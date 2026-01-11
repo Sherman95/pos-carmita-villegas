@@ -1,19 +1,32 @@
 <div class="login-shell">
   <div class="card">
-    <div class="header">
-      <h1>Iniciar sesión</h1>
-      <p>Accede al panel de ventas</p>
+    <div class="brand">
+      <div class="logo">PV</div>
+      <div>
+        <h1>Iniciar sesión</h1>
+        <p>Accede al panel de ventas</p>
+      </div>
     </div>
 
     <form (ngSubmit)="submit()" autocomplete="off">
       <mat-form-field appearance="outline" class="full">
         <mat-label>Usuario</mat-label>
         <input matInput name="username" [(ngModel)]="username" required />
+        <mat-hint>Tu usuario registrado</mat-hint>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full">
         <mat-label>Contraseña</mat-label>
-        <input matInput name="password" type="password" [(ngModel)]="password" required />
+        <input
+          matInput
+          name="password"
+          [type]="hidePassword ? 'password' : 'text'"
+          [(ngModel)]="password"
+          required
+        />
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+          <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
       </mat-form-field>
 
       <div class="error" *ngIf="error">{{ error }}</div>

@@ -1,6 +1,29 @@
 <h2 mat-dialog-title>Resumen de Cuenta</h2>
 
 <mat-dialog-content>
+  <div class="client-card">
+    <div class="client-header">
+      <div class="icon-circle"><mat-icon>person</mat-icon></div>
+      <div class="client-meta">
+        <div class="eyebrow">Cliente de la venta</div>
+        <div class="client-name">{{ clienteLabel() }}</div>
+        <div class="client-note" *ngIf="selectedClientId() === 'anon'">Sin identificación</div>
+        <div class="client-note" *ngIf="selectedClientId() !== 'anon'">Puedes cambiarlo antes de cobrar</div>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="client-field">
+      <mat-label>Cambiar cliente</mat-label>
+      <mat-select [value]="selectedClientId()" (selectionChange)="onClienteChange($event.value)">
+        <mat-option value="anon">Consumidor final</mat-option>
+        @for (c of clients(); track c.id) {
+          <mat-option [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <mat-divider class="section-divider"></mat-divider>
   
   <mat-list>
     @for (linea of cartService.items(); track $index) {

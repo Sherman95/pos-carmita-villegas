@@ -37,6 +37,7 @@ export class PriceDialogComponent {
 
   confirmar(): void {
     // Cierra y envía el precio nuevo al carrito
-    this.dialogRef.close(this.precioFinal);
+    const valor = Number(this.precioFinal);
+    this.dialogRef.close(Number.isFinite(valor) ? valor : this.data.precioBase);
   }
 }

@@ -1,0 +1,73 @@
+<section class="profile-shell">
+  <div class="profile-card" *ngIf="user(); else emptyState">
+    <div class="identity">
+      <div class="avatar">{{ (user()?.username || 'U')[0] | uppercase }}</div>
+      <div class="identity-text">
+        <div class="eyebrow">Perfil</div>
+        <div class="headline">{{ user()?.username }}</div>
+        <div class="meta-row">
+          <span class="badge role">{{ user()?.role || 'N/A' }}</span>
+          <span class="status-dot"></span>
+          <span class="muted">Sesión activa en este dispositivo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="card-section">
+        <div class="section-title">Datos de cuenta</div>
+        <div class="info">
+          <div class="info-item">
+            <span class="label">Usuario</span>
+            <span class="value">{{ user()?.username }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Rol</span>
+            <span class="value badge">{{ user()?.role || 'N/A' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Estado</span>
+            <span class="value">Activo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-title">Preferencias locales</div>
+        <form (ngSubmit)="save()" autocomplete="off" class="edit-form">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Editar usuario (local)</mat-label>
+            <input matInput [(ngModel)]="username" name="username" required />
+            <mat-hint>Solo cambia el nombre guardado en este dispositivo</mat-hint>
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-stroked-button color="primary" type="submit">Guardar</button>
+            <button mat-flat-button color="warn" type="button" (click)="logout()">
+              <mat-icon>logout</mat-icon>
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+
+          <div class="hint" *ngIf="message()">{{ message() }}</div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="profile-card empty">
+      <div class="header">
+        <div class="avatar">?</div>
+        <div>
+          <h2>Sin datos de usuario</h2>
+          <p>Inicia sesión nuevamente para cargar tu perfil</p>
+        </div>
+      </div>
+      <button mat-flat-button color="primary" (click)="logout()">
+        <mat-icon>login</mat-icon>
+        <span>Ir a iniciar sesión</span>
+      </button>
+    </div>
+  </ng-template>
+</section>

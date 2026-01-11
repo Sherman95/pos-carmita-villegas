@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navigation',
@@ -19,4 +21,11 @@ export class NavigationComponent {
     { path: '/reports', label: 'Reportes', icon: 'insights' },
     { path: '/clients', label: 'Clientes', icon: 'people' },
   ];
+
+  constructor(private auth: AuthService, private router: Router) {}
+
+  logout() {
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
+  }
 }

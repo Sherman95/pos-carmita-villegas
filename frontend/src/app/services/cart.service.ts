@@ -34,10 +34,14 @@ export class CartService {
   }
 
   agregar(producto: Item, precioFinal: number) {
+    const precioVenta = Number(precioFinal);
+    const precioProducto = Number(producto.precio);
+    const precioValido = Number.isFinite(precioVenta) ? precioVenta : (Number.isFinite(precioProducto) ? precioProducto : 0);
+
     const itemsActuales = this.items();
     
     // Buscamos si ya existe ese producto CON ESE MISMO PRECIO en el carrito
-    const existe = itemsActuales.find(i => i.item.id === producto.id && i.precioVenta === precioFinal);
+    const existe = itemsActuales.find(i => i.item.id === producto.id && i.precioVenta === precioValido);
 
     if (existe) {
       // Si ya existe, solo sumamos 1 a la cantidad
@@ -49,9 +53,9 @@ export class CartService {
       // Si no existe, agregamos un renglón nuevo
       const nuevoItem: CartItem = {
         item: producto,
-        precioVenta: precioFinal,
+        precioVenta: precioValido,
         cantidad: 1,
-        subtotal: precioFinal
+        subtotal: precioValido
       };
       this.items.set([...itemsActuales, nuevoItem]);
     }

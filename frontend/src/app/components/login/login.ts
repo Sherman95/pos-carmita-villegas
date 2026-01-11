@@ -20,24 +20,27 @@ export class LoginComponent {
   password = '';
   loading = false;
   error = '';
+  hidePassword = true;
 
   constructor(private auth: AuthService, private router: Router) {}
 
   submit() {
-    if (!this.username || !this.password) {
+    const username = this.username.trim();
+    const password = this.password.trim();
+    if (!username || !password) {
       this.error = 'Ingresa usuario y contraseña';
       return;
     }
     this.loading = true;
     this.error = '';
-    this.auth.login(this.username, this.password).subscribe({
+    this.auth.login(username, password).subscribe({
       next: () => {
         this.loading = false;
         this.router.navigateByUrl('/');
       },
       error: (err) => {
         this.loading = false;
-        this.error = err?.error?.error || 'Credenciales inválidas';
+        this.error = err?.error?.error || 'Credenciales inválidas. Inténtalo de nuevo.';
       }
     });
   }

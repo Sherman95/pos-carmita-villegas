@@ -39,6 +39,14 @@
   color: #0d47a1;
 }
 
+.nav-btn.danger {
+  color: #b91c1c;
+}
+
+.nav-btn.danger mat-icon {
+  color: #b91c1c;
+}
+
 @media (min-width: 768px) {
   .bottom-nav {
     max-width: 960px;
