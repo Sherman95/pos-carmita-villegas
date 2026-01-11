@@ -16,7 +16,7 @@ import { ItemsService } from '../../services/items.service';
 import { SalesService } from '../../services/sales.service';
 import { Item } from '../../interfaces/interfaces';
 
-type Period = 'week' | 'month' | 'year' | 'custom';
+type Period = 'today' | 'week' | 'month' | 'year' | 'custom';
 
 interface SaleRow {
   id: string;
@@ -78,19 +78,23 @@ export class ReportsComponent implements OnInit {
   selectedSaleId = signal<string | null>(null);
   saleDetails = signal<Record<string, DetailRow[]>>({});
   loadingDetail = signal<boolean>(false);
+  canExport = signal<boolean>(false);
+  activeTab = signal<'general' | 'client' | 'service'>('general');
 
   ngOnInit(): void {
     this.loadClients();
     this.loadServicios();
     const today = new Date();
     const iso = (d: Date) => d.toISOString().slice(0, 10);
+    this.periodGeneral.set('today');
     this.fromGeneral.set(iso(today));
     this.toGeneral.set(iso(today));
+    this.periodClient.set('today');
     this.fromClient.set(iso(today));
     this.toClient.set(iso(today));
+    this.periodService.set('today');
     this.fromService.set(iso(today));
     this.toService.set(iso(today));
-    this.loadGeneral();
   }
 
   loadClients() {
@@ -111,6 +115,9 @@ export class ReportsComponent implements OnInit {
     if (period === 'custom') return { from, to };
     const now = new Date();
     const iso = (d: Date) => d.toISOString().slice(0, 10);
+    if (period === 'today') {
+      return { from: iso(now), to: iso(now) };
+    }
     if (period === 'week') {
       const start = new Date(now);
       start.setDate(now.getDate() - 6);
@@ -125,7 +132,8 @@ export class ReportsComponent implements OnInit {
   }
 
   private apiPeriod(period: Period): 'week' | 'month' | 'year' | undefined {
-    return period === 'custom' ? undefined : period;
+    if (period === 'custom' || period === 'today') return undefined;
+    return period;
   }
 
   private async ensureDetails(rows: SaleRow[]) {
@@ -142,6 +150,7 @@ export class ReportsComponent implements OnInit {
   }
 
   async exportPDF() {
+    if (!this.canExport()) return;
     const doc = new jsPDF();
     const generatedAt = new Date();
     let cursorY = 16;
@@ -278,19 +287,24 @@ export class ReportsComponent implements OnInit {
     const label =
       period === 'custom'
         ? 'Rango personalizado'
-        : period === 'week'
-          ? 'Ultimos 7 dias'
-          : period === 'month'
-            ? 'Mes en curso'
-            : 'Anio en curso';
+        : period === 'today'
+          ? 'Hoy'
+          : period === 'week'
+            ? 'Ultimos 7 dias'
+            : period === 'month'
+              ? 'Mes en curso'
+              : 'Anio en curso';
     return `${prefix} · ${label} (${range.from} al ${range.to})`;
   }
 
   loadGeneral() {
     const { from, to } = this.periodRange(this.periodGeneral(), this.fromGeneral(), this.toGeneral());
+    this.fromGeneral.set(from);
+    this.toGeneral.set(to);
     this.loadingGeneral.set(true);
     const apiPeriod = this.apiPeriod(this.periodGeneral());
-    this.reportsService.getSummary({ from, to, period: apiPeriod }).subscribe({
+    const summaryOpts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
+    this.reportsService.getSummary(summaryOpts).subscribe({
       next: (data) => this.summaryGeneral.set(data || { count: 0, total: 0 }),
       error: (err) => console.error('Error resumen general', err)
     });
@@ -298,6 +312,7 @@ export class ReportsComponent implements OnInit {
       next: (rows) => {
         this.salesGeneral.set(rows || []);
         this.loadingGeneral.set(false);
+        this.canExport.set(true);
       },
       error: (err) => {
         console.error('Error ventas generales', err);
@@ -309,14 +324,17 @@ export class ReportsComponent implements OnInit {
   loadByClient() {
     if (!this.selectedClientId()) return;
     const { from, to } = this.periodRange(this.periodClient(), this.fromClient(), this.toClient());
+    this.fromClient.set(from);
+    this.toClient.set(to);
     this.loadingClient.set(true);
     const apiPeriod = this.apiPeriod(this.periodClient());
-    const opts = apiPeriod ? { period: apiPeriod } : { from, to };
+    const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
     this.reportsService.getByClient(this.selectedClientId(), opts).subscribe({
       next: (data) => {
         this.salesClient.set(data.sales || []);
         this.summaryClient.set(data.summary || { count: 0, total: 0 });
         this.loadingClient.set(false);
+        this.canExport.set(true);
       },
       error: (err) => {
         console.error('Error ventas por cliente', err);
@@ -328,14 +346,17 @@ export class ReportsComponent implements OnInit {
   loadByService() {
     if (!this.selectedServiceId()) return;
     const { from, to } = this.periodRange(this.periodService(), this.fromService(), this.toService());
+    this.fromService.set(from);
+    this.toService.set(to);
     this.loadingService.set(true);
     const apiPeriod = this.apiPeriod(this.periodService());
-    const opts = apiPeriod ? { period: apiPeriod } : { from, to };
+    const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
     this.reportsService.getByItem(this.selectedServiceId(), opts).subscribe({
       next: (data) => {
         this.salesServiceList.set(data.sales || []);
         this.summaryService.set(data.summary || { count: 0, total: 0 });
         this.loadingService.set(false);
+        this.canExport.set(true);
       },
       error: (err) => {
         console.error('Error ventas por servicio', err);

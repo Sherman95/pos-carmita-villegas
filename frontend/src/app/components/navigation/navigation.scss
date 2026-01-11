@@ -5,46 +5,48 @@
   right: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  background: #ffffff;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  background: #4b1e3a;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -6px 16px rgba(75, 30, 58, 0.3);
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
   z-index: 1000;
 }
 
 .nav-btn {
   min-width: 0;
-  padding: 6px 4px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   font-size: 12px;
-  color: #444;
+  color: #ffffff;
 }
 
 .nav-btn mat-icon {
   font-size: 20px;
   height: 20px;
   width: 20px;
+  color: #ffffff;
 }
 
 .nav-btn.active {
-  color: #0d47a1;
+  color: #ffffff;
   font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .nav-btn.active mat-icon {
-  color: #0d47a1;
+  color: #ffffff;
 }
 
 .nav-btn.danger {
-  color: #b91c1c;
+  color: #f5dce8;
 }
 
 .nav-btn.danger mat-icon {
-  color: #b91c1c;
+  color: #f5dce8;
 }
 
 @media (min-width: 768px) {

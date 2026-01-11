@@ -5,6 +5,7 @@ import { ReportsComponent } from './components/reports/reports';
 import { ClientsComponent } from './components/clients/clients';
 import { HomeComponent } from './components/home/home';
 import { LoginComponent } from './components/login/login';
+import { ProfileComponent } from './components/profile/profile';
 import { authGuard } from './services/auth.guard';
 
 export const routes: Routes = [
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'history', component: SalesHistoryComponent, canActivate: [authGuard] },
   { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
   { path: 'clients', component: ClientsComponent, canActivate: [authGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
 ];

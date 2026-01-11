@@ -1,38 +1,24 @@
 <div class="clients-container">
-  <mat-card class="form-card">
-    <div class="title">Nuevo cliente</div>
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Nombre</mat-label>
-        <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Cédula</mat-label>
-        <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Teléfono</mat-label>
-        <input matInput [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
-        <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" />
+  <div class="header">
+    <div>
+      <div class="title">Clientes</div>
+      <div class="subtitle">Crea, busca y edita fichas rápido</div>
+    </div>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="showCreateForm()">Agregar cliente</button>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput type="text" placeholder="Nombre, cédula o email" [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)" />
       </mat-form-field>
     </div>
-    <div class="actions">
-      <button mat-stroked-button color="warn" *ngIf="editingId()" (click)="cancelEdit()">Cancelar</button>
-      <button mat-flat-button color="primary" (click)="saveClient()" [disabled]="!form().nombre">
-        {{ editingId() ? 'Actualizar' : 'Guardar' }}
-      </button>
-    </div>
-  </mat-card>
+  </div>
 
-  <div class="list-title">Clientes</div>
   <div *ngIf="loading()" class="loading">Cargando...</div>
-  <div *ngIf="!loading() && clients().length === 0" class="empty">No hay clientes.</div>
+  <div *ngIf="!loading() && filteredClients().length === 0" class="empty">Sin resultados.</div>
 
   <div class="clients-list">
-    <mat-card class="client" *ngFor="let c of clients()">
+    <mat-card class="client" *ngFor="let c of filteredClients()">
       <div class="row">
         <div>
           <div class="name">{{ c.nombre }}</div>
@@ -46,4 +32,35 @@
       </div>
     </mat-card>
   </div>
+
+  <ng-template #clientFormDialog>
+    <h2 mat-dialog-title>{{ editingId() ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
+    <mat-dialog-content class="dialog-content">
+      <div class="form-sub">Campos mínimos: nombre; los demás son opcionales.</div>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cédula</mat-label>
+          <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" />
+        </mat-form-field>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end" class="dialog-actions">
+      <button mat-stroked-button color="warn" mat-dialog-close (click)="cancelEdit()">Cancelar</button>
+      <button mat-flat-button color="primary" (click)="saveClient()" [disabled]="!form().nombre">
+        {{ editingId() ? 'Actualizar' : 'Guardar' }}
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
 </div>

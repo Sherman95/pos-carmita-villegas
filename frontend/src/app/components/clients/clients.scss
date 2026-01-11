@@ -1,65 +1,128 @@
 .clients-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 18px;
+  padding: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
-.form-card {
-  padding: 16px;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .title {
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 22px;
+  color: #3a2735;
+}
+
+.subtitle {
+  color: #5c4c56;
+  font-size: 13px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.dialog-actions {
+  gap: 8px;
+}
+
+.search-field {
+  min-width: 240px;
+  max-width: 320px;
+  width: 100%;
+}
+
+.form-card {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(122, 41, 79, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.form-header {
   margin-bottom: 8px;
+}
+
+.form-title {
+  font-weight: 700;
+  color: #3a2735;
+}
+
+.form-sub {
+  color: #6b4b60;
+  font-size: 12px;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.list-title {
-  font-weight: 600;
-  padding: 0 2px;
+  margin-top: 8px;
 }
 
 .clients-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .client {
   padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(122, 41, 79, 0.12);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+  background: #fff;
 }
 
 .client .row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .client-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .client .name {
   font-weight: 700;
+  color: #3a2735;
 }
 
 .client .meta {
-  color: #666;
+  color: #6b4b60;
   font-size: 12px;
+  margin-top: 2px;
 }
 
 .loading, .empty {
@@ -67,13 +130,8 @@
   color: #666;
 }
 
-@media (min-width: 720px) {
+@media (min-width: 900px) {
   .clients-container {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-
-  .form-grid {
-    grid-template-columns: repeat(3, 1fr);
+    padding: 18px;
   }
 }

@@ -1,34 +1,62 @@
 <div class="home">
-  <mat-card class="hero">
-    <div class="hero-text">
-      <div class="title">Punto de Venta</div>
-      <div class="subtitle">Elige cliente y comienza a cobrar</div>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="badge">Caja</div>
+      <h1>Punto de venta</h1>
+      <p class="subtitle">Elige cliente y arranca la sesión de cobro con un clic.</p>
+      <div class="pill">Listo para cobrar</div>
     </div>
-    <div class="hero-actions">
-      <mat-form-field appearance="outline">
-        <mat-label>Cliente</mat-label>
-        <mat-select [ngModel]="selectedClientId()" (ngModelChange)="selectedClientId.set($event)">
-          <mat-option *ngFor="let c of clienteOpciones()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <button mat-flat-button color="primary" class="cta" (click)="irAVenta()">
-        <mat-icon>point_of_sale</mat-icon>
-        Nueva venta
-      </button>
-    </div>
-  </mat-card>
 
-  <div class="quick-actions">
+    <mat-card class="hero-card">
+      <div class="card-title">Cliente de la venta</div>
+      <div class="card-subtitle">Puedes dejar "Consumidor final" si no deseas asociar.</div>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="client-field">
+          <mat-label>Cliente</mat-label>
+          <mat-select [ngModel]="selectedClientId()" (ngModelChange)="selectedClientId.set($event)">
+            <mat-option *ngFor="let c of clienteOpciones()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-flat-button color="primary" class="cta" (click)="irAVenta()">
+          <mat-icon>point_of_sale</mat-icon>
+          Ir a cobrar
+        </button>
+      </div>
+      <div class="helper">Tip: puedes cambiar el cliente después desde la venta.</div>
+    </mat-card>
+  </section>
+
+  <section class="actions-grid">
+    <mat-card class="action" (click)="irAVenta()">
+      <div class="icon-circle"><mat-icon>play_circle</mat-icon></div>
+      <div>
+        <div class="label">Nueva venta</div>
+        <div class="hint">Ingresa productos y cobra</div>
+      </div>
+    </mat-card>
+
     <mat-card class="action" (click)="irAHistorial()">
-      <mat-icon>history</mat-icon>
-      <div class="label">Historial diario</div>
+      <div class="icon-circle"><mat-icon>history</mat-icon></div>
+      <div>
+        <div class="label">Historial diario</div>
+        <div class="hint">Revisa movimientos de hoy</div>
+      </div>
     </mat-card>
+
     <mat-card class="action" (click)="irAReportes()">
-      <mat-icon>insights</mat-icon>
-      <div class="label">Reportes</div>
+      <div class="icon-circle"><mat-icon>insights</mat-icon></div>
+      <div>
+        <div class="label">Reportes</div>
+        <div class="hint">Descarga PDF y totales</div>
+      </div>
     </mat-card>
+
     <mat-card class="action" (click)="irAClientes()">
-      <mat-icon>people</mat-icon>
-      <div class="label">Clientes</div>
+      <div class="icon-circle"><mat-icon>people</mat-icon></div>
+      <div>
+        <div class="label">Clientes</div>
+        <div class="hint">Gestiona fichas y contactos</div>
+      </div>
     </mat-card>
-  </div>
+  </section>
+</div>

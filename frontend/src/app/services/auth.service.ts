@@ -31,6 +31,12 @@ export class AuthService {
     this.currentUser.set(null);
   }
 
+  // Solo actualiza el usuario en memoria/localStorage (para uso en perfil local)
+  setUserLocal(user: LoginResponse['user']) {
+    localStorage.setItem('user', JSON.stringify(user));
+    this.currentUser.set(user);
+  }
+
   getToken(): string | null {
     return localStorage.getItem('token');
   }

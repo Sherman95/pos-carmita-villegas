@@ -6,13 +6,30 @@
       <p class="lead">Filtra, revisa y descarga los movimientos por periodo, cliente o servicio.</p>
     </div>
     <div class="actions-bar">
-      <button mat-stroked-button color="primary" (click)="exportPDF()">
+      <button mat-stroked-button color="primary" (click)="exportPDF()" [disabled]="!canExport()">
         <mat-icon>picture_as_pdf</mat-icon>
         Descargar PDF
       </button>
+      <span class="hint" *ngIf="!canExport()">Aplica un filtro para habilitar la descarga</span>
     </div>
   </div>
 
+  <div class="tabs">
+    <button mat-button [class.active]="activeTab() === 'general'" (click)="activeTab.set('general')">
+      <mat-icon>insights</mat-icon>
+      General
+    </button>
+    <button mat-button [class.active]="activeTab() === 'client'" (click)="activeTab.set('client')">
+      <mat-icon>person</mat-icon>
+      Cliente
+    </button>
+    <button mat-button [class.active]="activeTab() === 'service'" (click)="activeTab.set('service')">
+      <mat-icon>build</mat-icon>
+      Servicio
+    </button>
+  </div>
+
+  @if (activeTab() === 'general') {
   <mat-card class="panel">
     <div class="panel-header">
       <div>
@@ -23,7 +40,8 @@
       <div class="filters-row">
         <mat-form-field appearance="outline" class="period">
           <mat-label>Periodo</mat-label>
-          <mat-select [ngModel]="periodGeneral()" (ngModelChange)="periodGeneral.set($event); loadGeneral()">
+          <mat-select [ngModel]="periodGeneral()" (ngModelChange)="periodGeneral.set($event)">
+            <mat-option value="today">Hoy</mat-option>
             <mat-option value="week">Semana</mat-option>
             <mat-option value="month">Mes</mat-option>
             <mat-option value="year">Año</mat-option>
@@ -85,7 +103,9 @@
       </mat-card>
     </div>
   </mat-card>
+  }
 
+  @if (activeTab() === 'client') {
   <mat-card class="panel">
     <div class="panel-header">
       <div>
@@ -104,6 +124,7 @@
         <mat-form-field appearance="outline" class="period">
           <mat-label>Periodo</mat-label>
           <mat-select [ngModel]="periodClient()" (ngModelChange)="periodClient.set($event)">
+            <mat-option value="today">Hoy</mat-option>
             <mat-option value="week">Semana</mat-option>
             <mat-option value="month">Mes</mat-option>
             <mat-option value="year">Año</mat-option>
@@ -165,7 +186,9 @@
       </mat-card>
     </div>
   </mat-card>
+  }
 
+  @if (activeTab() === 'service') {
   <mat-card class="panel">
     <div class="panel-header">
       <div>
@@ -184,6 +207,7 @@
         <mat-form-field appearance="outline" class="period">
           <mat-label>Periodo</mat-label>
           <mat-select [ngModel]="periodService()" (ngModelChange)="periodService.set($event)">
+            <mat-option value="today">Hoy</mat-option>
             <mat-option value="week">Semana</mat-option>
             <mat-option value="month">Mes</mat-option>
             <mat-option value="year">Año</mat-option>
@@ -245,6 +269,7 @@
       </mat-card>
     </div>
   </mat-card>
+  }
 
   <ng-template #loadingTpl>
     <p class="loading">Cargando...</p>

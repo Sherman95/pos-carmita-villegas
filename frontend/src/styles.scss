@@ -6,14 +6,24 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+  --brand-base: #4b1e3a;
+  --brand-accent: #7a294f;
+  --brand-soft: #f7eef3;
+  --brand-contrast: #f5dce8;
+  --brand-text: #1f1722;
+}
+
 html {
   height: 100%;
   @include mat.theme((
     color: (
-      primary: mat.$magenta-palette,
-      tertiary: mat.$violet-palette,
+      primary: mat.$m2-indigo-palette,
+      tertiary: mat.$m2-pink-palette,
     ),
-    typography: Roboto,
+    typography: Poppins,
     density: 0,
   ));
 }
@@ -29,10 +39,54 @@ body {
   // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   // Reset the user agent margin.
   margin: 0;
   height: 100%;
+}
+
+body {
+  background: linear-gradient(180deg, #fdf9fb, #f7eef3);
+  color: var(--brand-text);
+}
+
+.mat-mdc-select-panel {
+  background: #ffffff !important;
+  color: var(--brand-text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.mat-mdc-select-panel .mdc-list-item__primary-text {
+  color: var(--brand-text);
+}
+
+.mat-mdc-dialog-surface {
+  background: #ffffff !important;
+  color: var(--brand-text);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+}
+
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-outlined-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  background: var(--brand-base) !important;
+  color: #ffffff !important;
+  border-color: var(--brand-base) !important;
+}
+
+.mat-mdc-stroked-button.mat-primary {
+  border-color: var(--brand-base);
+  color: var(--brand-base);
+}
+
+.brand-bg-dark {
+  background: var(--brand-base) !important;
+  color: #ffffff !important;
+}
+
+.brand-text-light {
+  color: #ffffff !important;
 }
 /* You can add global styles to this file, and also import other style files */

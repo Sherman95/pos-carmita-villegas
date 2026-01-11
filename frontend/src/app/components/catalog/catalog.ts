@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -6,8 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { ItemsService } from '../../services/items.service';
 import { Item } from '../../interfaces/interfaces';
 import { PriceDialogComponent } from '../price-dialog/price-dialog';
@@ -17,19 +16,28 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatDialogModule],
   templateUrl: './catalog.html',
   styleUrl: './catalog.scss'
 })
 export class CatalogComponent implements OnInit {
   private itemsService = inject(ItemsService);
-  private dialog = inject(MatDialog); 
+  private dialog = inject(MatDialog);
   private cartService = inject(CartService);
   private router = inject(Router);
+  private dialogRef?: MatDialogRef<unknown>;
+
+  @ViewChild('serviceFormDialog') formDialog!: TemplateRef<unknown>;
 
   items = signal<Item[]>([]);
   selectedId = signal<string>('');
   form = signal<{ nombre: string; precio: number | null }>({ nombre: '', precio: null });
+  searchTerm = signal<string>('');
+  filteredItems = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (!term) return this.items();
+    return this.items().filter((i) => i.nombre.toLowerCase().includes(term));
+  });
 
   presets: Array<{ nombre: string; precio: number }> = [
     { nombre: 'Manicure', precio: 0 },
@@ -68,6 +76,7 @@ export class CatalogComponent implements OnInit {
     const found = this.items().find((i) => i.id === id);
     if (found) {
       this.form.set({ nombre: found.nombre, precio: found.precio });
+      this.openDialog();
     }
   }
 
@@ -76,8 +85,17 @@ export class CatalogComponent implements OnInit {
     this.form.set({ nombre: '', precio: null });
   }
 
+  nuevoServicio() {
+    this.limpiar();
+    this.openDialog();
+  }
+
   updateField<K extends keyof ReturnType<typeof this.form>>(key: K, value: ReturnType<typeof this.form>[K]) {
     this.form.set({ ...this.form(), [key]: value });
+  }
+
+  setSearch(term: string) {
+    this.searchTerm.set(term || '');
   }
 
   guardar() {
@@ -92,11 +110,15 @@ export class CatalogComponent implements OnInit {
     const obs = id ? this.itemsService.updateItem(id, payload) : this.itemsService.createItem(payload);
     obs.subscribe({
       next: () => {
-        this.limpiar();
+        this.closeDialog();
         this.cargarItems();
       },
       error: (err) => console.error('Error guardando servicio', err)
     });
+  }
+
+  cancelar() {
+    this.closeDialog();
   }
 
   seedServicios() {
@@ -135,5 +157,19 @@ export class CatalogComponent implements OnInit {
 
   agregarAlCarrito(item: Item, precioFinal: number) {
     this.cartService.agregar(item, precioFinal);
+  }
+
+  private openDialog() {
+    this.dialogRef = this.dialog.open(this.formDialog, {
+      width: '520px',
+      autoFocus: true
+    });
+
+    this.dialogRef.afterClosed().subscribe(() => this.limpiar());
+  }
+
+  private closeDialog() {
+    this.dialogRef?.close();
+    this.dialogRef = undefined;
   }
 }

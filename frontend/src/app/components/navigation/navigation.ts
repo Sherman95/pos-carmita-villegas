@@ -17,9 +17,9 @@ export class NavigationComponent {
   navItems = [
     { path: '/', label: 'Inicio', icon: 'home' },
     { path: '/catalog', label: 'Catálogo', icon: 'storefront' },
-    { path: '/history', label: 'Diario', icon: 'history' },
     { path: '/reports', label: 'Reportes', icon: 'insights' },
     { path: '/clients', label: 'Clientes', icon: 'people' },
+    { path: '/profile', label: 'Perfil', icon: 'account_circle' },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}
