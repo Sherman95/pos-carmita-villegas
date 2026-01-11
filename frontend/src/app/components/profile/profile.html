@@ -52,6 +52,43 @@
           <div class="hint" *ngIf="message()">{{ message() }}</div>
         </form>
       </div>
+
+      <div class="card-section">
+        <div class="section-title">Datos del recibo / factura simulada</div>
+        <form (ngSubmit)="saveBusiness()" autocomplete="off" class="edit-form">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nombre comercial</mat-label>
+            <input matInput [(ngModel)]="business().name" name="bizName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>RUC</mat-label>
+            <input matInput [(ngModel)]="business().ruc" name="bizRuc" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Dirección</mat-label>
+            <input matInput [(ngModel)]="business().address" name="bizAddress" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Teléfono</mat-label>
+            <input matInput [(ngModel)]="business().phone" name="bizPhone" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>IVA (decimal, ej. 0.15)</mat-label>
+            <input matInput type="number" step="0.01" [(ngModel)]="taxRateInput" name="bizIva" />
+            <mat-hint>Se aplicará al cobrar y en el ticket</mat-hint>
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-stroked-button color="primary" type="submit">Guardar datos</button>
+          </div>
+
+          <div class="hint" *ngIf="message()">{{ message() }}</div>
+        </form>
+      </div>
     </div>
   </div>
 

@@ -10,7 +10,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { ClientsService, Client } from '../../services/clients.service';
 import { CartService } from '../../services/cart.service';
 import { SalesService } from '../../services/sales.service';
+import { SettingsService } from '../../services/settings.service';
 import { TicketDialogComponent, TicketData } from '../ticket-dialog/ticket-dialog';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-cart-detail',
@@ -32,6 +35,7 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
   public cartService = inject(CartService);
   private clientsService = inject(ClientsService);
   private salesService = inject(SalesService);
+  private settingsService = inject(SettingsService);
   private dialog = inject(MatDialog);
 
   clients = signal<Client[]>([]);
@@ -85,9 +89,12 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
 
     const itemsSnapshot = [...this.cartService.items()];
     const totalSnapshot = this.cartService.total();
+    const business = this.settingsService.settings();
+    const taxRate = business.taxRate ?? 0;
+    const totalConIva = Number(totalSnapshot) * (1 + taxRate);
 
     const venta = {
-      total: totalSnapshot,
+      total: totalConIva,
       metodo_pago: 'EFECTIVO',
       client_id: this.cartService.clienteId(),
       items: this.cartService.items()
@@ -107,10 +114,22 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
             precio: i.precioVenta,
             subtotal: i.subtotal
           })),
-          total: Number(totalSnapshot) || 0
+          total: Number(totalConIva) || 0,
+          businessName: business.name,
+          businessRuc: business.ruc,
+          businessAddress: business.address,
+          businessPhone: business.phone,
+          taxRate
         };
 
-        this.dialog.open(TicketDialogComponent, { data: ticketData, maxWidth: '380px' });
+        const dialogRef = this.dialog.open(TicketDialogComponent, {
+          data: ticketData,
+          maxWidth: '380px',
+          panelClass: 'ticket-dialog-capture'
+        });
+
+        // Capturar el ticket renderizado y guardarlo como PDF
+        this.capturarYEnviarTicket(dialogRef, res?.saleId);
 
         this.cartService.limpiarCarrito();
         this.cerrar();
@@ -120,5 +139,33 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
         alert('❌ Ocurrió un error al guardar la venta.');
       }
     });
+  }
+
+  private async capturarYEnviarTicket(dialogRef: any, saleId: string, docType: string = 'receipt') {
+    try {
+      await dialogRef?.afterOpened().toPromise();
+      await new Promise((resolve) => setTimeout(resolve, 60));
+
+      const el = document.querySelector('.ticket-dialog-capture .ticket-paper') as HTMLElement | null;
+      if (!el) return;
+
+      const canvas = await html2canvas(el, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const mmWidth = canvas.width * 0.264583;
+      const mmHeight = canvas.height * 0.264583;
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [mmWidth, mmHeight] });
+      pdf.addImage(imgData, 'PNG', 0, 0, mmWidth, mmHeight, undefined, 'FAST');
+
+      const dataUri = pdf.output('datauristring');
+      const base64 = dataUri.split(',')[1];
+
+      if (saleId && base64) {
+        this.salesService.uploadReceipt(saleId, base64, docType).subscribe({
+          error: (err) => console.error('No se pudo guardar el recibo PDF', err)
+        });
+      }
+    } catch (err) {
+      console.error('Error generando/enviando PDF', err);
+    }
   }
 }

@@ -4,6 +4,48 @@
     <div class="summary-amount">${{ totalHoy() | number:'1.2-2' }}</div>
   </mat-card>
 
+  <div class="list-title">Recibos por cliente</div>
+  <mat-card class="filters-card">
+    <div class="filters">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Cliente</mat-label>
+        <mat-select [(ngModel)]="filterClientId">
+          <mat-option [value]="''">Selecciona un cliente</mat-option>
+          <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput type="date" [(ngModel)]="filterFrom">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput type="date" [(ngModel)]="filterTo">
+      </mat-form-field>
+      <button mat-flat-button color="primary" (click)="buscarRecibosPorCliente()">Buscar</button>
+    </div>
+    @if (loadingReceipts()) {
+      <p class="loading">Cargando recibos...</p>
+    } @else if (clientReceipts().length === 0) {
+      <p class="empty">Sin recibos para este filtro.</p>
+    } @else {
+      <div class="receipts-list">
+        @for (r of clientReceipts(); track r.receipt_id) {
+          <div class="receipt-row">
+            <div class="left">
+              <div class="name">Venta {{ r.sale_id }}</div>
+              <div class="meta">{{ r.sale_created_at | date:'medium' }} · Total ${{ r.total | number:'1.2-2' }}</div>
+            </div>
+            <button mat-stroked-button (click)="descargarReciboCliente(r)">
+              <mat-icon>download</mat-icon>
+              Descargar
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </mat-card>
+
   <div class="list-title">Ventas recientes</div>
 
   <div class="sales-list">
@@ -25,6 +67,12 @@
           <div class="meta">
             <span>Método: {{ sale.metodo_pago || 'N/D' }}</span>
             <span>ID: {{ sale.id }}</span>
+          </div>
+          <div class="actions">
+            <button mat-stroked-button color="primary" (click)="$event.stopPropagation(); descargarRecibo(sale.id)" [disabled]="downloadingSaleId() === sale.id">
+              <mat-icon>receipt_long</mat-icon>
+              {{ downloadingSaleId() === sale.id ? 'Descargando...' : 'Ver recibo' }}
+            </button>
           </div>
           @if (selectedSaleId() === sale.id) {
             <div class="details">

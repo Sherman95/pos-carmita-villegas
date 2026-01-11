@@ -328,3 +328,108 @@ export const getSaleWithDetails = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al obtener venta con detalle' });
     }
 };
+
+export const saveSaleReceipt = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { pdfBase64, docType } = req.body as { pdfBase64?: string; docType?: string };
+
+    if (!id) return res.status(400).json({ error: 'id requerido' });
+    if (!pdfBase64 || typeof pdfBase64 !== 'string') {
+        return res.status(400).json({ error: 'pdfBase64 requerido' });
+    }
+
+    const kind = docType && typeof docType === 'string' ? docType : 'receipt';
+
+    try {
+        // Verificar que exista la venta
+        const saleExists = await pool.query('SELECT 1 FROM sales WHERE id = $1', [id]);
+        if (saleExists.rowCount === 0) {
+            return res.status(404).json({ error: 'Venta no encontrada' });
+        }
+
+        // Insertar recibo (se guarda la cadena base64 del PDF)
+        const insertSql = `
+            INSERT INTO sale_receipts (sale_id, pdf_base64, doc_type)
+            VALUES ($1, $2, $3)
+            RETURNING id, created_at, doc_type
+        `;
+        const { rows } = await pool.query(insertSql, [id, pdfBase64, kind]);
+
+        res.status(201).json({ receiptId: rows[0].id, created_at: rows[0].created_at, doc_type: rows[0].doc_type });
+    } catch (error) {
+        console.error('Error guardando recibo:', error);
+        res.status(500).json({ error: 'Error al guardar recibo' });
+    }
+};
+
+export const getSaleReceipt = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { docType } = req.query as { docType?: string };
+    if (!id) return res.status(400).json({ error: 'id requerido' });
+
+    try {
+        const params: any[] = [id];
+        let clause = '';
+        if (docType) {
+            clause = 'AND doc_type = $2';
+            params.push(docType);
+        }
+
+        const { rows } = await pool.query(
+            `SELECT pdf_base64, created_at, doc_type
+             FROM sale_receipts
+             WHERE sale_id = $1
+             ${clause}
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            params
+        );
+
+        if (rows.length === 0) return res.status(404).json({ error: 'Recibo no encontrado' });
+
+        res.status(200).json({ pdfBase64: rows[0].pdf_base64, created_at: rows[0].created_at, doc_type: rows[0].doc_type });
+    } catch (error) {
+        console.error('Error obteniendo recibo:', error);
+        res.status(500).json({ error: 'Error al obtener recibo' });
+    }
+};
+
+export const getReceiptsByClient = async (req: Request, res: Response) => {
+    const { clientId } = req.params;
+    const { from, to, docType } = req.query as { from?: string; to?: string; docType?: string };
+    if (!clientId) return res.status(400).json({ error: 'clientId requerido' });
+
+    try {
+        const params: any[] = [clientId];
+        let dateClause = '';
+        if (from && to) {
+            params.push(from, to);
+            dateClause = "AND s.created_at >= $2::date AND s.created_at < ($3::date + INTERVAL '1 day')";
+        }
+
+        const typeClause = docType ? 'AND sr.doc_type = $' + (params.length + 1) : '';
+        if (docType) params.push(docType);
+
+        const { rows } = await pool.query(
+            `SELECT sr.id AS receipt_id, sr.sale_id, sr.created_at AS receipt_created_at,
+                    s.total, s.metodo_pago,
+                    COALESCE(s.client_nombre, c.nombre) AS client_nombre,
+                    COALESCE(s.client_cedula, c.cedula) AS client_cedula,
+                    s.created_at AS sale_created_at,
+                    sr.doc_type
+             FROM sale_receipts sr
+             JOIN sales s ON sr.sale_id = s.id
+             LEFT JOIN clients c ON s.client_id = c.id
+             WHERE s.client_id = $1
+             ${dateClause}
+             ${typeClause}
+             ORDER BY sr.created_at DESC`,
+            params
+        );
+
+        res.status(200).json(rows);
+    } catch (error) {
+        console.error('Error obteniendo recibos por cliente:', error);
+        res.status(500).json({ error: 'Error al obtener recibos por cliente' });
+    }
+};

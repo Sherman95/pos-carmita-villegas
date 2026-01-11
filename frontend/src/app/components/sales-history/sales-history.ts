@@ -1,7 +1,14 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
 import { SalesService } from '../../services/sales.service';
+import { ClientsService, Client } from '../../services/clients.service';
 
 interface Sale {
   id: string;
@@ -24,17 +31,26 @@ interface SaleDetail {
 @Component({
   selector: 'app-sales-history',
   standalone: true,
-  imports: [CommonModule, MatCardModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, FormsModule, MatFormFieldModule, MatSelectModule, MatInputModule],
   templateUrl: './sales-history.html',
   styleUrl: './sales-history.scss'
 })
 export class SalesHistoryComponent implements OnInit {
   private salesService = inject(SalesService);
+  private clientsService = inject(ClientsService);
 
   sales = signal<Sale[]>([]);
   selectedSaleId = signal<string | null>(null);
   saleDetails = signal<Record<string, SaleDetail[]>>({});
   loadingDetail = signal<boolean>(false);
+
+  clients = signal<Client[]>([]);
+  filterClientId = signal<string>('');
+  filterFrom = signal<string>('');
+  filterTo = signal<string>('');
+  clientReceipts = signal<any[]>([]);
+  loadingReceipts = signal<boolean>(false);
+  downloadingSaleId = signal<string | null>(null);
 
   totalHoy = computed(() => {
     const hoy = new Date();
@@ -52,12 +68,20 @@ export class SalesHistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarVentas();
+    this.cargarClientes();
   }
 
   cargarVentas() {
     this.salesService.getSales().subscribe({
       next: (data) => this.sales.set(data),
       error: (err) => console.error('Error cargando ventas', err)
+    });
+  }
+
+  cargarClientes() {
+    this.clientsService.getClients().subscribe({
+      next: (data) => this.clients.set(data || []),
+      error: (err) => console.error('Error cargando clientes', err)
     });
   }
 
@@ -84,5 +108,66 @@ export class SalesHistoryComponent implements OnInit {
   formatearHora(fechaIso: string): string {
     const d = new Date(fechaIso);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  descargarRecibo(saleId: string) {
+    this.downloadingSaleId.set(saleId);
+    this.salesService.getReceipt(saleId).subscribe({
+      next: (data) => {
+        const base64 = data.pdfBase64;
+        if (!base64) return;
+        const blob = this.base64ToBlob(base64, 'application/pdf');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recibo-${saleId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloadingSaleId.set(null);
+      },
+      error: (err) => {
+        console.error('No se pudo obtener el recibo', err);
+        this.downloadingSaleId.set(null);
+      }
+    });
+  }
+
+  buscarRecibosPorCliente() {
+    const cid = this.filterClientId();
+    if (!cid) {
+      this.clientReceipts.set([]);
+      return;
+    }
+    this.loadingReceipts.set(true);
+    this.salesService.getReceiptsByClient(cid, { from: this.filterFrom() || undefined, to: this.filterTo() || undefined }).subscribe({
+      next: (data) => {
+        this.clientReceipts.set(data || []);
+        this.loadingReceipts.set(false);
+      },
+      error: (err) => {
+        console.error('Error obteniendo recibos por cliente', err);
+        this.loadingReceipts.set(false);
+      }
+    });
+  }
+
+  descargarReciboCliente(receipt: any) {
+    if (!receipt.sale_id) return;
+    this.descargarRecibo(receipt.sale_id);
+  }
+
+  private base64ToBlob(base64: string, contentType = ''): Blob {
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+    return new Blob(byteArrays, { type: contentType });
   }
 }

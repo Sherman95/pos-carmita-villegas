@@ -6,10 +6,10 @@
 
   <div class="ticket-paper">
     <div class="header">
-      <div class="brand">Carmita Villegas - Salón de Belleza</div>
-      <div class="text">RUC: 1799999999001</div>
-      <div class="text">Av. Siempre Viva 123</div>
-      <div class="text">Tel: 099 999 9999</div>
+      <div class="brand">{{ data.businessName || 'Carmita Villegas - Salón de Belleza' }}</div>
+      <div class="text">RUC: {{ data.businessRuc || '1799999999001' }}</div>
+      <div class="text">{{ data.businessAddress || 'Av. Siempre Viva 123' }}</div>
+      <div class="text">Tel: {{ data.businessPhone || '099 999 9999' }}</div>
     </div>
 
     <div class="separator"></div>
@@ -54,7 +54,7 @@
         <span>{{ subtotal | number:'1.2-2' }}</span>
       </div>
       <div class="row">
-        <span>IVA 15%</span>
+        <span>IVA {{ (data.taxRate || 0.15) * 100 | number:'1.0-2' }}%</span>
         <span>{{ iva | number:'1.2-2' }}</span>
       </div>
       <div class="row total">

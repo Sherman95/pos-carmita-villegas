@@ -16,6 +16,11 @@ export interface TicketData {
   identificacion?: string;
   items: TicketItem[];
   total: number;
+  businessName?: string;
+  businessRuc?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  taxRate?: number; // decimal, ej. 0.15
 }
 
 @Component({
@@ -40,7 +45,9 @@ export class TicketDialogComponent {
   }
 
   get subtotal(): number {
-    return this.redondear(this.data.total / 1.15);
+    const rate = typeof this.data.taxRate === 'number' ? this.data.taxRate : 0.15;
+    const divisor = 1 + rate;
+    return this.redondear(this.data.total / divisor);
   }
 
   get iva(): number {

@@ -126,6 +126,19 @@ CREATE TABLE public.sales (
 
 ALTER TABLE public.sales OWNER TO postgres;
 
+-- Tabla para recibos en PDF asociados a ventas
+CREATE TABLE IF NOT EXISTS public.sale_receipts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    sale_id uuid NOT NULL,
+    pdf_base64 text NOT NULL,
+    doc_type character varying(30) DEFAULT 'receipt'::character varying NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT sale_receipts_pkey PRIMARY KEY (id),
+    CONSTRAINT sale_receipts_sale_fk FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sale_receipts_sale_id ON public.sale_receipts USING btree (sale_id);
+
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --

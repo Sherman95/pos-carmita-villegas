@@ -15,6 +15,24 @@ export class SalesService {
     return this.http.post(this.apiUrl, saleData);
   }
 
+  uploadReceipt(saleId: string, pdfBase64: string, docType: string = 'receipt'): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${saleId}/receipt`, { pdfBase64, docType });
+  }
+
+  getReceipt(saleId: string, docType?: string): Observable<{ pdfBase64: string; created_at: string; doc_type: string }> {
+    const params: any = {};
+    if (docType) params.docType = docType;
+    return this.http.get<{ pdfBase64: string; created_at: string; doc_type: string }>(`${this.apiUrl}/${saleId}/receipt`, { params });
+  }
+
+  getReceiptsByClient(clientId: string, params?: { from?: string; to?: string; docType?: string }): Observable<any[]> {
+    const httpParams: any = {};
+    if (params?.from) httpParams.from = params.from;
+    if (params?.to) httpParams.to = params.to;
+    if (params?.docType) httpParams.docType = params.docType;
+    return this.http.get<any[]>(`${this.apiUrl}/receipt-by-client/${clientId}`, { params: httpParams });
+  }
+
   getSales(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
