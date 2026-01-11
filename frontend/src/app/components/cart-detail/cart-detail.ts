@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDividerModule } from '@angular/material/divider';
 import { ClientsService, Client } from '../../services/clients.service';
 import { CartService } from '../../services/cart.service';
@@ -26,30 +27,57 @@ import html2canvas from 'html2canvas';
     MatButtonModule,
     MatIconModule,
     MatListModule,
+    MatInputModule,
+    MatAutocompleteModule,
     MatFormFieldModule,
-    MatSelectModule,
     MatDividerModule
   ],
   templateUrl: './cart-detail.html',
   styleUrl: './cart-detail.scss'
 })
-export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAVE
+export class CartDetailComponent implements OnInit {
   public cartService = inject(CartService);
   private clientsService = inject(ClientsService);
   private salesService = inject(SalesService);
-  private settingsService = inject(SettingsService);
+  private settingsService = inject(SettingsService); // Inyectamos el servicio de configuración
   private dialog = inject(MatDialog);
 
+  // SEÑALES DE ESTADO
   clients = signal<Client[]>([]);
-  clientSearch = signal('');
+  searchText = signal(''); 
+  selectedClientId = signal<string>('anon');
+
+  // ==========================================
+  // CÁLCULOS FINANCIEROS (REACTIVOS)
+  // ==========================================
+
+  // 1. Subtotal: Suma de los items en el carrito (Base imponible)
+  subtotal = computed(() => this.cartService.total());
+
+  // 2. Tasa de Impuesto: Viene del SettingsService (ej: 0.15 para 15%)
+  taxRate = computed(() => this.settingsService.settings().taxRate ?? 0);
+
+  // 3. Monto del Impuesto: Subtotal * Tasa
+  taxAmount = computed(() => this.subtotal() * this.taxRate());
+
+  // 4. Total Final: Subtotal + Impuestos
+  grandTotal = computed(() => this.subtotal() + this.taxAmount());
+
+
+  // ==========================================
+  // LÓGICA DE CLIENTES Y BUSCADOR
+  // ==========================================
+
   filteredClients = computed(() => {
-    const term = this.clientSearch().toLowerCase().trim();
+    const term = this.searchText().toLowerCase().trim();
     if (!term) return this.clients();
+    
     return this.clients().filter((c) =>
-      (c.nombre || '').toLowerCase().includes(term) || (c.cedula || '').toLowerCase().includes(term)
+      (c.nombre || '').toLowerCase().includes(term) || 
+      (c.cedula || '').toLowerCase().includes(term)
     );
   });
-  selectedClientId = signal<string>('anon');
+
   clienteLabel = computed(() => {
     const id = this.selectedClientId();
     if (!id || id === 'anon') return 'Consumidor final';
@@ -68,15 +96,47 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
 
   cargarClientes() {
     this.clientsService.getClients().subscribe({
-      next: (data) => this.clients.set(data || []),
+      next: (data) => {
+        this.clients.set(data || []);
+        this.inicializarTextoBuscador();
+      },
       error: (err) => console.error('Error cargando clientes', err)
     });
   }
 
-  onClienteChange(id: string) {
-    this.selectedClientId.set(id);
-    this.cartService.setCliente(id === 'anon' ? null : id);
+  inicializarTextoBuscador() {
+    const currentId = this.selectedClientId();
+    if (currentId && currentId !== 'anon') {
+      const client = this.clients().find(c => c.id === currentId);
+      if (client) {
+        this.searchText.set(client.nombre);
+      }
+    } else {
+        this.searchText.set('Consumidor Final');
+    }
   }
+
+  onOptionSelected(event: any) {
+    const selectedValue = event.option.value;
+
+    if (selectedValue === 'anon') {
+      this.selectedClientId.set('anon');
+      this.cartService.setCliente(null);
+      this.searchText.set('Consumidor Final');
+    } else {
+      this.selectedClientId.set(selectedValue.id);
+      this.cartService.setCliente(selectedValue.id);
+      this.searchText.set(selectedValue.nombre);
+    }
+  }
+
+  limpiarBusqueda(event: Event) {
+      // Opcional: this.searchText.set('');
+  }
+
+  // ==========================================
+  // ACCIONES DEL CARRITO
+  // ==========================================
 
   cerrar() {
     this.dialogRef.close();
@@ -95,18 +155,18 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
   cobrar() {
     if (this.cartService.items().length === 0) return;
 
-    const client = this.clients().find((c) => c.id === this.cartService.clienteId());
-
+    const client = this.clients().find((c) => c.id === this.selectedClientId());
     const itemsSnapshot = [...this.cartService.items()];
-    const totalSnapshot = this.cartService.total();
+    
+    // Obtenemos los valores calculados de las señales
+    const finalTotal = this.grandTotal(); 
+    const currentTaxRate = this.taxRate();
     const business = this.settingsService.settings();
-    const taxRate = business.taxRate ?? 0;
-    const totalConIva = Number(totalSnapshot) * (1 + taxRate);
 
     const venta = {
-      total: totalConIva,
+      total: finalTotal, // Usamos el total con IVA calculado
       metodo_pago: 'EFECTIVO',
-      client_id: this.cartService.clienteId(),
+      client_id: this.selectedClientId() === 'anon' ? null : this.selectedClientId(),
       items: this.cartService.items()
     };
 
@@ -124,12 +184,12 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
             precio: i.precioVenta,
             subtotal: i.subtotal
           })),
-          total: Number(totalConIva) || 0,
+          total: Number(finalTotal) || 0,
           businessName: business.name,
           businessRuc: business.ruc,
           businessAddress: business.address,
           businessPhone: business.phone,
-          taxRate
+          taxRate: currentTaxRate // Enviamos la tasa de impuesto al ticket
         };
 
         const dialogRef = this.dialog.open(TicketDialogComponent, {
@@ -138,7 +198,6 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
           panelClass: 'ticket-dialog-capture'
         });
 
-        // Capturar el ticket renderizado y guardarlo como PDF
         this.capturarYEnviarTicket(dialogRef, res?.saleId);
 
         this.cartService.limpiarCarrito();

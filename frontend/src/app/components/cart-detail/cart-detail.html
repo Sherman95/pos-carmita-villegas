@@ -5,60 +5,93 @@
     <div class="client-header">
       <div class="icon-circle"><mat-icon>person</mat-icon></div>
       <div class="client-meta">
-        <div class="eyebrow">Cliente de la venta</div>
+        <div class="eyebrow">Cliente actual</div>
         <div class="client-name">{{ clienteLabel() }}</div>
-        <div class="client-note" *ngIf="selectedClientId() === 'anon'">Sin identificación</div>
-        <div class="client-note" *ngIf="selectedClientId() !== 'anon'">Puedes cambiarlo antes de cobrar</div>
       </div>
     </div>
 
     <mat-form-field appearance="outline" class="client-field">
-      <mat-label>Cambiar cliente</mat-label>
-      <mat-select [value]="selectedClientId()" (selectionChange)="onClienteChange($event.value)">
-        <mat-option value="anon">Consumidor final</mat-option>
-        <mat-option>
-          <mat-form-field appearance="outline" class="search-field">
-            <mat-label>Buscar nombre o cédula</mat-label>
-            <input matInput [(ngModel)]="clientSearch" />
-          </mat-form-field>
+      <mat-label>Buscar / Cambiar Cliente</mat-label>
+      
+      <input type="text"
+             matInput
+             placeholder="Escribe nombre o cédula..."
+             [ngModel]="searchText()"
+             (ngModelChange)="searchText.set($event)"
+             [matAutocomplete]="auto"
+             (focus)="limpiarBusqueda($event)">
+             
+      @if (searchText() && searchText() !== 'Consumidor Final') {
+        <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
+            <mat-icon>close</mat-icon>
+        </button>
+      }
+
+      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)">
+        
+        <mat-option value="anon">
+          <mat-icon>person_outline</mat-icon>
+          <span>Consumidor Final</span>
         </mat-option>
+
+        <mat-divider></mat-divider>
+
         @for (c of filteredClients(); track c.id) {
-          <mat-option class="client-option" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+          <mat-option [value]="c">
+            <span style="font-weight: 500;">{{ c.nombre }}</span>
+            <small style="color: gray; margin-left: 8px;">{{ c.cedula }}</small>
+          </mat-option>
         }
-      </mat-select>
+        
+        @if (filteredClients().length === 0 && searchText()) {
+            <mat-option disabled>No se encontraron clientes</mat-option>
+        }
+
+      </mat-autocomplete>
     </mat-form-field>
   </div>
 
   <mat-divider class="section-divider"></mat-divider>
   
   <mat-list>
-    @for (linea of cartService.items(); track $index) {
-      <mat-list-item class="item-lista">
-        
-        <button mat-icon-button matListItemAvatar color="warn" (click)="eliminar($index)">
-          <mat-icon>delete</mat-icon>
-        </button>
-
-        <div matListItemTitle class="titulo">
-          {{ linea.item.nombre }} <span class="cantidad">x{{ linea.cantidad }}</span>
-        </div>
-
-        <div matListItemLine class="detalle-precio">
-          Precio Unit: ${{ linea.precioVenta }}
-        </div>
-        
-        <div matListItemMeta class="subtotal">
-          ${{ linea.subtotal | number:'1.2-2' }}
-        </div>
-
-      </mat-list-item>
-      <mat-divider></mat-divider>
-    }
+     @for (linea of cartService.items(); track $index) {
+        <mat-list-item class="item-lista">
+             <button mat-icon-button matListItemAvatar color="warn" (click)="eliminar($index)">
+                 <mat-icon>delete</mat-icon>
+             </button>
+             <div matListItemTitle class="titulo">
+                 {{ linea.item.nombre }} <span class="cantidad">x{{ linea.cantidad }}</span>
+             </div>
+             <div matListItemLine class="detalle-precio">
+                 Precio Unit: ${{ linea.precioVenta }}
+             </div>
+             <div matListItemMeta class="subtotal">
+                 ${{ linea.subtotal | number:'1.2-2' }}
+             </div>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+     }
   </mat-list>
 
-  <div class="total-container">
-    <span>TOTAL:</span>
-    <span class="monto-total">${{ cartService.total() | number:'1.2-2' }}</span>
+  <div class="summary-section">
+    
+    <div class="summary-row">
+      <span class="label">Subtotal:</span>
+      <span class="value">${{ subtotal() | number:'1.2-2' }}</span>
+    </div>
+
+    <div class="summary-row">
+      <span class="label">IVA ({{ taxRate() * 100 | number:'1.0-0' }}%):</span>
+      <span class="value">${{ taxAmount() | number:'1.2-2' }}</span>
+    </div>
+
+    <mat-divider style="margin: 10px 0; border-color: #ddd;"></mat-divider>
+
+    <div class="total-row">
+      <span class="label">TOTAL A PAGAR:</span>
+      <span class="monto-total">${{ grandTotal() | number:'1.2-2' }}</span>
+    </div>
+
   </div>
 
 </mat-dialog-content>
