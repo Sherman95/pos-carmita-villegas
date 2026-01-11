@@ -1,7 +1,16 @@
 import { Pool } from 'pg';
+import dns from 'node:dns';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Render (y otros hosts) a veces resuelve Supabase a IPv6; si el entorno no tiene salida IPv6
+// la conexión falla con ENETUNREACH. Forzamos a preferir IPv4.
+try {
+    dns.setDefaultResultOrder('ipv4first');
+} catch {
+    // No-op: en versiones viejas de Node esta API puede no existir
+}
 
 const databaseUrl = process.env.DATABASE_URL;
 const shouldUseSsl =
