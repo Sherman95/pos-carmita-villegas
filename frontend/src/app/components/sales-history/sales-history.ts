@@ -110,19 +110,29 @@ export class SalesHistoryComponent implements OnInit {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  // =========================================================
+  // CORRECCIÓN: Eliminamos la referencia a pdfBase64
+  // =========================================================
   descargarRecibo(saleId: string) {
     this.downloadingSaleId.set(saleId);
+    
+    // El servicio ahora retorna un Blob (archivo binario), no un objeto JSON
     this.salesService.getReceipt(saleId).subscribe({
-      next: (data) => {
-        const base64 = data.pdfBase64;
-        if (!base64) return;
-        const blob = this.base64ToBlob(base64, 'application/pdf');
-        const url = URL.createObjectURL(blob);
+      next: (blob: Blob) => {
+        // Creamos la URL directamente del blob
+        const url = window.URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
         a.href = url;
         a.download = `recibo-${saleId}.pdf`;
+        a.target = '_blank';
+        
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
         this.downloadingSaleId.set(null);
       },
       error: (err) => {
@@ -154,20 +164,5 @@ export class SalesHistoryComponent implements OnInit {
   descargarReciboCliente(receipt: any) {
     if (!receipt.sale_id) return;
     this.descargarRecibo(receipt.sale_id);
-  }
-
-  private base64ToBlob(base64: string, contentType = ''): Blob {
-    const byteCharacters = atob(base64);
-    const byteArrays = [];
-    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-      const slice = byteCharacters.slice(offset, offset + 512);
-      const byteNumbers = new Array(slice.length);
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      byteArrays.push(byteArray);
-    }
-    return new Blob(byteArrays, { type: contentType });
   }
 }
