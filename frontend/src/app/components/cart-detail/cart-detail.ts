@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +21,7 @@ import html2canvas from 'html2canvas';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
@@ -39,6 +41,14 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
   private dialog = inject(MatDialog);
 
   clients = signal<Client[]>([]);
+  clientSearch = signal('');
+  filteredClients = computed(() => {
+    const term = this.clientSearch().toLowerCase().trim();
+    if (!term) return this.clients();
+    return this.clients().filter((c) =>
+      (c.nombre || '').toLowerCase().includes(term) || (c.cedula || '').toLowerCase().includes(term)
+    );
+  });
   selectedClientId = signal<string>('anon');
   clienteLabel = computed(() => {
     const id = this.selectedClientId();
@@ -147,7 +157,10 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
       await new Promise((resolve) => setTimeout(resolve, 60));
 
       const el = document.querySelector('.ticket-dialog-capture .ticket-paper') as HTMLElement | null;
-      if (!el) return;
+      if (!el) {
+        console.warn('No se encontró el elemento del ticket para capturar.');
+        return;
+      }
 
       const canvas = await html2canvas(el, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
@@ -159,10 +172,15 @@ export class CartDetailComponent implements OnInit { // <--- AQUÍ ESTÁ LA CLAV
       const dataUri = pdf.output('datauristring');
       const base64 = dataUri.split(',')[1];
 
+      console.log('[capturarYEnviarTicket] saleId:', saleId, 'docType:', docType, 'base64 length:', base64?.length);
+
       if (saleId && base64) {
         this.salesService.uploadReceipt(saleId, base64, docType).subscribe({
-          error: (err) => console.error('No se pudo guardar el recibo PDF', err)
+          next: (resp) => console.log('[uploadReceipt] éxito', resp),
+          error: (err) => console.error('[uploadReceipt] error', err)
         });
+      } else {
+        console.warn('[capturarYEnviarTicket] saleId o base64 faltante', { saleId, base64 });
       }
     } catch (err) {
       console.error('Error generando/enviando PDF', err);

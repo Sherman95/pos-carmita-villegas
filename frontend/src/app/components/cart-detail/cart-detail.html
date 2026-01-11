@@ -16,8 +16,14 @@
       <mat-label>Cambiar cliente</mat-label>
       <mat-select [value]="selectedClientId()" (selectionChange)="onClienteChange($event.value)">
         <mat-option value="anon">Consumidor final</mat-option>
-        @for (c of clients(); track c.id) {
-          <mat-option [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+        <mat-option>
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar nombre o cédula</mat-label>
+            <input matInput [(ngModel)]="clientSearch" />
+          </mat-form-field>
+        </mat-option>
+        @for (c of filteredClients(); track c.id) {
+          <mat-option class="client-option" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
