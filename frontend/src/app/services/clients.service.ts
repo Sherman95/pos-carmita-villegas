@@ -9,6 +9,7 @@ export interface Client {
   cedula?: string | null;
   telefono?: string | null;
   email?: string | null;
+  direccion?: string | null; // <--- NUEVO CAMPO AGREGADO
   ultima_visita?: string | null;
   created_at?: string;
   updated_at?: string;
