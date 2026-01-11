@@ -15,14 +15,23 @@ export class SalesService {
     return this.http.post(this.apiUrl, saleData);
   }
 
+  // Este método sigue enviando JSON porque subimos el Base64 generado por jsPDF
   uploadReceipt(saleId: string, pdfBase64: string, docType: string = 'receipt'): Observable<any> {
     return this.http.post(`${this.apiUrl}/${saleId}/receipt`, { pdfBase64, docType });
   }
 
-  getReceipt(saleId: string, docType?: string): Observable<{ pdfBase64: string; created_at: string; doc_type: string }> {
+  // =========================================================================
+  // CORRECCIÓN PRINCIPAL:
+  // Cambiamos el tipo de respuesta a 'blob' para recibir el archivo binario
+  // =========================================================================
+  getReceipt(saleId: string, docType?: string): Observable<Blob> {
     const params: any = {};
     if (docType) params.docType = docType;
-    return this.http.get<{ pdfBase64: string; created_at: string; doc_type: string }>(`${this.apiUrl}/${saleId}/receipt`, { params });
+
+    return this.http.get(`${this.apiUrl}/${saleId}/receipt`, {
+      params,
+      responseType: 'blob' // <--- ESTO ES LA CLAVE. Indica que esperamos un archivo.
+    });
   }
 
   getReceiptsByClient(clientId: string, params?: { from?: string; to?: string; docType?: string }): Observable<any[]> {
