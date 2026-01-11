@@ -36,7 +36,11 @@ export class ClientsComponent implements OnInit {
     );
   });
 
-  form = signal<{ nombre: string; cedula?: string; telefono?: string; email?: string }>({ nombre: '', cedula: '', telefono: '', email: '' });
+  // ACTUALIZADO: Agregamos 'direccion' al tipo y al valor inicial
+  form = signal<{ nombre: string; cedula?: string; telefono?: string; email?: string; direccion?: string }>({ 
+    nombre: '', cedula: '', telefono: '', email: '', direccion: '' 
+  });
+  
   editingId = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -83,11 +87,13 @@ export class ClientsComponent implements OnInit {
 
   editClient(client: Client) {
     this.editingId.set(client.id);
+    // ACTUALIZADO: Cargamos la dirección al editar
     this.form.set({
       nombre: client.nombre,
       cedula: client.cedula || '',
       telefono: client.telefono || '',
-      email: client.email || ''
+      email: client.email || '',
+      direccion: client.direccion || '' // <--- AQUÍ
     });
     this.openDialog();
   }
@@ -117,7 +123,8 @@ export class ClientsComponent implements OnInit {
 
   private resetForm() {
     this.editingId.set(null);
-    this.form.set({ nombre: '', cedula: '', telefono: '', email: '' });
+    // ACTUALIZADO: Reseteamos la dirección
+    this.form.set({ nombre: '', cedula: '', telefono: '', email: '', direccion: '' });
   }
 
   deleteClient(id: string) {
