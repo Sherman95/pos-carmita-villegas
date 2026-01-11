@@ -3,14 +3,25 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configura la conexión usando las variables de entorno
-const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT) || 5432,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+const databaseUrl = process.env.DATABASE_URL;
+const shouldUseSsl =
+    process.env.DB_SSL === 'true' ||
+    (!!databaseUrl && process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
+
+// Configura la conexión usando DATABASE_URL (prod) o variables separadas (local)
+const pool = databaseUrl
+    ? new Pool({
+          connectionString: databaseUrl,
+          ...(shouldUseSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+      })
+    : new Pool({
+          host: process.env.DB_HOST || 'localhost',
+          port: Number(process.env.DB_PORT) || 5432,
+          user: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
+          ...(shouldUseSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+      });
 
 // Agrega un console.log cuando se conecte exitosamente
 pool.on('connect', () => {
