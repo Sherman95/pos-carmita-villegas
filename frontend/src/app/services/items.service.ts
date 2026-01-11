@@ -2,11 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Item } from '../interfaces/interfaces';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/api/items';
+  private apiUrl = `${environment.apiBaseUrl}/api/items`;
 
   getItems(): Observable<Item[]> {
     return this.http.get<Item[]>(this.apiUrl);

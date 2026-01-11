@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,7 @@ import { Observable } from 'rxjs';
 export class SalesService {
   private http = inject(HttpClient);
   // Asegúrate de que esta URL coincida con tu backend
-  private apiUrl = 'http://localhost:3000/api/sales';
+  private apiUrl = `${environment.apiBaseUrl}/api/sales`;
 
   saveSale(saleData: any): Observable<any> {
     return this.http.post(this.apiUrl, saleData);

@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 interface LoginResponse {
   token: string;
@@ -9,7 +10,7 @@ interface LoginResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
+  private apiUrl = `${environment.apiBaseUrl}/api/auth`;
   currentUser = signal<LoginResponse['user'] | null>(this.getStoredUser());
 
   constructor(private http: HttpClient) {}

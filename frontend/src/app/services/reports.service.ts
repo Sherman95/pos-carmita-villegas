@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:3000/api/sales';
+  private baseUrl = `${environment.apiBaseUrl}/api/sales`;
 
   getByRange(from: string, to: string): Observable<any[]> {
     const params = new HttpParams().set('from', from).set('to', to);
