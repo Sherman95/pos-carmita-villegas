@@ -1,0 +1,11 @@
+.app-shell {
+	min-height: 100vh;
+	background: #f7f9fb;
+	display: flex;
+	flex-direction: column;
+}
+
+.page {
+	flex: 1;
+	padding-bottom: 160px; /* espacio para footer + nav */
+}

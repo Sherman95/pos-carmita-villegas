@@ -1,0 +1,62 @@
+<div class="catalog-page">
+	<div class="header">
+		<div>
+			<div class="title">Servicios</div>
+			<div class="subtitle">Agrega, edita y úsalos en la venta</div>
+		</div>
+		<div class="header-actions">
+			<button mat-stroked-button color="primary" (click)="seedServicios()">Cargar servicios sugeridos</button>
+			<button mat-button color="primary" (click)="irAlHistorial()">
+				<mat-icon>history</mat-icon>
+				Historial diario
+			</button>
+		</div>
+	</div>
+
+	<mat-card class="form-card">
+		<div class="form-grid">
+			<mat-form-field appearance="outline" class="full">
+				<mat-label>Selecciona servicio</mat-label>
+				<mat-select [ngModel]="selectedId()" (ngModelChange)="seleccionar($event)">
+					<mat-option value="">(Nuevo)</mat-option>
+					<mat-option *ngFor="let s of items()" [value]="s.id">{{ s.nombre }}</mat-option>
+				</mat-select>
+			</mat-form-field>
+
+			<mat-form-field appearance="outline">
+				<mat-label>Nombre</mat-label>
+				<input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
+			</mat-form-field>
+
+			<mat-form-field appearance="outline">
+				<mat-label>Precio</mat-label>
+				<input matInput type="number" [ngModel]="form().precio" (ngModelChange)="updateField('precio', +$event)" />
+			</mat-form-field>
+
+			<div class="form-actions">
+				<button mat-stroked-button (click)="limpiar()">Limpiar</button>
+				<button mat-flat-button color="primary" (click)="guardar()">{{ selectedId() ? 'Actualizar' : 'Agregar' }}</button>
+			</div>
+		</div>
+	</mat-card>
+
+	<div class="catalog-grid">
+		@for (item of items(); track item.id) {
+			<mat-card class="item-card">
+				<div class="card-content">
+					<div class="info">
+						<span class="nombre">{{ item.nombre }}</span>
+						<span class="badge servicio">SERVICIO</span>
+					</div>
+					<div class="precio">${{ item.precio }}</div>
+				</div>
+				<div class="actions">
+					<button mat-button (click)="seleccionar(item.id)">Editar</button>
+					<button mat-stroked-button color="primary" (click)="abrirDialogoPrecio(item)">Agregar a venta</button>
+				</div>
+			</mat-card>
+		} @empty {
+			<p class="no-items">No hay servicios. Usa "Cargar servicios sugeridos" o agrega uno nuevo.</p>
+		}
+	</div>
+</div>

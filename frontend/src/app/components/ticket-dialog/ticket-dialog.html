@@ -1,0 +1,73 @@
+<div class="ticket-wrapper">
+  <div class="controls no-print">
+    <button mat-stroked-button color="primary" (click)="imprimir()">Imprimir</button>
+    <button mat-button (click)="cerrar()">Cerrar</button>
+  </div>
+
+  <div class="ticket-paper">
+    <div class="header">
+      <div class="brand">Carmita Villegas - Salón de Belleza</div>
+      <div class="text">RUC: 1799999999001</div>
+      <div class="text">Av. Siempre Viva 123</div>
+      <div class="text">Tel: 099 999 9999</div>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="info">
+      <div class="row">
+        <span>Fecha:</span>
+        <span>{{ data.fecha | date:'medium' }}</span>
+      </div>
+      <div class="row">
+        <span>Cliente:</span>
+        <span>{{ data.cliente || 'Consumidor Final' }}</span>
+      </div>
+      <div class="row">
+        <span>C.I./RUC:</span>
+        <span>{{ data.identificacion || '9999999999999' }}</span>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="table">
+      <div class="table-head">
+        <span class="qty">Cant</span>
+        <span class="desc">Descripción</span>
+        <span class="price">P.Unit</span>
+        <span class="total">Total</span>
+      </div>
+      <div class="table-body" *ngFor="let item of data.items">
+        <span class="qty">{{ item.cantidad }}</span>
+        <span class="desc">{{ item.nombre }}</span>
+        <span class="price">{{ item.precio | number:'1.2-2' }}</span>
+        <span class="total">{{ item.subtotal | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="totals">
+      <div class="row">
+        <span>Subtotal</span>
+        <span>{{ subtotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="row">
+        <span>IVA 15%</span>
+        <span>{{ iva | number:'1.2-2' }}</span>
+      </div>
+      <div class="row total">
+        <span>Total a pagar</span>
+        <span>{{ data.total | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="footer">
+      <div>¡Gracias por su visita!</div>
+      <div>Documento sin valor tributario</div>
+    </div>
+  </div>
+</div>

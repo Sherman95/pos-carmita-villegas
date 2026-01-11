@@ -1,0 +1,26 @@
+<div class="login-shell">
+  <div class="card">
+    <div class="header">
+      <h1>Iniciar sesión</h1>
+      <p>Accede al panel de ventas</p>
+    </div>
+
+    <form (ngSubmit)="submit()" autocomplete="off">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Usuario</mat-label>
+        <input matInput name="username" [(ngModel)]="username" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Contraseña</mat-label>
+        <input matInput name="password" type="password" [(ngModel)]="password" required />
+      </mat-form-field>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+
+      <button mat-raised-button color="primary" class="full" type="submit" [disabled]="loading">
+        {{ loading ? 'Ingresando...' : 'Entrar' }}
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,106 @@
+.ticket-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticket-paper {
+  width: 300px;
+  max-width: 100%;
+  background: #fff;
+  color: #000;
+  border: 1px solid #d1d5db;
+  padding: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.header {
+  text-align: center;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.text {
+  margin-top: 2px;
+}
+
+.separator {
+  border-bottom: 1px dashed #9ca3af;
+  margin: 10px 0;
+}
+
+.info .row,
+.totals .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.table-head,
+.table-body {
+  display: grid;
+  grid-template-columns: 40px 1fr 70px 70px;
+  gap: 6px;
+  align-items: center;
+}
+
+.table-head {
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.table-body + .table-body {
+  margin-top: 4px;
+}
+
+.totals .row {
+  margin: 4px 0;
+}
+
+.totals .total {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 300px;
+  max-width: 100%;
+}
+
+.no-print {
+  display: flex;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .ticket-paper {
+    width: 80mm;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 12px;
+  }
+
+  body {
+    background: #fff;
+  }
+}

@@ -1,0 +1,24 @@
+# Dependencias y build
+node_modules
+dist
+frontend/dist
+**/*.tsbuildinfo
+
+# Angular cache
+frontend/.angular/cache
+
+# Entornos y credenciales
+.env
+frontend/.env
+
+# Logs y temporales
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/

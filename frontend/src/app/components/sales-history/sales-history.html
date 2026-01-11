@@ -1,0 +1,50 @@
+<div class="history-container">
+  <mat-card class="summary-card">
+    <div class="summary-label">Total Vendido Hoy</div>
+    <div class="summary-amount">${{ totalHoy() | number:'1.2-2' }}</div>
+  </mat-card>
+
+  <div class="list-title">Ventas recientes</div>
+
+  <div class="sales-list">
+    @if (sales().length === 0) {
+      <p class="empty">No hay ventas registradas.</p>
+    } @else {
+      @for (sale of sales(); track sale.id) {
+        <mat-card class="sale-card" (click)="toggleDetalles(sale.id)">
+          <div class="row">
+            <div class="time">{{ formatearHora(sale.created_at) }}</div>
+            <div class="total">${{ sale.total | number:'1.2-2' }}</div>
+          </div>
+          <div class="meta">
+            <span>Cliente: {{ sale.client_nombre || 'Consumidor final' }}</span>
+            @if (sale.client_cedula) {
+              <span>Cédula: {{ sale.client_cedula }}</span>
+            }
+          </div>
+          <div class="meta">
+            <span>Método: {{ sale.metodo_pago || 'N/D' }}</span>
+            <span>ID: {{ sale.id }}</span>
+          </div>
+          @if (selectedSaleId() === sale.id) {
+            <div class="details">
+              @if (loadingDetail()) {
+                <p class="loading">Cargando detalle...</p>
+              } @else {
+                @if ((saleDetails()[sale.id] || []).length === 0) {
+                  <p class="empty">Sin detalles.</p>
+                } @else {
+                  <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
+                    <div class="name">{{ d.nombre_producto }}</div>
+                    <div class="qty-price">x{{ d.cantidad }} · ${{ d.precio_unitario | number:'1.2-2' }}</div>
+                    <div class="subtotal">${{ d.subtotal | number:'1.2-2' }}</div>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </mat-card>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>Resumen de Cuenta</h2>
+
+<mat-dialog-content>
+  
+  <mat-list>
+    @for (linea of cartService.items(); track $index) {
+      <mat-list-item class="item-lista">
+        
+        <button mat-icon-button matListItemAvatar color="warn" (click)="eliminar($index)">
+          <mat-icon>delete</mat-icon>
+        </button>
+
+        <div matListItemTitle class="titulo">
+          {{ linea.item.nombre }} <span class="cantidad">x{{ linea.cantidad }}</span>
+        </div>
+
+        <div matListItemLine class="detalle-precio">
+          Precio Unit: ${{ linea.precioVenta }}
+        </div>
+        
+        <div matListItemMeta class="subtotal">
+          ${{ linea.subtotal | number:'1.2-2' }}
+        </div>
+
+      </mat-list-item>
+      <mat-divider></mat-divider>
+    }
+  </mat-list>
+
+  <div class="total-container">
+    <span>TOTAL:</span>
+    <span class="monto-total">${{ cartService.total() | number:'1.2-2' }}</span>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cerrar()">SEGUIR AGREGANDO</button>
+  <button mat-raised-button color="primary" class="btn-cobrar" (click)="cobrar()">
+    COBRAR
+  </button>
+</mat-dialog-actions>

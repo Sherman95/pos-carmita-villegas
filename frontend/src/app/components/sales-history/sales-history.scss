@@ -1,0 +1,80 @@
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #0d47a1, #1976d2);
+  color: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.summary-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.summary-amount {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.list-title {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+.sales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sale-card {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.sale-card .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sale-card .time {
+  font-weight: 600;
+  color: #0d47a1;
+}
+
+.sale-card .total {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sale-card .meta {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  color: #666;
+  font-size: 12px;
+}
+
+.empty {
+  text-align: center;
+  color: #777;
+  margin: 16px 0;
+}
+
+@media (min-width: 768px) {
+  .history-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+}

@@ -1,0 +1,49 @@
+<div class="clients-container">
+  <mat-card class="form-card">
+    <div class="title">Nuevo cliente</div>
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Cédula</mat-label>
+        <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" />
+      </mat-form-field>
+    </div>
+    <div class="actions">
+      <button mat-stroked-button color="warn" *ngIf="editingId()" (click)="cancelEdit()">Cancelar</button>
+      <button mat-flat-button color="primary" (click)="saveClient()" [disabled]="!form().nombre">
+        {{ editingId() ? 'Actualizar' : 'Guardar' }}
+      </button>
+    </div>
+  </mat-card>
+
+  <div class="list-title">Clientes</div>
+  <div *ngIf="loading()" class="loading">Cargando...</div>
+  <div *ngIf="!loading() && clients().length === 0" class="empty">No hay clientes.</div>
+
+  <div class="clients-list">
+    <mat-card class="client" *ngFor="let c of clients()">
+      <div class="row">
+        <div>
+          <div class="name">{{ c.nombre }}</div>
+          <div class="meta">Cédula: {{ c.cedula || 'No registrada' }}</div>
+          <div class="meta">{{ c.telefono || 'Sin teléfono' }} · {{ c.email || 'Sin email' }}</div>
+        </div>
+        <div class="client-actions">
+          <button mat-button color="primary" (click)="editClient(c)">Editar</button>
+          <button mat-stroked-button color="warn" (click)="deleteClient(c.id)">Eliminar</button>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+</div>

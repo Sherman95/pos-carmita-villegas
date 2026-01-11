@@ -1,0 +1,87 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.hero {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(135deg, #0d47a1, #1976d2);
+  color: #fff;
+  border-radius: 14px;
+}
+
+.hero-text .title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.hero-text .subtitle {
+  opacity: 0.9;
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-actions .cta {
+  align-self: flex-start;
+  height: 48px;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-actions .action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.quick-actions .action mat-icon {
+  color: #3f51b5;
+}
+
+.quick-actions .action .label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.quick-actions .action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+@media (min-width: 900px) {
+  .home {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .hero-actions {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

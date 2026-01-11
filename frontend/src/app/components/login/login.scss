@@ -1,0 +1,40 @@
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  padding: 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header h1 {
+  margin: 0;
+  font-weight: 800;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.full {
+  width: 100%;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
