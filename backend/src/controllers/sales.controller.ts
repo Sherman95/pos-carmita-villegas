@@ -37,7 +37,6 @@ export const createSale = async (req: Request, res: Response) => {
         await client.query('BEGIN');
 
         // 2. INSERTAR CABECERA (Tabla 'sales')
-        // Usamos client_id (puede ser null) y metodo_pago
         const saleQuery = `
             INSERT INTO sales (total, metodo_pago, client_id, client_nombre, client_cedula) 
             VALUES ($1, $2, $3, $4, $5) 
@@ -57,14 +56,11 @@ export const createSale = async (req: Request, res: Response) => {
             await client.query(itemQuery, [
                 saleId, 
                 item.item.id,       // ID del producto (FK)
-                item.item.nombre,   // <--- AQUÍ GUARDAMOS EL NOMBRE SNAPSHOT
+                item.item.nombre,   // Snapshot nombre
                 item.cantidad, 
-                item.precioVenta,   // Precio final (puede ser editado)
+                item.precioVenta,   // Precio final
                 item.subtotal
             ]);
-            
-            // OPCIONAL: AQUÍ PODRÍAS RESTAR STOCK SI ES 'PRODUCTO'
-            // Pero dejémoslo simple por ahora.
         }
 
         // 4. CONFIRMAR TRANSACCIÓN
@@ -102,7 +98,6 @@ export const getSales = async (_req: Request, res: Response) => {
     }
 };
 
-// Ventas por rango de fechas (inclusive). Espera query params from, to en formato YYYY-MM-DD
 export const getSalesByRange = async (req: Request, res: Response) => {
     const { from, to } = req.query as { from?: string; to?: string };
 
@@ -130,7 +125,6 @@ export const getSalesByRange = async (req: Request, res: Response) => {
     }
 };
 
-// Resumen agregado por período (month|year) o por rango explícito
 export const getSalesSummary = async (req: Request, res: Response) => {
     const { period, year, month, from, to } = req.query as { period?: string; year?: string; month?: string; from?: string; to?: string };
 
@@ -155,7 +149,6 @@ export const getSalesSummary = async (req: Request, res: Response) => {
             end = `${y + 1}-01-01`;
         } else if (from && to) {
             start = from;
-            // end exclusivo: sumamos 1 día
             const toDate = new Date(to);
             toDate.setDate(toDate.getDate() + 1);
             end = toDate.toISOString().slice(0, 10);
@@ -177,7 +170,6 @@ export const getSalesSummary = async (req: Request, res: Response) => {
     }
 };
 
-// Ventas y total por cliente
 export const getSalesByClient = async (req: Request, res: Response) => {
     const { clientId } = req.params;
     const { from, to, period } = req.query as { from?: string; to?: string; period?: string };
@@ -207,7 +199,7 @@ export const getSalesByClient = async (req: Request, res: Response) => {
             ${start && end ? 'AND s.created_at >= $2::date AND s.created_at < $3::date' : ''}
             ORDER BY s.created_at DESC
         `;
-            const summarySql = `
+        const summarySql = `
             SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total
             FROM sales
             WHERE client_id = $1
@@ -217,7 +209,7 @@ export const getSalesByClient = async (req: Request, res: Response) => {
         const params = start && end ? [clientId, start, end] : [clientId];
         const [detailResult, summaryResult] = await Promise.all([
             pool.query(detailQuery, params),
-                pool.query(summarySql, params)
+            pool.query(summarySql, params)
         ]);
 
         res.status(200).json({
@@ -362,9 +354,13 @@ export const saveSaleReceipt = async (req: Request, res: Response) => {
     }
 };
 
+// =================================================================================
+// FUNCIÓN CORREGIDA: Devuelve un Buffer (Archivo) en lugar de JSON
+// =================================================================================
 export const getSaleReceipt = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { docType } = req.query as { docType?: string };
+    
     if (!id) return res.status(400).json({ error: 'id requerido' });
 
     try {
@@ -385,12 +381,30 @@ export const getSaleReceipt = async (req: Request, res: Response) => {
             params
         );
 
-        if (rows.length === 0) return res.status(404).json({ error: 'Recibo no encontrado' });
+        // Si no hay recibo, devolvemos 404
+        if (rows.length === 0) {
+             console.warn(`[getSaleReceipt] No hay recibo para venta ID: ${id}`);
+             return res.status(404).json({ error: 'Recibo no encontrado. Puede que no se haya generado aún.' });
+        }
 
-        res.status(200).json({ pdfBase64: rows[0].pdf_base64, created_at: rows[0].created_at, doc_type: rows[0].doc_type });
+        const record = rows[0];
+
+        // --- CORRECCIÓN CLAVE ---
+        // Convertimos el string base64 almacenado en la DB a un Buffer binario
+        const pdfBuffer = Buffer.from(record.pdf_base64, 'base64');
+
+        // Configuramos los headers para que el navegador sepa que es un PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        // 'inline' abre el PDF en el navegador. 
+        res.setHeader('Content-Disposition', `inline; filename="recibo-${id}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        // Enviamos el archivo
+        res.send(pdfBuffer);
+
     } catch (error) {
         console.error('Error obteniendo recibo:', error);
-        res.status(500).json({ error: 'Error al obtener recibo' });
+        res.status(500).json({ error: 'Error interno al obtener recibo' });
     }
 };
 
