@@ -24,6 +24,7 @@
           <div class="name">{{ c.nombre }}</div>
           <div class="meta">Cédula: {{ c.cedula || 'No registrada' }}</div>
           <div class="meta">{{ c.telefono || 'Sin teléfono' }} · {{ c.email || 'Sin email' }}</div>
+          <div class="meta" *ngIf="c.direccion"><mat-icon style="font-size: 14px; height: 14px; width: 14px; vertical-align: middle;">place</mat-icon> {{ c.direccion }}</div>
         </div>
         <div class="client-actions">
           <button mat-button color="primary" (click)="editClient(c)">Editar</button>
@@ -54,6 +55,13 @@
           <mat-label>Email</mat-label>
           <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" />
         </mat-form-field>
+        
+        <mat-form-field appearance="outline" style="grid-column: 1 / -1;">
+          <mat-label>Dirección</mat-label>
+          <input matInput [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event)" placeholder="Ej. Av. Principal 123" />
+          <mat-icon matSuffix>place</mat-icon>
+        </mat-form-field>
+
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
