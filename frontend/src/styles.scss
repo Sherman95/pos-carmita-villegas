@@ -90,3 +90,27 @@ body {
   color: #ffffff !important;
 }
 /* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   AGREGA ESTO AL FINAL DE TU ARCHIVO src/styles.scss GLOBAL
+============================================================ */
+
+/* Forza un fondo blanco sólido para el panel del autocompletado */
+.mat-mdc-autocomplete-panel {
+  background-color: #ffffff !important; /* Color blanco imperativo */
+  
+  /* Agrega una sombra estándar de Material Design para que resalte */
+  box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 
+              0px 8px 10px 1px rgba(0,0,0,0.14), 
+              0px 3px 14px 2px rgba(0,0,0,0.12) !important;
+              
+  /* Asegura que los bordes estén definidos si usas un tema claro */
+  border: 1px solid rgba(0,0,0,0.12); 
+  
+  /* Opcional: asegura que esté por encima de otros elementos */
+  z-index: 1000;
+}
+
+/* Asegura que el texto de las opciones sea legible */
+.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__primary-text {
+    color: rgba(0, 0, 0, 0.87); /* Color de texto estándar oscuro */
+}

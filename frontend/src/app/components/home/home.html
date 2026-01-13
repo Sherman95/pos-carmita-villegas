@@ -10,18 +10,53 @@
     <mat-card class="hero-card">
       <div class="card-title">Cliente de la venta</div>
       <div class="card-subtitle">Puedes dejar "Consumidor final" si no deseas asociar.</div>
+      
       <div class="form-row">
+        
         <mat-form-field appearance="outline" class="client-field">
-          <mat-label>Cliente</mat-label>
-          <mat-select [ngModel]="selectedClientId()" (ngModelChange)="selectedClientId.set($event)">
-            <mat-option *ngFor="let c of clienteOpciones()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
-          </mat-select>
+          <mat-label>Buscar Cliente</mat-label>
+          
+          <input type="text"
+                 matInput
+                 placeholder="Escribe nombre o cédula..."
+                 [ngModel]="searchText()"
+                 (ngModelChange)="searchText.set($event)"
+                 [matAutocomplete]="auto"
+                 (focus)="limpiarBusqueda()">
+
+          @if (searchText() && searchText() !== 'Consumidor Final') {
+            <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
+                <mat-icon>close</mat-icon>
+            </button>
+          }
+
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)">
+            
+            <mat-option value="anon">
+              <mat-icon>person_outline</mat-icon>
+              <span>Consumidor Final</span>
+            </mat-option>
+
+            <mat-divider></mat-divider>
+
+            @for (c of filteredClients(); track c.id) {
+              <mat-option [value]="c">
+                <span style="font-weight: 500;">{{ c.nombre }}</span>
+                <small style="color: gray; margin-left: 8px;">{{ c.cedula }}</small>
+              </mat-option>
+            }
+
+            @if (filteredClients().length === 0 && searchText()) {
+              <mat-option disabled>No se encontraron resultados</mat-option>
+            }
+          </mat-autocomplete>
         </mat-form-field>
         <button mat-flat-button color="primary" class="cta" (click)="irAVenta()">
           <mat-icon>point_of_sale</mat-icon>
           Ir a cobrar
         </button>
       </div>
+      
       <div class="helper">Tip: puedes cambiar el cliente después desde la venta.</div>
     </mat-card>
   </section>

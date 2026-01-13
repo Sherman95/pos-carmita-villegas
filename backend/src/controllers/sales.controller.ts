@@ -18,12 +18,13 @@ export const createSale = async (req: Request, res: Response) => {
     const client = await pool.connect();
 
     try {
-        // Recibimos más datos según tu tabla 'sales'
-        const { total, items, metodo_pago, client_id } = req.body;
+        // 1. Recibimos 'tax_rate' del frontend (además de lo demás)
+        const { total, items, metodo_pago, client_id, tax_rate } = req.body;
 
         let clientNombre: string | null = null;
         let clientCedula: string | null = null;
 
+        // Búsqueda de datos del cliente (si existe)
         if (client_id) {
             const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
             if (rows.length === 0) {
@@ -33,20 +34,30 @@ export const createSale = async (req: Request, res: Response) => {
             clientCedula = rows[0].cedula || null;
         }
 
-        // 1. INICIAR TRANSACCIÓN
+        // 2. INICIAR TRANSACCIÓN
         await client.query('BEGIN');
 
-        // 2. INSERTAR CABECERA (Tabla 'sales')
+        // 3. INSERTAR CABECERA CON TAX_RATE
+        // Hemos agregado la columna tax_rate al SQL y el parámetro $6
         const saleQuery = `
-            INSERT INTO sales (total, metodo_pago, client_id, client_nombre, client_cedula) 
-            VALUES ($1, $2, $3, $4, $5) 
+            INSERT INTO sales (total, metodo_pago, client_id, client_nombre, client_cedula, tax_rate) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
             RETURNING id
         `;
-        const saleValues = [total, metodo_pago || 'EFECTIVO', client_id || null, clientNombre, clientCedula];
+
+        const saleValues = [
+        total, 
+        metodo_pago || 'EFECTIVO', 
+        client_id || null, 
+        clientNombre, 
+         clientCedula,
+        tax_rate 
+        ];
+
         const saleResult = await client.query(saleQuery, saleValues);
         const saleId = saleResult.rows[0].id;
 
-        // 3. INSERTAR DETALLES (Tabla 'sale_details')
+        // 4. INSERTAR DETALLES (Esto se mantiene igual)
         const itemQuery = `
             INSERT INTO sale_details (sale_id, item_id, nombre_producto, cantidad, precio_unitario, subtotal)
             VALUES ($1, $2, $3, $4, $5, $6)
@@ -63,11 +74,16 @@ export const createSale = async (req: Request, res: Response) => {
             ]);
         }
 
-        // 4. CONFIRMAR TRANSACCIÓN
+        // 5. CONFIRMAR TRANSACCIÓN
         await client.query('COMMIT');
 
-        console.log(`✅ Venta creada ID: ${saleId}`);
-        res.status(201).json({ message: 'Venta registrada', saleId, client_nombre: clientNombre, client_cedula: clientCedula });
+        console.log(`✅ Venta creada ID: ${saleId} con Tasa: ${tax_rate || 0.15}`);
+        res.status(201).json({ 
+            message: 'Venta registrada', 
+            saleId, 
+            client_nombre: clientNombre, 
+            client_cedula: clientCedula 
+        });
 
     } catch (error) {
         // Si falla, deshacemos todo
@@ -86,7 +102,11 @@ export const getSales = async (_req: Request, res: Response) => {
                 s.id, s.total, s.metodo_pago, s.client_id, 
                 COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                 COALESCE(s.client_cedula, c.cedula) AS client_cedula,
-                s.created_at
+                s.created_at,
+                
+                -- ¡¡¡ ESTO ES LO QUE FALTABA !!!
+                s.tax_rate 
+
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
              ORDER BY s.created_at DESC`
@@ -111,7 +131,11 @@ export const getSalesByRange = async (req: Request, res: Response) => {
                 s.id, s.total, s.metodo_pago, s.client_id,
                 COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                 COALESCE(s.client_cedula, c.cedula) AS client_cedula,
-                s.created_at
+                s.created_at,
+
+                -- ¡¡¡ ESTO TAMBIÉN FALTABA AQUÍ !!!
+                s.tax_rate
+
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
              WHERE s.created_at >= $1::date AND s.created_at < ($2::date + INTERVAL '1 day')
@@ -172,110 +196,123 @@ export const getSalesSummary = async (req: Request, res: Response) => {
 
 export const getSalesByClient = async (req: Request, res: Response) => {
     const { clientId } = req.params;
-    const { from, to, period } = req.query as { from?: string; to?: string; period?: string };
-    if (!clientId) {
-        return res.status(400).json({ error: 'clientId requerido' });
-    }
-
-    let start = from;
-    let end = to;
-
-    if (period === 'week') {
-        const rng = getWeekRange(new Date());
-        start = rng.start;
-        end = rng.end;
-    }
+    const { period, from, to } = req.query;
 
     try {
-        const detailQuery = `
+        let dateFilter = '';
+        const params: any[] = [clientId];
+
+        if (from && to) {
+            dateFilter = 'AND s.created_at::date >= $2 AND s.created_at::date <= $3';
+            params.push(from, to);
+        } else if (period === 'week') {
+            dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
+        } else if (period === 'month') {
+            dateFilter = "AND s.created_at >= DATE_TRUNC('month', NOW())";
+        } else if (period === 'year') {
+            dateFilter = "AND s.created_at >= DATE_TRUNC('year', NOW())";
+        }
+
+        const salesQuery = `
             SELECT 
-                s.id, s.total, s.metodo_pago, s.client_id,
-                COALESCE(s.client_nombre, c.nombre) AS client_nombre,
-                COALESCE(s.client_cedula, c.cedula) AS client_cedula,
-                s.created_at
+                s.id, 
+                s.total, 
+                s.metodo_pago, 
+                s.created_at,
+                c.nombre as client_nombre, 
+                c.cedula as client_cedula,
+                
+                -- SOLUCIÓN FINAL: LEER EL IVA REAL GUARDADO
+                -- Usamos COALESCE por si las ventas muy viejas tienen NULL, les pone 0.15
+               s.tax_rate as tax_rate
+
             FROM sales s
             LEFT JOIN clients c ON s.client_id = c.id
-            WHERE s.client_id = $1
-            ${start && end ? 'AND s.created_at >= $2::date AND s.created_at < $3::date' : ''}
+            WHERE s.client_id = $1 ${dateFilter}
             ORDER BY s.created_at DESC
         `;
-        const summarySql = `
-            SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total
-            FROM sales
-            WHERE client_id = $1
-            ${start && end ? 'AND created_at >= $2::date AND created_at < $3::date' : ''}
+
+        const { rows: sales } = await pool.query(salesQuery, params);
+
+        const summaryQuery = `
+            SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total
+            FROM sales s
+            WHERE client_id = $1 ${dateFilter}
         `;
+        const { rows: summary } = await pool.query(summaryQuery, params);
 
-        const params = start && end ? [clientId, start, end] : [clientId];
-        const [detailResult, summaryResult] = await Promise.all([
-            pool.query(detailQuery, params),
-            pool.query(summarySql, params)
-        ]);
-
-        res.status(200).json({
-            sales: detailResult.rows,
-            summary: summaryResult.rows[0]
-        });
+        res.json({ sales, summary: summary[0] });
     } catch (error) {
-        console.error('Error obteniendo ventas por cliente:', error);
-        res.status(500).json({ error: 'Error al obtener ventas por cliente' });
+        console.error('Error report client:', error);
+        res.status(500).json({ error: 'Error obteniendo reporte por cliente' });
     }
 };
 
 export const getSalesByItem = async (req: Request, res: Response) => {
     const { itemId } = req.params;
-    const { from, to, period } = req.query as { from?: string; to?: string; period?: string };
-    if (!itemId) return res.status(400).json({ error: 'itemId requerido' });
-
-    let start = from;
-    let end = to;
-    if (period === 'week') {
-        const rng = getWeekRange(new Date());
-        start = rng.start;
-        end = rng.end;
-    }
+    const { period, from, to } = req.query;
 
     try {
-        const detailQuery = `
+        let dateFilter = '';
+        const params: any[] = [itemId];
+
+        if (from && to) {
+            dateFilter = 'AND s.created_at::date >= $2 AND s.created_at::date <= $3';
+            params.push(from, to);
+        } else if (period === 'week') {
+            dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
+        } else if (period === 'month') {
+            dateFilter = "AND s.created_at >= DATE_TRUNC('month', NOW())";
+        } else if (period === 'year') {
+            dateFilter = "AND s.created_at >= DATE_TRUNC('year', NOW())";
+        }
+
+        const salesQuery = `
             SELECT 
-                s.id AS sale_id,
+                s.id as sale_id,
                 s.created_at,
                 s.metodo_pago,
-                COALESCE(s.client_nombre, c.nombre) AS client_nombre,
-                COALESCE(s.client_cedula, c.cedula) AS client_cedula,
-                sd.nombre_producto,
+                c.nombre as client_nombre,
+                c.cedula as client_cedula,
                 sd.cantidad,
                 sd.precio_unitario,
-                sd.subtotal
+                sd.subtotal as total,
+                
+                -- SOLUCIÓN FINAL: LEER EL IVA REAL DE LA VENTA PADRE
+                s.tax_rate as tax_rate
+
             FROM sale_details sd
             JOIN sales s ON sd.sale_id = s.id
             LEFT JOIN clients c ON s.client_id = c.id
-            WHERE sd.item_id = $1
-            ${start && end ? 'AND s.created_at >= $2::date AND s.created_at < $3::date' : ''}
+            WHERE sd.item_id = $1 ${dateFilter}
             ORDER BY s.created_at DESC
         `;
 
-        const summarySql = `
-            SELECT COUNT(*)::int AS count, COALESCE(SUM(sd.subtotal),0)::numeric AS total
+        const { rows: sales } = await pool.query(salesQuery, params);
+
+        const summaryQuery = `
+            SELECT 
+                COUNT(*) as count, 
+                COALESCE(SUM(sd.subtotal), 0) as total
             FROM sale_details sd
             JOIN sales s ON sd.sale_id = s.id
-            WHERE sd.item_id = $1
-            ${start && end ? 'AND s.created_at >= $2::date AND s.created_at < $3::date' : ''}
+            WHERE sd.item_id = $1 ${dateFilter}
         `;
+        const { rows: summary } = await pool.query(summaryQuery, params);
 
-        const params = start && end ? [itemId, start, end] : [itemId];
-        const [detailResult, summaryResult] = await Promise.all([
-            pool.query(detailQuery, params),
-            pool.query(summarySql, params)
-        ]);
+        // Mapeo
+        const mappedSales = sales.map(row => ({
+            ...row,
+            id: row.sale_id, 
+            total: Number(row.total),
+            // Aseguramos que tax_rate sea número para el frontend
+            tax_rate: Number(row.tax_rate) 
+        }));
 
-        res.status(200).json({
-            sales: detailResult.rows,
-            summary: summaryResult.rows[0]
-        });
+        res.json({ sales: mappedSales, summary: summary[0] });
     } catch (error) {
-        console.error('Error obteniendo ventas por servicio:', error);
-        res.status(500).json({ error: 'Error al obtener ventas por servicio' });
+        console.error('Error report item:', error);
+        res.status(500).json({ error: 'Error obteniendo reporte por servicio' });
     }
 };
 

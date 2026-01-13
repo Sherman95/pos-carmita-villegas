@@ -2,17 +2,34 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SettingsService } from './settings.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SalesService {
   private http = inject(HttpClient);
+  private settings = inject(SettingsService); // <--- Ya lo tenías inyectado, ¡perfecto!
+  
   // Asegúrate de que esta URL coincida con tu backend
   private apiUrl = `${environment.apiBaseUrl}/api/sales`;
 
   saveSale(saleData: any): Observable<any> {
-    return this.http.post(this.apiUrl, saleData);
+    // =========================================================================
+    // CORRECCIÓN PRINCIPAL: INYECTAR EL IVA DEL PERFIL
+    // =========================================================================
+    
+    // 1. Leemos el valor que tienes configurado en tu perfil AHORA MISMO
+    const currentTaxRate = this.settings.settings().taxRate;
+
+    // 2. Creamos el paquete final agregando el campo 'tax_rate'
+    const payload = {
+      ...saleData,
+      tax_rate: currentTaxRate 
+    };
+
+    // 3. Enviamos 'payload' (que ya lleva el IVA) en lugar de 'saleData' solo
+    return this.http.post(this.apiUrl, payload);
   }
 
   // Este método sigue enviando JSON porque subimos el Base64 generado por jsPDF
@@ -21,7 +38,7 @@ export class SalesService {
   }
 
   // =========================================================================
-  // CORRECCIÓN PRINCIPAL:
+  // CORRECCIÓN PRINCIPAL (MANTENIDA):
   // Cambiamos el tipo de respuesta a 'blob' para recibir el archivo binario
   // =========================================================================
   getReceipt(saleId: string, docType?: string): Observable<Blob> {

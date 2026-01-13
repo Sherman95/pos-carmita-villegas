@@ -49,14 +49,14 @@
           </mat-select>
         </mat-form-field>
         @if (periodGeneral() === 'custom') {
-          <mat-form-field appearance="outline">
-            <mat-label>Desde</mat-label>
-            <input matInput type="date" [ngModel]="fromGeneral()" (ngModelChange)="fromGeneral.set($event)" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Hasta</mat-label>
-            <input matInput type="date" [ngModel]="toGeneral()" (ngModelChange)="toGeneral.set($event)" />
-          </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" [ngModel]="fromGeneral()" (ngModelChange)="fromGeneral.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" [ngModel]="toGeneral()" (ngModelChange)="toGeneral.set($event)" />
+        </mat-form-field>
         }
         <button mat-flat-button color="primary" (click)="loadGeneral()">Aplicar</button>
       </div>
@@ -64,6 +64,7 @@
 
     <div class="sales-list" *ngIf="!loadingGeneral(); else loadingTpl">
       <div *ngIf="salesGeneral().length === 0" class="empty">Sin ventas en el periodo.</div>
+
       <mat-card class="sale" *ngFor="let sale of salesGeneral()" (click)="toggleDetalles(sale.id)">
         <div class="sale-header">
           <div>
@@ -71,34 +72,56 @@
             <div class="chips">
               <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
               <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id }}</span>
+              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
             </div>
           </div>
-          <div class="total">${{ sale.total | number:'1.2-2' }}</div>
+          
+          <div class="money-col">
+            <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
+              <div class="money-row small">
+                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row small">
+                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row total">
+                ${{ val.total | number:'1.2-2' }}
+              </div>
+            </ng-container>
+          </div>
         </div>
 
         @if (selectedSaleId() === sale.id) {
-          <div class="details">
-            <div class="details-header">Detalle de venta</div>
-            @if (loadingDetail()) {
-              <p class="loading">Cargando detalle...</p>
-            } @else {
-              @if ((saleDetails()[sale.id] || []).length === 0) {
-                <p class="empty">Sin detalles.</p>
-              } @else {
-                <div class="detail-row detail-head">
-                  <div>Concepto</div>
-                  <div>Cant. · Precio</div>
-                  <div class="subtotal">Subtotal</div>
-                </div>
-                <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-                  <div class="name">{{ d.nombre_producto }}</div>
-                  <div class="qty-price">x{{ d.cantidad }} · ${{ d.precio_unitario | number:'1.2-2' }}</div>
-                  <div class="subtotal">${{ d.subtotal | number:'1.2-2' }}</div>
-                </div>
-              }
-            }
+        <div class="details">
+          <div class="details-header">Detalle de venta</div>
+          @if (loadingDetail()) {
+          <p class="loading">Cargando detalle...</p>
+          } @else {
+          @if ((saleDetails()[sale.id] || []).length === 0) {
+          <p class="empty">Sin detalles.</p>
+          } @else {
+          <div class="detail-row detail-head">
+            <div style="flex: 2;">Concepto</div>
+            <div class="text-center">Cant.</div>
+            <div class="text-right">P.Unit</div>
+            <div class="text-right">Sub</div>
+            <div class="text-right">IVA</div>
+            <div class="text-right">Total</div>
           </div>
+          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
+            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
+            <div class="text-center">x{{ d.cantidad }}</div>
+            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
+            
+            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
+                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
+                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
+                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
+            </ng-container>
+          </div>
+          }
+          }
+        </div>
         }
       </mat-card>
     </div>
@@ -118,7 +141,8 @@
           <mat-label>Cliente</mat-label>
           <mat-select [ngModel]="selectedClientId()" (ngModelChange)="selectedClientId.set($event)">
             <mat-option value="">Selecciona cliente</mat-option>
-            <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
+            <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : ''
+              }}</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="period">
@@ -132,14 +156,14 @@
           </mat-select>
         </mat-form-field>
         @if (periodClient() === 'custom') {
-          <mat-form-field appearance="outline">
-            <mat-label>Desde</mat-label>
-            <input matInput type="date" [ngModel]="fromClient()" (ngModelChange)="fromClient.set($event)" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Hasta</mat-label>
-            <input matInput type="date" [ngModel]="toClient()" (ngModelChange)="toClient.set($event)" />
-          </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" [ngModel]="fromClient()" (ngModelChange)="fromClient.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" [ngModel]="toClient()" (ngModelChange)="toClient.set($event)" />
+        </mat-form-field>
         }
         <button mat-flat-button color="primary" (click)="loadByClient()" [disabled]="!selectedClientId()">Aplicar</button>
       </div>
@@ -147,6 +171,7 @@
 
     <div class="sales-list" *ngIf="!loadingClient(); else loadingTpl">
       <div *ngIf="salesClient().length === 0" class="empty">Sin ventas para este cliente.</div>
+
       <mat-card class="sale" *ngFor="let sale of salesClient()" (click)="toggleDetalles(sale.id)">
         <div class="sale-header">
           <div>
@@ -154,34 +179,56 @@
             <div class="chips">
               <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
               <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id }}</span>
+              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
             </div>
           </div>
-          <div class="total">${{ sale.total | number:'1.2-2' }}</div>
+          
+          <div class="money-col">
+            <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
+              <div class="money-row small">
+                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row small">
+                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row total">
+                ${{ val.total | number:'1.2-2' }}
+              </div>
+            </ng-container>
+          </div>
         </div>
 
         @if (selectedSaleId() === sale.id) {
-          <div class="details">
-            <div class="details-header">Detalle de venta</div>
-            @if (loadingDetail()) {
-              <p class="loading">Cargando detalle...</p>
-            } @else {
-              @if ((saleDetails()[sale.id] || []).length === 0) {
-                <p class="empty">Sin detalles.</p>
-              } @else {
-                <div class="detail-row detail-head">
-                  <div>Concepto</div>
-                  <div>Cant. · Precio</div>
-                  <div class="subtotal">Subtotal</div>
-                </div>
-                <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-                  <div class="name">{{ d.nombre_producto }}</div>
-                  <div class="qty-price">x{{ d.cantidad }} · ${{ d.precio_unitario | number:'1.2-2' }}</div>
-                  <div class="subtotal">${{ d.subtotal | number:'1.2-2' }}</div>
-                </div>
-              }
-            }
+        <div class="details">
+          <div class="details-header">Detalle de venta</div>
+          @if (loadingDetail()) {
+          <p class="loading">Cargando detalle...</p>
+          } @else {
+          @if ((saleDetails()[sale.id] || []).length === 0) {
+          <p class="empty">Sin detalles.</p>
+          } @else {
+          <div class="detail-row detail-head">
+            <div style="flex: 2;">Concepto</div>
+            <div class="text-center">Cant.</div>
+            <div class="text-right">P.Unit</div>
+            <div class="text-right">Sub</div>
+            <div class="text-right">IVA</div>
+            <div class="text-right">Total</div>
           </div>
+          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
+            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
+            <div class="text-center">x{{ d.cantidad }}</div>
+            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
+            
+            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
+                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
+                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
+                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
+            </ng-container>
+          </div>
+          }
+          }
+        </div>
         }
       </mat-card>
     </div>
@@ -215,14 +262,14 @@
           </mat-select>
         </mat-form-field>
         @if (periodService() === 'custom') {
-          <mat-form-field appearance="outline">
-            <mat-label>Desde</mat-label>
-            <input matInput type="date" [ngModel]="fromService()" (ngModelChange)="fromService.set($event)" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Hasta</mat-label>
-            <input matInput type="date" [ngModel]="toService()" (ngModelChange)="toService.set($event)" />
-          </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" [ngModel]="fromService()" (ngModelChange)="fromService.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" [ngModel]="toService()" (ngModelChange)="toService.set($event)" />
+        </mat-form-field>
         }
         <button mat-flat-button color="primary" (click)="loadByService()" [disabled]="!selectedServiceId()">Aplicar</button>
       </div>
@@ -230,6 +277,7 @@
 
     <div class="sales-list" *ngIf="!loadingService(); else loadingTpl">
       <div *ngIf="salesServiceList().length === 0" class="empty">Sin ventas para este servicio.</div>
+
       <mat-card class="sale" *ngFor="let sale of salesServiceList()" (click)="toggleDetalles(sale.id)">
         <div class="sale-header">
           <div>
@@ -237,34 +285,56 @@
             <div class="chips">
               <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
               <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id }}</span>
+              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
             </div>
           </div>
-          <div class="total">${{ sale.total | number:'1.2-2' }}</div>
+          
+          <div class="money-col">
+            <ng-container *ngIf="getValues(sale.total, 'additive', sale.tax_rate) as val">
+              <div class="money-row small">
+                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row small">
+                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
+              </div>
+              <div class="money-row total">
+                ${{ val.total | number:'1.2-2' }}
+              </div>
+            </ng-container>
+          </div>
         </div>
 
         @if (selectedSaleId() === sale.id) {
-          <div class="details">
-            <div class="details-header">Detalle de venta</div>
-            @if (loadingDetail()) {
-              <p class="loading">Cargando detalle...</p>
-            } @else {
-              @if ((saleDetails()[sale.id] || []).length === 0) {
-                <p class="empty">Sin detalles.</p>
-              } @else {
-                <div class="detail-row detail-head">
-                  <div>Concepto</div>
-                  <div>Cant. · Precio</div>
-                  <div class="subtotal">Subtotal</div>
-                </div>
-                <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-                  <div class="name">{{ d.nombre_producto }}</div>
-                  <div class="qty-price">x{{ d.cantidad }} · ${{ d.precio_unitario | number:'1.2-2' }}</div>
-                  <div class="subtotal">${{ d.subtotal | number:'1.2-2' }}</div>
-                </div>
-              }
-            }
+        <div class="details">
+          <div class="details-header">Detalle de venta</div>
+          @if (loadingDetail()) {
+          <p class="loading">Cargando detalle...</p>
+          } @else {
+          @if ((saleDetails()[sale.id] || []).length === 0) {
+          <p class="empty">Sin detalles.</p>
+          } @else {
+          <div class="detail-row detail-head">
+            <div style="flex: 2;">Concepto</div>
+            <div class="text-center">Cant.</div>
+            <div class="text-right">P.Unit</div>
+            <div class="text-right">Sub</div>
+            <div class="text-right">IVA</div>
+            <div class="text-right">Total</div>
           </div>
+          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
+            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
+            <div class="text-center">x{{ d.cantidad }}</div>
+            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
+            
+            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
+                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
+                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
+                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
+            </ng-container>
+          </div>
+          }
+          }
+        </div>
         }
       </mat-card>
     </div>

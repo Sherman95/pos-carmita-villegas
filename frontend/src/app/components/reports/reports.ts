@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { SettingsService } from '../../services/settings.service';
 import { firstValueFrom } from 'rxjs';
 import { ReportsService } from '../../services/reports.service';
 import { ClientsService, Client } from '../../services/clients.service';
@@ -26,6 +27,7 @@ interface SaleRow {
   client_nombre?: string | null;
   client_cedula?: string | null;
   created_at: string;
+  tax_rate?: number;
 }
 
 interface DetailRow {
@@ -47,6 +49,7 @@ export class ReportsComponent implements OnInit {
   private reportsService = inject(ReportsService);
   private clientsService = inject(ClientsService);
   private itemsService = inject(ItemsService);
+  private settingsService = inject(SettingsService);
   private salesService = inject(SalesService);
 
   clients = signal<Client[]>([]);
@@ -74,6 +77,7 @@ export class ReportsComponent implements OnInit {
   salesServiceList = signal<SaleRow[]>([]);
   summaryService = signal<{ count: number; total: number }>({ count: 0, total: 0 });
   loadingService = signal<boolean>(false);
+  taxRate = signal<number>(0);
 
   selectedSaleId = signal<string | null>(null);
   saleDetails = signal<Record<string, DetailRow[]>>({});
@@ -82,6 +86,8 @@ export class ReportsComponent implements OnInit {
   activeTab = signal<'general' | 'client' | 'service'>('general');
 
   ngOnInit(): void {
+    const settings = this.settingsService.settings();
+    this.taxRate.set(settings.taxRate || 0);
     this.loadClients();
     this.loadServicios();
     const today = new Date();
@@ -113,8 +119,17 @@ export class ReportsComponent implements OnInit {
 
   private periodRange(period: Period, from: string, to: string) {
     if (period === 'custom') return { from, to };
+    
     const now = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    
+    // CORRECCIÓN: Usar hora local en lugar de UTC
+    const iso = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     if (period === 'today') {
       return { from: iso(now), to: iso(now) };
     }
@@ -127,6 +142,7 @@ export class ReportsComponent implements OnInit {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       return { from: iso(start), to: iso(now) };
     }
+    // Año
     const start = new Date(now.getFullYear(), 0, 1);
     return { from: iso(start), to: iso(now) };
   }
@@ -149,19 +165,28 @@ export class ReportsComponent implements OnInit {
     }
   }
 
+  
+
+  // =========================================================================
+  // 2. EXPORTAR PDF (Corregido con lógica aditiva para items)
+  //
   async exportPDF() {
     if (!this.canExport()) return;
+    
     const doc = new jsPDF();
     const generatedAt = new Date();
+    // Tasa por defecto (solo informativa en el header)
+    const currentTaxRate = this.taxRate(); 
     let cursorY = 16;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-
     doc.setFontSize(16);
-    doc.text('Reporte de ventas', 14, cursorY);
+    doc.text('Reporte de ventas detallado', 14, cursorY);
     doc.setFontSize(10);
     doc.text(`Generado: ${generatedAt.toLocaleString()}`, 14, cursorY + 6);
+    // Nota: El % mostrado aquí es el actual, aunque cada venta tenga el suyo
+    doc.text(`IVA Actual Configurado: ${(currentTaxRate * 100).toFixed(0)}%`, 14, cursorY + 11);
 
     const addSection = async (title: string, subtitle: string, rows: SaleRow[]) => {
       await this.ensureDetails(rows);
@@ -178,71 +203,89 @@ export class ReportsComponent implements OnInit {
         return;
       }
 
-      const sectionTotal = rows.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
-
       const body = [] as any[];
+      let sectionSubtotal = 0;
+      let sectionIVA = 0;
+      let sectionTotal = 0;
+
       for (const sale of rows) {
-        const totalNum = Number(sale.total) || 0;
+        // DETECTAR TASA: Si la venta tiene tasa guardada, úsala. Si no, usa la actual.
+        const tasaVenta = sale.tax_rate !== undefined ? Number(sale.tax_rate) : currentTaxRate;
+
+        // A. VENTA (Inclusive): Usamos 'tasaVenta'
+        const valsVenta = this.getValues(sale.total, 'inclusive', tasaVenta);
+        
+        sectionSubtotal += valsVenta.subtotal;
+        sectionIVA += valsVenta.iva;
+        sectionTotal += valsVenta.total;
+
         body.push({
           type: 'sale',
           fecha: this.formatearHora(sale.created_at),
           cliente: `${sale.client_nombre || 'Consumidor final'}${sale.client_cedula ? ' · ' + sale.client_cedula : ''}`,
           metodo: sale.metodo_pago || 'N/D',
-          total: `$${totalNum.toFixed(2)}`
+          subtotal: `$${valsVenta.subtotal.toFixed(2)}`,
+          iva: `$${valsVenta.iva.toFixed(2)}`,
+          total: `$${valsVenta.total.toFixed(2)}`
         });
 
         const details = this.saleDetails()[sale.id] || [];
         for (const d of details) {
-          const precio = Number(d.precio_unitario) || 0;
-          const subtotal = Number(d.subtotal) || 0;
+          const cantidad = Number(d.cantidad) || 0;
+          const baseItem = Number(d.subtotal) || 0; 
+
+          // B. ÍTEM (Additive): Usamos la MISMA 'tasaVenta' del padre
+          const valsItem = this.getValues(baseItem, 'additive', tasaVenta); 
+
           body.push({
             type: 'detail',
             fecha: '',
             cliente: `   ${d.nombre_producto}`,
-            metodo: `x${d.cantidad} · $${precio.toFixed(2)}`,
-            total: `$${subtotal.toFixed(2)}`
+            metodo: `x${cantidad}`,
+            subtotal: `$${valsItem.subtotal.toFixed(2)}`, 
+            iva: `$${valsItem.iva.toFixed(2)}`,           
+            total: `$${valsItem.total.toFixed(2)}`        
           });
         }
       }
 
       autoTable(doc, {
         startY: cursorY + 8,
-        head: [['Fecha', 'Cliente', 'Método', 'Total']],
+        head: [['Fecha', 'Cliente/Ítem', 'Cant/Método', 'Subtotal', 'IVA', 'Total']],
         body,
         columns: [
           { header: 'Fecha', dataKey: 'fecha' },
-          { header: 'Cliente', dataKey: 'cliente' },
-          { header: 'Método', dataKey: 'metodo' },
+          { header: 'Cliente/Ítem', dataKey: 'cliente' },
+          { header: 'Cant/Método', dataKey: 'metodo' },
+          { header: 'Subtotal', dataKey: 'subtotal' },
+          { header: 'IVA', dataKey: 'iva' },
           { header: 'Total', dataKey: 'total' }
         ],
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [33, 37, 41], textColor: 255 },
         alternateRowStyles: { fillColor: [248, 249, 250] },
-        theme: 'striped',
         columnStyles: {
-          fecha: { cellWidth: 48 },
-          cliente: { cellWidth: 84 },
-          metodo: { halign: 'center', cellWidth: 32 },
-          total: { halign: 'right', cellWidth: 28 }
+          fecha: { cellWidth: 35 },
+          cliente: { cellWidth: 60 },
+          metodo: { halign: 'center', cellWidth: 25 },
+          subtotal: { halign: 'right', cellWidth: 22 },
+          iva: { halign: 'right', cellWidth: 18 },
+          total: { halign: 'right', cellWidth: 25 }
         },
         didParseCell: (data) => {
-          const raw = data.row.raw as any;
-          if (raw?.type === 'sale') {
-            data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.fillColor = [255, 255, 255];
-          }
-          if (raw?.type === 'detail') {
-            data.cell.styles.fontStyle = 'normal';
-            data.cell.styles.textColor = [60, 60, 60];
-            data.cell.styles.fillColor = [245, 245, 245];
-          }
-          // Divider line between sales: thin top border on sale rows
-          if (raw?.type === 'sale') {
-            const rowStyles = (data.row as any).styles || {};
-            rowStyles.lineWidth = 0.2;
-            rowStyles.lineColor = [220, 220, 220];
-            (data.row as any).styles = rowStyles;
-          }
+           const raw = data.row.raw as any;
+           if (raw?.type === 'sale') {
+             data.cell.styles.fontStyle = 'bold';
+             data.cell.styles.fillColor = [255, 255, 255];
+             const rowStyles = (data.row as any).styles || {};
+             rowStyles.lineWidth = 0.1;
+             rowStyles.lineColor = [200, 200, 200];
+             (data.row as any).styles = rowStyles;
+           }
+           if (raw?.type === 'detail') {
+             data.cell.styles.textColor = [80, 80, 80];
+             data.cell.styles.fillColor = [250, 250, 250];
+           }
         }
       });
 
@@ -250,36 +293,55 @@ export class ReportsComponent implements OnInit {
       cursorY = finalY + 6;
 
       doc.setFontSize(9);
-      doc.text(`Resumen sección: ${rows.length} venta(s) · Total $${sectionTotal.toFixed(2)}`, 14, cursorY);
-      cursorY += 8;
+      doc.text(`Resumen sección: ${rows.length} registros`, 14, cursorY);
+      doc.text(`Subtotal: $${sectionSubtotal.toFixed(2)}`, 80, cursorY);
+      doc.text(`IVA: $${sectionIVA.toFixed(2)}`, 120, cursorY);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total: $${sectionTotal.toFixed(2)}`, 160, cursorY);
+      doc.setFont('helvetica', 'normal');
+      
+      cursorY += 10;
     };
 
-    const generalSubtitle = this.rangeLabel('General', this.periodGeneral(), this.fromGeneral(), this.toGeneral());
-    await addSection('Ventas generales', generalSubtitle, this.salesGeneral());
+    let totalGlobal = 0;
 
-    if (this.selectedClientId()) {
-      const client = this.clients().find((c) => c.id === this.selectedClientId());
-      const clienteLabel = client ? `${client.nombre}${client.cedula ? ' · ' + client.cedula : ''}` : 'Cliente seleccionado';
-      const subtitle = this.rangeLabel(`Cliente: ${clienteLabel}`, this.periodClient(), this.fromClient(), this.toClient());
-      await addSection('Por cliente', subtitle, this.salesClient());
+    if (this.activeTab() === 'general') {
+        const generalSubtitle = this.rangeLabel('General', this.periodGeneral(), this.fromGeneral(), this.toGeneral());
+        await addSection('Ventas generales', generalSubtitle, this.salesGeneral());
+        // Sumamos considerando la tasa de cada venta
+        totalGlobal = (this.salesGeneral() || []).reduce((acc, r) => {
+             const tasa = r.tax_rate !== undefined ? Number(r.tax_rate) : currentTaxRate;
+             return acc + this.getValues(r.total, 'inclusive', tasa).total;
+        }, 0);
+    } 
+    else if (this.activeTab() === 'client' && this.selectedClientId()) {
+         const client = this.clients().find((c) => c.id === this.selectedClientId());
+         const nombreCliente = client?.nombre || 'Desconocido';
+         
+         const subtitle = this.rangeLabel(`Cliente: ${nombreCliente}`, this.periodClient(), this.fromClient(), this.toClient());
+         await addSection('Por cliente', subtitle, this.salesClient());
+         totalGlobal = (this.salesClient() || []).reduce((acc, r) => {
+             const tasa = r.tax_rate !== undefined ? Number(r.tax_rate) : currentTaxRate;
+             return acc + this.getValues(r.total, 'inclusive', tasa).total;
+        }, 0);
+    } 
+    else if (this.activeTab() === 'service' && this.selectedServiceId()) {
+         const service = this.servicios().find((s) => s.id === this.selectedServiceId());
+         const nombreServicio = service?.nombre || 'Desconocido';
+
+         const subtitle = this.rangeLabel(`Servicio: ${nombreServicio}`, this.periodService(), this.fromService(), this.toService());
+         await addSection('Por servicio', subtitle, this.salesServiceList());
+         totalGlobal = (this.salesServiceList() || []).reduce((acc, r) => {
+             const tasa = r.tax_rate !== undefined ? Number(r.tax_rate) : currentTaxRate;
+             return acc + this.getValues(r.total, 'inclusive', tasa).total;
+        }, 0);
     }
-
-    if (this.selectedServiceId()) {
-      const service = this.servicios().find((s) => s.id === this.selectedServiceId());
-      const subtitle = this.rangeLabel(`Servicio: ${service?.nombre || 'Servicio seleccionado'}`, this.periodService(), this.fromService(), this.toService());
-      await addSection('Por servicio', subtitle, this.salesServiceList());
-    }
-
-    // Resumen global simple
-    const totalGeneral = (this.salesGeneral() || []).reduce((acc, r) => acc + (Number(r.total) || 0), 0);
-    const totalCliente = this.selectedClientId() ? this.salesClient().reduce((a, r) => a + (Number(r.total) || 0), 0) : 0;
-    const totalServicio = this.selectedServiceId() ? this.salesServiceList().reduce((a, r) => a + (Number(r.total) || 0), 0) : 0;
-    const totalGlobal = totalGeneral + totalCliente + totalServicio;
 
     doc.setFontSize(11);
-    doc.text(`Total global (secciones exportadas): $${totalGlobal.toFixed(2)}`, 14, cursorY + 6);
+    doc.text(`Total Final Reporte: $${totalGlobal.toFixed(2)}`, 14, cursorY + 6);
 
-    doc.save(`reporte-ventas-${generatedAt.toISOString().slice(0, 10)}.pdf`);
+    doc.save(`reporte-${this.activeTab()}-${generatedAt.toISOString().slice(0, 10)}.pdf`);
   }
 
   rangeLabel(prefix: string, period: Period, from: string, to: string) {
@@ -331,15 +393,18 @@ export class ReportsComponent implements OnInit {
     const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
     this.reportsService.getByClient(this.selectedClientId(), opts).subscribe({
       next: (data) => {
-        this.salesClient.set(data.sales || []);
+        // CORRECCIÓN: Mapear los datos para asegurar que 'id' exista
+        const fixedSales = (data.sales || []).map((s: any) => ({
+            ...s,
+            id: s.id || s.sale_id // <--- SI NO HAY ID, USA SALE_ID
+        }));
+
+        this.salesClient.set(fixedSales);
         this.summaryClient.set(data.summary || { count: 0, total: 0 });
         this.loadingClient.set(false);
         this.canExport.set(true);
       },
-      error: (err) => {
-        console.error('Error ventas por cliente', err);
-        this.loadingClient.set(false);
-      }
+      error: (err) => { /* ... */ }
     });
   }
 
@@ -353,15 +418,18 @@ export class ReportsComponent implements OnInit {
     const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
     this.reportsService.getByItem(this.selectedServiceId(), opts).subscribe({
       next: (data) => {
-        this.salesServiceList.set(data.sales || []);
+        // CORRECCIÓN: Mapear los datos aquí también
+        const fixedSales = (data.sales || []).map((s: any) => ({
+            ...s,
+            id: s.id || s.sale_id // <--- ASEGURAMOS EL ID
+        }));
+
+        this.salesServiceList.set(fixedSales);
         this.summaryService.set(data.summary || { count: 0, total: 0 });
         this.loadingService.set(false);
         this.canExport.set(true);
       },
-      error: (err) => {
-        console.error('Error ventas por servicio', err);
-        this.loadingService.set(false);
-      }
+      error: (err) => { /* ... */ }
     });
   }
 
@@ -389,4 +457,32 @@ export class ReportsComponent implements OnInit {
     const d = new Date(fechaIso);
     return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
   }
+
+  getValues(monto: number | string | undefined, type: 'inclusive' | 'additive' = 'inclusive', customRate?: number) {
+    const valor = Number(monto) || 0;
+    
+    // PRIORIDAD:
+    // 1. Si la venta trae su tasa (customRate), ÚSALA. (Inmutabilidad)
+    // 2. Si no trae nada (es null), usa la del perfil (this.taxRate()).
+    const rate = (customRate !== undefined && customRate !== null) 
+                 ? Number(customRate) 
+                 : this.taxRate();
+
+    let subtotal = 0;
+    let iva = 0;
+    let total = 0;
+
+    if (type === 'inclusive') {
+      total = valor;
+      subtotal = total / (1 + rate);
+      iva = total - subtotal;
+    } else {
+      subtotal = valor;
+      iva = subtotal * rate;
+      total = subtotal + iva;
+    }
+
+    return { subtotal, iva, total };
+  }
+
 }
