@@ -1,168 +1,168 @@
+// 1. CONFIGURACIÓN DE PÁGINA
+.home-container {
+  display: flex; flex-direction: column; height: 100%;
+  background-color: #f8f9fa; overflow-y: auto;
+}
 
-.home {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  max-width: 1200px;
+// 2. HEADER HERO (Vino Tinto Curvo)
+.hero-section {
+  background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
+  color: white;
+  padding: 40px 20px 80px; // Padding extra abajo para que el buscador flote
+  border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+  position: relative; z-index: 1;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(75, 30, 58, 0.3);
+
+  .greeting {
+    margin-bottom: 25px;
+    h1 { font-size: 2rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+    p { margin: 5px 0 0; opacity: 0.85; font-size: 1rem; }
+  }
+
+  // EL BUSCADOR FLOTANTE
+  .search-container {
+    max-width: 700px; // Aumentado de 600px a 700px
+    width: 95%;       // Ocupa casi todo el ancho en móvil
+    margin: 0 auto -55px; 
+    position: relative; z-index: 10;
+
+    .search-card {
+      padding: 5px 15px;
+      border-radius: 50px; // Píldora
+      display: flex; align-items: center;
+      background: white;
+      height: 65px;
+      
+      .search-icon { color: #4b1e3a; margin-right: 10px; opacity: 0.7; }
+      
+      .pro-input {
+        border: none; outline: none; flex: 1;
+        font-size: 1.1rem; color: #333;
+        background: transparent;
+        height: 100%;
+      }
+
+      .clear-btn {
+        color: #999;
+        mat-icon { font-size: 20px; }
+      }
+    }
+  }
+}
+
+// 3. GRID DEL DASHBOARD (La clave responsiva)
+.dashboard-grid {
+  padding: 80px 20px 40px; // Padding top compensa el buscador flotante
+  max-width: 1000px; 
   margin: 0 auto;
-}
-
-.hero {
+  
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-  align-items: stretch;
-}
+  grid-template-columns: 1fr; // Móvil: 1 columna
+  gap: 20px;
 
-.hero-copy {
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: #4b1e3a;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 18px 34px rgba(75, 30, 58, 0.16);
-}
-
-.hero-copy .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 12px;
-  width: fit-content;
-}
-
-.hero-copy h1 {
-  margin: 0;
-  font-size: 27px;
-  font-weight: 800;
-}
-
-.hero-copy .subtitle {
-  margin: 0;
-  opacity: 0.92;
-  line-height: 1.5;
-}
-
-.hero-copy .pill {
-  display: inline-flex;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  font-weight: 700;
-  width: fit-content;
-}
-
-.hero-card {
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(122, 41, 79, 0.12);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.07);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card-title {
-  font-weight: 700;
-  font-size: 17px;
-  color: #3a2735;
-}
-
-.card-subtitle {
-  color: #6b4b60;
-  font-size: 13px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-}
-
-.client-field {
-  width: 100%;
-}
-
-.cta {
-  align-self: flex-start;
-  height: 48px;
-  padding: 0 18px;
-  background: #4b1e3a !important;
-  color: #ffffff !important;
-}
-
-.helper {
-  color: #6b4b60;
-  font-size: 12px;
-}
-
-.actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-}
-
-.action {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  cursor: pointer;
-  border: 1px solid rgba(122, 41, 79, 0.1);
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-  min-height: 82px;
-}
-
-.icon-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #4b1e3a;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.label {
-  font-weight: 700;
-  color: #3a2735;
-}
-
-.hint {
-  color: #6b4b60;
-  font-size: 13px;
-}
-
-.action:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(75, 30, 58, 0.14);
-  border-color: rgba(122, 41, 79, 0.25);
-}
-
-@media (min-width: 900px) {
-  .home {
-    max-width: 1200px;
-    margin: 0 auto;
+  // --- RESPONSIVE: TABLETS Y PC ---
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(2, 1fr); // Tablet: 2 columnas
+    
+    // La tarjeta "Cobrar" ocupa todo el ancho en Tablet
+    .big-action { grid-column: 1 / -1; }
   }
 
-  .form-row {
-    grid-template-columns: 1fr auto;
-    align-items: end;
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(4, 1fr); // PC: 4 columnas
+    
+    // En PC, Cobrar ocupa 2 espacios, el resto 1
+    .big-action { grid-column: span 2; } 
   }
 
-  .cta {
-    margin-left: 6px;
+  // --- ESTILOS DE LAS TARJETAS ---
+  .dashboard-card {
+    background: white; border-radius: 20px; padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    cursor: pointer; transition: all 0.2s ease;
+    border: 1px solid rgba(0,0,0,0.03);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; min-height: 140px;
+
+    &:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+    .icon-box {
+      width: 50px; height: 50px; border-radius: 15px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+      mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    }
+
+    h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: #444; }
+
+    // Colores específicos
+    &.info .icon-box { background: #e3f2fd; color: #1565c0; }
+    &.success .icon-box { background: #e8f5e9; color: #2e7d32; }
+    &.warn .icon-box { background: #fff3e0; color: #ef6c00; }
+
+    // TARJETA ESPECIAL: COBRAR (Grande)
+    &.big-action {
+      background: linear-gradient(135deg, #4b1e3a 0%, #7b1fa2 100%);
+      color: white;
+      
+      .content-flex {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; padding: 0 10px;
+      }
+
+      .icon-box { background: rgba(255,255,255,0.2); color: white; margin: 0; }
+      
+      .text-box {
+        text-align: left; flex: 1; margin-left: 15px;
+        h3 { color: white; font-size: 1.4rem; }
+        p { margin: 0; opacity: 0.8; font-size: 0.9rem; }
+      }
+      
+      .arrow { opacity: 0.6; }
+    }
+  }
+}
+
+::ng-deep .custom-scroll-panel {
+  // ANCHO MÍNIMO: Esto evita que se vea "reducida"
+  min-width: 320px !important; 
+  max-width: 90vw !important;  // Que no se salga de la pantalla en móvil
+  
+  border-radius: 0 0 20px 20px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+  margin-top: 10px !important;
+
+  .mat-mdc-option {
+    height: 75px !important; // Más altura por cada fila
+    padding: 0 20px !important; // Más aire a los lados
+    border-bottom: 1px solid #f5f5f5;
+
+    .row-content {
+      display: flex; align-items: center; gap: 15px; width: 100%;
+      
+      .avatar-circle {
+        width: 45px; height: 45px; // Avatar un poco más grande
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; font-weight: 700; font-size: 1.1rem;
+        
+        mat-icon { font-size: 24px; width: 24px; height: 24px; }
+        &.client { background: #f3e5f5; color: #4b1e3a; }
+        &.add { background: #e8f5e9; color: #2e7d32; }
+      }
+
+      .text-info {
+        display: flex; flex-direction: column; line-height: 1.3;
+        flex: 1; // Ocupar todo el espacio disponible
+        overflow: hidden; // Prevenir desbordes
+        
+        .main-text { 
+          font-weight: 600; font-size: 1.05rem; color: #333; 
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sub-text { font-size: 0.85rem; color: #888; }
+      }
+    }
   }
 }

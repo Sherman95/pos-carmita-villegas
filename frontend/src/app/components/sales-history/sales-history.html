@@ -1,98 +1,135 @@
-<div class="history-container">
-  <mat-card class="summary-card">
-    <div class="summary-label">Total Vendido Hoy</div>
-    <div class="summary-amount">${{ totalHoy() | number:'1.2-2' }}</div>
-  </mat-card>
-
-  <div class="list-title">Recibos por cliente</div>
-  <mat-card class="filters-card">
-    <div class="filters">
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>Cliente</mat-label>
-        <mat-select [(ngModel)]="filterClientId">
-          <mat-option [value]="''">Selecciona un cliente</mat-option>
-          <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : '' }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Desde</mat-label>
-        <input matInput type="date" [(ngModel)]="filterFrom">
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Hasta</mat-label>
-        <input matInput type="date" [(ngModel)]="filterTo">
-      </mat-form-field>
-      <button mat-flat-button color="primary" (click)="buscarRecibosPorCliente()">Buscar</button>
+<div class="page-container">
+  
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Historial y Cierre 📅</h1>
+      <p>Revisa tus ventas diarias y reimprime recibos</p>
     </div>
-    @if (loadingReceipts()) {
-      <p class="loading">Cargando recibos...</p>
-    } @else if (clientReceipts().length === 0) {
-      <p class="empty">Sin recibos para este filtro.</p>
-    } @else {
-      <div class="receipts-list">
-        @for (r of clientReceipts(); track r.receipt_id) {
-          <div class="receipt-row">
-            <div class="left">
-              <div class="name">Venta {{ r.sale_id }}</div>
-              <div class="meta">{{ r.sale_created_at | date:'medium' }} · Total ${{ r.total | number:'1.2-2' }}</div>
-            </div>
-            <button mat-stroked-button (click)="descargarReciboCliente(r)">
-              <mat-icon>download</mat-icon>
-              Descargar
-            </button>
-          </div>
-        }
+    
+    <div class="summary-float elevation-z4">
+      <span class="label">Vendido Hoy</span>
+      <span class="amount">${{ totalHoy() | number:'1.2-2' }}</span>
+    </div>
+  </header>
+
+  <div class="history-container">
+
+    <div class="section-title">
+      <mat-icon>manage_search</mat-icon> Recibos por Cliente
+    </div>
+
+    <mat-card class="filters-card elevation-z2">
+      <div class="filters-grid">
+        
+        <mat-form-field appearance="outline" class="client-select">
+          <mat-label>Cliente</mat-label>
+          <mat-select [(ngModel)]="filterClientId" panelClass="custom-history-select">
+            <mat-option [value]="''">-- Todos los clientes --</mat-option>
+            <mat-option *ngFor="let c of clients()" [value]="c.id">
+              <div class="row-flex">
+                <div class="avatar-mini">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                <div class="text-col">
+                  <span class="name">{{ c.nombre }}</span>
+                  <span class="cedula" *ngIf="c.cedula">{{ c.cedula }}</span>
+                </div>
+              </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" [(ngModel)]="filterFrom">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" [(ngModel)]="filterTo">
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" class="btn-search" (click)="buscarRecibosPorCliente()">
+          <mat-icon>search</mat-icon> BUSCAR
+        </button>
       </div>
-    }
-  </mat-card>
 
-  <div class="list-title">Ventas recientes</div>
-
-  <div class="sales-list">
-    @if (sales().length === 0) {
-      <p class="empty">No hay ventas registradas.</p>
-    } @else {
-      @for (sale of sales(); track sale.id) {
-        <mat-card class="sale-card" (click)="toggleDetalles(sale.id)">
-          <div class="row">
-            <div class="time">{{ formatearHora(sale.created_at) }}</div>
-            <div class="total">${{ sale.total | number:'1.2-2' }}</div>
-          </div>
-          <div class="meta">
-            <span>Cliente: {{ sale.client_nombre || 'Consumidor final' }}</span>
-            @if (sale.client_cedula) {
-              <span>Cédula: {{ sale.client_cedula }}</span>
-            }
-          </div>
-          <div class="meta">
-            <span>Método: {{ sale.metodo_pago || 'N/D' }}</span>
-            <span>ID: {{ sale.id }}</span>
-          </div>
-          <div class="actions">
-            <button mat-stroked-button color="primary" (click)="$event.stopPropagation(); descargarRecibo(sale.id)" [disabled]="downloadingSaleId() === sale.id">
-              <mat-icon>receipt_long</mat-icon>
-              {{ downloadingSaleId() === sale.id ? 'Descargando...' : 'Ver recibo' }}
-            </button>
-          </div>
-          @if (selectedSaleId() === sale.id) {
-            <div class="details">
-              @if (loadingDetail()) {
-                <p class="loading">Cargando detalle...</p>
-              } @else {
-                @if ((saleDetails()[sale.id] || []).length === 0) {
-                  <p class="empty">Sin detalles.</p>
-                } @else {
-                  <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-                    <div class="name">{{ d.nombre_producto }}</div>
-                    <div class="qty-price">x{{ d.cantidad }} · ${{ d.precio_unitario | number:'1.2-2' }}</div>
-                    <div class="subtotal">${{ d.subtotal | number:'1.2-2' }}</div>
-                  </div>
-                }
-              }
+      @if (loadingReceipts()) {
+        <div class="state-msg"><mat-spinner diameter="30"></mat-spinner> Cargando...</div>
+      } @else if (clientReceipts().length === 0) {
+        <div class="state-msg empty">Sin recibos para este filtro.</div>
+      } @else {
+        <div class="receipts-list">
+          @for (r of clientReceipts(); track r.receipt_id) {
+            <div class="receipt-row">
+              <div class="info">
+                <div class="name">Venta #{{ r.sale_id }}</div>
+                <div class="meta">{{ r.sale_created_at | date:'medium' }} · <strong>${{ r.total | number:'1.2-2' }}</strong></div>
+              </div>
+              <button mat-stroked-button color="primary" (click)="verReciboCliente(r)" [disabled]="openingTicketId() === r.sale_id">
+                <mat-icon>print</mat-icon>
+                {{ openingTicketId() === r.sale_id ? '...' : 'Ticket' }}
+              </button>
             </div>
           }
-        </mat-card>
+        </div>
       }
-    }
+    </mat-card>
+
+    <div class="section-title mt-large">
+      <mat-icon>history</mat-icon> Ventas Recientes
+    </div>
+
+    <div class="sales-list-grid">
+      @if (sales().length === 0) {
+        <div class="state-msg empty">No hay ventas registradas hoy.</div>
+      } @else {
+        @for (sale of sales(); track sale.id) {
+          <mat-card class="sale-card elevation-z1" (click)="toggleDetalles(sale.id)">
+            
+            <div class="card-header">
+              <div class="time-badge">{{ formatearHora(sale.created_at) }}</div>
+              <div class="total-badge">${{ sale.total | number:'1.2-2' }}</div>
+            </div>
+
+            <div class="card-body">
+              <div class="client-info">
+                <span class="client-name">{{ sale.client_nombre || 'Consumidor final' }}</span>
+                <span class="method">{{ sale.metodo_pago || 'Efectivo' }}</span>
+              </div>
+              
+              <div class="actions">
+                <button mat-icon-button color="primary" 
+                        (click)="$event.stopPropagation(); verRecibo(sale.id)" 
+                        [disabled]="openingTicketId() === sale.id"
+                        matTooltip="Imprimir Ticket">
+                  <mat-icon>print</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            @if (selectedSaleId() === sale.id) {
+              <div class="details-box">
+                @if (loadingDetail()) {
+                  <p class="loading-text">Cargando...</p>
+                } @else {
+                  @if ((saleDetails()[sale.id] || []).length === 0) {
+                    <p class="empty-text">Sin detalles.</p>
+                  } @else {
+                    @for (d of saleDetails()[sale.id]; track d.id) {
+                      <div class="detail-row">
+                        <span class="prod">{{ d.nombre_producto }}</span>
+                        <span class="qty">x{{ d.cantidad }}</span>
+                        <span class="price">${{ d.subtotal | number:'1.2-2' }}</span>
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            }
+
+          </mat-card>
+        }
+      }
+    </div>
+
   </div>
 </div>

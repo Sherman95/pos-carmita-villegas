@@ -1,39 +1,65 @@
 <div class="login-shell">
-  <div class="card">
+  
+  <div class="decorative-bg">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+  </div>
+
+  <div class="card elevation-z8">
+    
     <div class="brand">
-      <img class="logo" src="/assets/imghome.png" alt="Logo" />
-      <div>
-        <h1>Iniciar sesión</h1>
-        <p>Accede al panel de ventas</p>
+      <div class="logo-container">
+         <img class="logo" 
+           src="/assets/imghome.png" 
+           alt="Logo" 
+           [hidden]="!logoLoaded"
+            (error)="onLogoError()">
+       
+        <mat-icon class="fallback-icon" *ngIf="!logoLoaded">storefront</mat-icon>
+    </div>
+      
+      <div class="brand-text">
+        <h1>Bienvenido 👋</h1>
+        <p>Inicia sesión en tu punto de venta</p>
       </div>
     </div>
 
-    <form (ngSubmit)="submit()" autocomplete="off">
-      <mat-form-field appearance="outline" class="full">
+    <form (ngSubmit)="submit()" autocomplete="off" class="login-form">
+      
+      <mat-form-field appearance="outline" class="full-width custom-field">
         <mat-label>Usuario</mat-label>
-        <input matInput name="username" [(ngModel)]="username" required />
-        <mat-hint>Tu usuario registrado</mat-hint>
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput name="username" [(ngModel)]="username" required placeholder="Ej. admin">
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full">
+      <mat-form-field appearance="outline" class="full-width custom-field">
         <mat-label>Contraseña</mat-label>
-        <input
-          matInput
-          name="password"
-          [type]="hidePassword ? 'password' : 'text'"
-          [(ngModel)]="password"
-          required
-        />
+        <mat-icon matPrefix>lock</mat-icon>
+        <input matInput 
+               name="password" 
+               [type]="hidePassword ? 'password' : 'text'" 
+               [(ngModel)]="password" 
+               required
+               placeholder="••••••">
         <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
           <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
         </button>
       </mat-form-field>
 
-      <div class="error" *ngIf="error">{{ error }}</div>
+      <div class="error-box" *ngIf="error">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error }}</span>
+      </div>
 
-      <button mat-raised-button color="primary" class="full" type="submit" [disabled]="loading">
-        {{ loading ? 'Ingresando...' : 'Entrar' }}
+      <button mat-flat-button class="btn-login" type="submit" [disabled]="loading">
+        <span *ngIf="!loading">INGRESAR</span>
+        <div class="loader" *ngIf="loading"></div>
       </button>
+
     </form>
+    
+    <div class="footer-copy">
+      © 2026 Sistema POS
+    </div>
   </div>
 </div>

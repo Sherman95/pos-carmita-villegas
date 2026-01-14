@@ -1,132 +1,160 @@
-.history-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+.page-container {
+  display: flex; flex-direction: column; height: 100%;
+  background-color: #f8f9fa; overflow-y: auto;
 }
 
-.summary-card {
-  background: linear-gradient(135deg, #0d47a1, #1976d2);
-  color: #fff;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-}
+// 1. HEADER VINO TINTO
+.header-section {
+  background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%);
+  color: white;
+  padding: 30px 20px 80px; // Espacio extra para la tarjeta flotante
+  border-bottom-left-radius: 35px; border-bottom-right-radius: 35px;
+  text-align: center; position: relative; z-index: 1;
+  box-shadow: 0 4px 20px rgba(75, 30, 58, 0.4);
 
-.summary-label {
-  font-size: 14px;
-  opacity: 0.9;
-}
+  h1 { font-size: 1.8rem; margin: 0; font-weight: 700; }
+  p { opacity: 0.8; margin: 5px 0 0; font-size: 0.95rem; }
 
-.summary-amount {
-  font-size: 32px;
-  font-weight: 700;
-  margin-top: 6px;
-}
+  // TARJETA FLOTANTE (TOTAL HOY)
+  .summary-float {
+    position: absolute;
+    bottom: -30px; left: 50%; transform: translateX(-50%);
+    background: white; color: #333;
+    padding: 15px 30px; border-radius: 50px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 200px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 
-.list-title {
-  font-weight: 600;
-  font-size: 16px;
-  padding: 0 4px;
-  color: #0d47a1;
-}
-
-.sales-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.actions {
-  margin-top: 8px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.sale-card {
-  padding: 12px;
-  border-radius: 10px;
-}
-
-.sale-card .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.sale-card .time {
-  font-weight: 600;
-  color: #0d47a1;
-}
-
-.sale-card .total {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.sale-card .meta {
-  margin-top: 6px;
-  display: flex;
-  justify-content: space-between;
-  color: #666;
-  font-size: 12px;
-}
-
-.empty {
-  text-align: center;
-  color: #777;
-  margin: 16px 0;
-}
-
-.filters-card {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: #f3f7ff;
-  border: 1px solid #d7e3ff;
-  box-shadow: 0 4px 12px rgba(13, 71, 161, 0.08);
-  border-radius: 12px;
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-  align-items: end;
-}
-
-.receipts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.receipt-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid #d7e3ff;
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.05);
-}
-
-.receipt-row .name {
-  font-weight: 600;
-}
-
-.receipt-row .meta {
-  font-size: 12px;
-  color: #666;
-}
-
-@media (min-width: 768px) {
-  .history-container {
-    max-width: 720px;
-    margin: 0 auto;
+    .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .amount { font-size: 1.6rem; font-weight: 800; color: #4b1e3a; line-height: 1.1; }
   }
 }
+
+// 2. CONTENEDOR PRINCIPAL
+.history-container {
+  padding: 60px 20px 100px; // Padding top grande por la tarjeta flotante
+  max-width: 1000px; margin: 0 auto;
+  position: relative; z-index: 2;
+
+  .section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 1.1rem; font-weight: 700; color: #444; margin-bottom: 15px;
+    mat-icon { color: #4b1e3a; }
+    &.mt-large { margin-top: 40px; }
+  }
+
+  // --- TARJETA DE FILTROS ---
+  .filters-card {
+    background: white; border-radius: 16px; padding: 20px;
+    border: 1px solid rgba(0,0,0,0.03);
+
+    .filters-grid {
+      display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
+      .client-select { flex: 2; min-width: 250px; }
+      mat-form-field { flex: 1; min-width: 140px; }
+      .btn-search { height: 50px; border-radius: 12px; padding: 0 25px; }
+    }
+
+    .state-msg { text-align: center; padding: 20px; color: #888; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    .receipts-list {
+      margin-top: 20px; border-top: 1px dashed #eee; padding-top: 10px;
+      .receipt-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px; border-bottom: 1px solid #f9f9f9;
+        &:last-child { border-bottom: none; }
+        
+        .info {
+          .name { font-weight: 600; color: #333; }
+          .meta { font-size: 0.85rem; color: #888; }
+        }
+      }
+    }
+  }
+
+  // --- GRID DE VENTAS RECIENTES ---
+  .sales-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); // Responsivo
+    gap: 15px;
+
+    .state-msg.empty { grid-column: 1 / -1; text-align: center; color: #999; padding: 40px; }
+
+    .sale-card {
+      background: white; border-radius: 16px; padding: 0;
+      cursor: pointer; transition: transform 0.2s;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.03);
+
+      &:hover { transform: translateY(-3px); }
+
+      .card-header {
+        background: #f8f9fa; padding: 12px 15px;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #eee;
+
+        .time-badge { background: white; border: 1px solid #ddd; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; color: #666; font-weight: 600; }
+        .total-badge { font-weight: 800; color: #4b1e3a; font-size: 1.1rem; }
+      }
+
+      .card-body {
+        padding: 15px; display: flex; justify-content: space-between; align-items: center;
+        .client-info {
+          display: flex; flex-direction: column;
+          .client-name { font-weight: 600; color: #333; font-size: 0.95rem; }
+          .method { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-top: 2px; }
+        }
+      }
+
+      // DETALLES DESPLEGABLES
+      .details-box {
+        background: #fff8fc; // Fondo rosado muy suave
+        padding: 15px; border-top: 1px dashed #f0d0e0;
+        
+        .detail-row {
+          display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; color: #555;
+          .prod { flex: 1; }
+          .qty { margin: 0 10px; color: #999; }
+          .price { font-weight: 600; }
+        }
+        .loading-text, .empty-text { text-align: center; color: #aaa; font-size: 0.8rem; margin: 0; }
+      }
+    }
+  }
+}
+
+// --- ESTILOS DEL DROPDOWN DE CLIENTES (Aquí está la magia) ---
+::ng-deep .custom-history-select {
+  border-radius: 0 0 12px 12px !important;
+  background: white;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15) !important;
+
+  .mat-mdc-option {
+    height: 60px !important; 
+    padding: 0 15px !important;
+    border-bottom: 1px solid #f8f8f8;
+
+    .row-flex {
+      display: flex; align-items: center; gap: 12px; width: 100%; height: 100%;
+      
+      .avatar-mini {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: #f3e5f5; color: #4b1e3a;
+        font-weight: 700; font-size: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid rgba(75, 30, 58, 0.1);
+      }
+
+      .text-col {
+        display: flex; flex-direction: column; line-height: 1.2;
+        .name { font-weight: 600; font-size: 0.95rem; color: #333; }
+        .cedula { font-size: 0.75rem; color: #888; }
+      }
+    }
+  }
+}
+
+// UTILIDADES
+.full { width: 100%; }
+::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }

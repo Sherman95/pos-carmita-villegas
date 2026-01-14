@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PriceDialog } from './price-dialog';
+import { PriceDialogComponent } from './price-dialog';
 
-describe('PriceDialog', () => {
-  let component: PriceDialog;
-  let fixture: ComponentFixture<PriceDialog>;
+describe('PriceDialogComponent', () => {
+  let component: PriceDialogComponent;
+  let fixture: ComponentFixture<PriceDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PriceDialog]
+      imports: [PriceDialogComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PriceDialog);
+    fixture = TestBed.createComponent(PriceDialogComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

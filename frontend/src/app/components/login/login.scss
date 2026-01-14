@@ -1,70 +1,192 @@
+// --- CONFIGURACIÓN DE PANTALLA COMPLETA ---
 .login-shell {
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 20% 20%, rgba(122, 41, 79, 0.25), transparent 45%),
-    radial-gradient(circle at 80% 0%, rgba(75, 30, 58, 0.25), transparent 35%),
-    linear-gradient(135deg, #f7eef3, #fdf9fb);
-  padding: 16px;
-}
-
-.card {
-  width: 100%;
-  max-width: 360px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(75, 30, 58, 0.2);
-  border: 1px solid rgba(122, 41, 79, 0.08);
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.brand {
-  display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1px solid rgba(122, 41, 79, 0.12);
-  box-shadow: 0 6px 16px rgba(75, 30, 58, 0.18);
-}
-
-.brand h1 {
-  margin: 0;
-  font-weight: 800;
-}
-
-.brand p {
-  margin: 4px 0 0;
-  color: #6b4b60;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.full {
+  min-height: 100vh;
   width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2e0e22 0%, #4b1e3a 100%); // Fondo oscuro base
 }
 
-.error {
-  color: #b91c1c;
-  font-size: 13px;
-  margin: 4px 0 0;
+// --- DECORACIÓN DE FONDO (CÍRCULOS FLOTANTES) ---
+.decorative-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none; // Para que no interfieran con clics
+
+  .circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px); // Efecto difuminado
+    opacity: 0.4;
+    animation: float 10s infinite ease-in-out;
+  }
+
+  .circle-1 {
+    width: 300px; height: 300px;
+    background: #ad1457; // Rosado intenso
+    top: -50px; left: -50px;
+  }
+
+  .circle-2 {
+    width: 400px; height: 400px;
+    background: #6a1b9a; // Morado
+    bottom: -100px; right: -100px;
+    animation-delay: -5s;
+  }
 }
 
-button.full {
-  margin-top: 4px;
-  background: linear-gradient(135deg, #4b1e3a, #7a294f);
-  color: #fff;
+// --- TARJETA DE LOGIN ---
+.card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.95); // Casi sólido
+  backdrop-filter: blur(10px); // Efecto cristal suave
+  padding: 40px;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  
+  // Animación de entrada
+  animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+// --- LOGO Y TÍTULOS ---
+.brand {
+  margin-bottom: 30px;
+
+  .logo-container {
+    width: 80px; height: 80px;
+    margin: 0 auto 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    padding: 10px;
+
+    img.logo {
+      width: 100%; height: 100%; object-fit: contain;
+    }
+    
+    // Icono por si falla la imagen
+    .fallback-icon {
+      font-size: 40px; width: 40px; height: 40px; color: #4b1e3a;
+    }
+  }
+
+  .brand-text {
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #4b1e3a;
+      letter-spacing: -0.5px;
+    }
+    p {
+      margin: 5px 0 0;
+      color: #666;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// --- FORMULARIO ---
+.login-form {
+  display: flex; flex-direction: column; gap: 15px;
+
+  .full-width { width: 100%; }
+  
+  // Iconos dentro de los inputs
+  mat-icon { color: #888; }
+}
+
+// --- ERROR BOX ---
+.error-box {
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  border: 1px solid #ef9a9a;
+  animation: shake 0.4s ease-in-out;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; color: #c62828; }
+}
+
+// --- BOTÓN GRANDE ---
+.btn-login {
+  height: 55px;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #4b1e3a 0%, #7b1fa2 100%);
+  color: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:not([disabled]):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(75, 30, 58, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+  }
+}
+
+// --- FOOTER ---
+.footer-copy {
+  margin-top: 30px;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+// --- SPINNER SIMPLE (CSS Puro) ---
+.loader {
+  width: 20px; height: 20px;
+  border: 2px solid #ffffff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: rotation 1s linear infinite;
+}
+
+// --- ANIMACIONES ---
+@keyframes float {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(20px, 20px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rotation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+// AJUSTES MATERIAL
+::ng-deep .custom-field {
+  .mat-mdc-form-field-flex {
+    background-color: #f8f9fa !important; // Fondo gris muy claro en inputs
+    border-radius: 12px;
+  }
+  .mat-mdc-form-field-subscript-wrapper { display: none; } // Ocultar espacio extra abajo
 }

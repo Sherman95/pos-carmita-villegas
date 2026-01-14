@@ -1,74 +1,121 @@
-<div class="clients-container">
-  <div class="header">
-    <div>
-      <div class="title">Clientes</div>
-      <div class="subtitle">Crea, busca y edita fichas rápido</div>
-    </div>
-    <div class="header-actions">
-      <button mat-flat-button color="primary" (click)="showCreateForm()">Agregar cliente</button>
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Buscar</mat-label>
-        <mat-icon matPrefix>search</mat-icon>
-        <input matInput type="text" placeholder="Nombre, cédula o email" [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)" />
-      </mat-form-field>
-    </div>
-  </div>
-
-  <div *ngIf="loading()" class="loading">Cargando...</div>
-  <div *ngIf="!loading() && filteredClients().length === 0" class="empty">Sin resultados.</div>
-
-  <div class="clients-list">
-    <mat-card class="client" *ngFor="let c of filteredClients()">
-      <div class="row">
-        <div>
-          <div class="name">{{ c.nombre }}</div>
-          <div class="meta">Cédula: {{ c.cedula || 'No registrada' }}</div>
-          <div class="meta">{{ c.telefono || 'Sin teléfono' }} · {{ c.email || 'Sin email' }}</div>
-          <div class="meta" *ngIf="c.direccion"><mat-icon style="font-size: 14px; height: 14px; width: 14px; vertical-align: middle;">place</mat-icon> {{ c.direccion }}</div>
-        </div>
-        <div class="client-actions">
-          <button mat-button color="primary" (click)="editClient(c)">Editar</button>
-          <button mat-stroked-button color="warn" (click)="deleteClient(c.id)">Eliminar</button>
-        </div>
+<div class="page-container">
+  
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Clientes 👥</h1>
+      <p>Gestiona tu base de datos</p>
+      
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" 
+               placeholder="Buscar por nombre, cédula o email..." 
+               [ngModel]="searchTerm()" 
+               (ngModelChange)="setSearch($event)">
+        
+        @if (searchTerm()) {
+          <button mat-icon-button (click)="setSearch('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
       </div>
-    </mat-card>
+
+      <button mat-flat-button class="btn-add" (click)="showCreateForm()">
+        <mat-icon>add</mat-icon> NUEVO CLIENTE
+      </button>
+    </div>
+  </header>
+
+  <div class="list-container">
+    
+    @if (loading()) {
+      <div class="state-message">Cargando clientes...</div>
+    } @else if (filteredClients().length === 0) {
+      <div class="state-message empty">
+        <mat-icon>person_off</mat-icon>
+        <p>No se encontraron clientes.</p>
+      </div>
+    } @else {
+      @for (c of filteredClients(); track c.id) {
+        <div class="client-card elevation-z2" (click)="editClient(c)">
+          
+          <div class="card-content">
+            <div class="avatar-circle">
+              {{ c.nombre.charAt(0).toUpperCase() }}
+            </div>
+
+            <div class="text-info">
+              <span class="name">{{ c.nombre }}</span>
+              <span class="details">
+                <mat-icon class="tiny-icon">badge</mat-icon> {{ c.cedula || 'S/N' }}
+              </span>
+              <span class="details secondary">
+                {{ c.telefono || 'Sin cel' }} · {{ c.email || 'Sin email' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button mat-icon-button color="warn" (click)="deleteClient(c.id); $event.stopPropagation()">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    }
   </div>
 
   <ng-template #clientFormDialog>
-    <h2 mat-dialog-title>{{ editingId() ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
-    <mat-dialog-content class="dialog-content">
-      <div class="form-sub">Campos mínimos: nombre; los demás son opcionales.</div>
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
-          <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Cédula</mat-label>
-          <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono</mat-label>
-          <input matInput [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" />
-        </mat-form-field>
-        
-        <mat-form-field appearance="outline" style="grid-column: 1 / -1;">
-          <mat-label>Dirección</mat-label>
-          <input matInput [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event)" placeholder="Ej. Av. Principal 123" />
-          <mat-icon matSuffix>place</mat-icon>
-        </mat-form-field>
+  <div class="dialog-header-modern">
+    <h2 mat-dialog-title>{{ selectedClientId() ? 'Editar Cliente 👤' : 'Nuevo Cliente ✨' }}</h2>
+    <button mat-icon-button mat-dialog-close tabindex="-1" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
-      </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end" class="dialog-actions">
-      <button mat-stroked-button color="warn" mat-dialog-close (click)="cancelEdit()">Cancelar</button>
-      <button mat-flat-button color="primary" (click)="saveClient()" [disabled]="!form().nombre">
-        {{ editingId() ? 'Actualizar' : 'Guardar' }}
-      </button>
-    </mat-dialog-actions>
-  </ng-template>
+  <mat-dialog-content class="modern-content">
+    <p class="subtitle">Información de contacto y facturación.</p>
+
+    <div class="form-grid-2">
+      
+      <mat-form-field appearance="outline" class="col-span-2">
+        <mat-label>Nombre Completo</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" placeholder="Ej. María Pérez" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cédula / RUC</mat-label>
+        <mat-icon matPrefix>badge</mat-icon>
+        <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" placeholder="Opcional" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <mat-icon matPrefix>phone</mat-icon>
+        <input matInput [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" placeholder="099..." />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="col-span-2">
+        <mat-label>Correo Electrónico</mat-label>
+        <mat-icon matPrefix>mail</mat-icon>
+        <input matInput [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" placeholder="cliente@email.com" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="col-span-2">
+        <mat-label>Dirección</mat-label>
+        <mat-icon matPrefix>place</mat-icon>
+        <input matInput [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event)" placeholder="Calle principal..." />
+      </mat-form-field>
+
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="modern-actions">
+    <button mat-button mat-dialog-close (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!form().nombre">
+      {{ selectedClientId() ? 'Actualizar' : 'Guardar Cliente' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
 </div>

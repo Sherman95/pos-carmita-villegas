@@ -1,42 +1,54 @@
-.footer-container {
+// BARRA FLOTANTE MODERNA
+.floating-bar {
   position: fixed;
-  bottom: 64px; // ubica el footer arriba de la barra de navegación inferior
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 70px;
-  background-color: #212121; // Gris oscuro elegante
-  color: white;
+  
+  // CAMBIO IMPORTANTE: Lo subimos para que no choque con la navegación
+  bottom: 90px; 
+  
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  
+  background: #ffffff;
+  color: #333;
+  
+  border-radius: 50px;
+  padding: 10px 10px 10px 25px;
+  
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  padding-bottom: env(safe-area-inset-bottom);
-  box-sizing: border-box;
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.3); // Sombra hacia arriba
-  z-index: 999; // debajo de la barra de navegación pero flotando sobre el contenido
-}
+  justify-content: space-between;
+  
+  // Z-INDEX MAYOR QUE LA NAVEGACIÓN (1000 vs 1100)
+  z-index: 1100; 
+  
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  border: 1px solid rgba(0,0,0,0.05);
 
-.total-info {
-  display: flex;
-  flex-direction: column;
-}
+  // ... (El resto del CSS se queda igual) ...
+  .info-group {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .amount { font-size: 1.3rem; font-weight: 800; color: #4b1e3a; }
+  }
 
-.label {
-  font-size: 0.75rem;
-  color: #bbb;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.monto {
-  font-size: 1.6rem;
-  font-weight: bold;
-  color: #69f0ae; // Verde neon
-}
-
-.btn-cobrar {
-  font-weight: bold;
-  height: 45px;
-  border-radius: 25px;
+  .btn-checkout {
+    background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
+    color: white;
+    height: 45px;
+    border-radius: 25px;
+    padding: 0 20px;
+    font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+    
+    .badge-count {
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+    }
+  }
 }

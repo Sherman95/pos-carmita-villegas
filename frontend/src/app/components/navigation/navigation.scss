@@ -1,68 +1,123 @@
+// CONFIGURACIÓN DE LA BARRA
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  background: #4b1e3a;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -6px 16px rgba(75, 30, 58, 0.3);
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
-  z-index: 1000;
-}
-
-.nav-btn {
-  min-width: 0;
-  padding: 8px 6px;
+  height: 70px; // Altura cómoda
+  background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%); // Tu color Vino Tinto
   display: flex;
-  flex-direction: column;
+  justify-content: space-around; // Distribuye los botones equitativamente
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: 12px;
-  color: #ffffff;
-  /* Fuerza color blanco sobre estilos de Angular Material */
-  --mdc-text-button-label-text-color: #ffffff;
-  --mdc-text-button-label-text-color-hover: #ffffff;
-  --mdc-text-button-label-text-color-pressed: #ffffff;
-  --mdc-text-button-label-text-color-focus: #ffffff;
-}
+  padding-bottom: env(safe-area-inset-bottom); // Para iPhones nuevos
+  z-index: 9000; // ¡Encima de todo!
+  box-shadow: 0 -5px 20px rgba(75, 30, 58, 0.3); // Sombra morada suave
+  border-top: 1px solid rgba(255,255,255,0.05);
 
-.nav-btn .label {
-  color: #ffffff;
-  font-weight: 600;
-}
+  // ESTILO DE LOS BOTONES
+  .nav-item {
+    flex: 1; // Ocupar espacio igual
+    height: 100%;
+    min-width: auto; // Reset de Material
+    padding: 0;
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.6); // Color inactivo (transparente)
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    
+    // Contenedor interno para alinear icono y texto
+    ::ng-deep .mat-mdc-button-touch-target { display: none; } // Fix Material touch area
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 
-.nav-btn mat-icon {
-  font-size: 20px;
-  height: 20px;
-  width: 20px;
-  color: #ffffff;
-}
+    .icon-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 24px;
+      transition: transform 0.2s;
+      
+      mat-icon {
+        font-size: 24px;
+        width: 24px; height: 24px;
+      }
+    }
 
-.nav-btn.active {
-  color: #ffffff;
-  font-weight: 700;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
+    .label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      opacity: 0.8;
+      transition: all 0.2s;
+    }
 
-.nav-btn.active mat-icon {
-  color: #ffffff;
-}
+    // --- ESTADO ACTIVO (SELECCIONADO) ---
+    &.active {
+      color: #ffffff; // Texto blanco brillante
 
-.nav-btn.danger {
-  color: #f5dce8;
-}
+      .icon-container {
+        transform: translateY(-2px); // Sube un poquito
+        
+        // Efecto de brillo detrás del icono
+        &::after {
+          content: '';
+          position: absolute;
+          width: 35px; height: 35px;
+          background: rgba(255, 255, 255, 0.15); // Círculo de luz
+          border-radius: 50%;
+          z-index: -1;
+          animation: popIn 0.3s ease-out;
+        }
+      }
 
-.nav-btn.danger mat-icon {
-  color: #f5dce8;
-}
+      mat-icon {
+        color: #f8bbd0; // Icono Rosado Pastel (combina con el Vino)
+      }
 
-@media (min-width: 768px) {
-  .bottom-nav {
-    max-width: 960px;
-    margin: 0 auto;
-    border-radius: 12px 12px 0 0;
+      .label {
+        font-weight: 700;
+        opacity: 1;
+        color: #f8bbd0;
+      }
+    }
   }
+}
+
+// --- VERSIÓN PARA PC (Isla Flotante) ---
+@media (min-width: 800px) {
+  .bottom-nav {
+    bottom: 20px; // Flota un poco arriba
+    left: 50%;
+    transform: translateX(-50%); // Centrado
+    width: auto; // Ancho automático según contenido
+    min-width: 400px;
+    height: 65px;
+    border-radius: 50px; // Píldora
+    padding: 0 20px;
+    justify-content: center;
+    gap: 10px; // Espacio entre botones
+    
+    // Los botones en PC tienen bordes redondos
+    .nav-item {
+      border-radius: 20px;
+      flex: 0 1 100px; // Ancho fijo por botón
+      height: 50px;
+      
+      &.active {
+        background: rgba(255,255,255,0.1); // Fondo suave al activo
+      }
+      
+      .icon-container::after { display: none; } // Quitamos el círculo en PC
+    }
+  }
+}
+
+// ANIMACIÓN
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }

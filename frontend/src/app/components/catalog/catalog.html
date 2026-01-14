@@ -1,69 +1,105 @@
-<div class="catalog-page">
-	<div class="header">
-		<div>
-			<div class="title">Servicios</div>
-			<div class="subtitle">Agrega, edita y úsalos en la venta</div>
-		</div>
-		<div class="header-actions">
-			<button mat-flat-button color="primary" (click)="nuevoServicio()">
-				<mat-icon>add</mat-icon>
-				Nuevo servicio
-			</button>
-			<button mat-stroked-button color="primary" (click)="seedServicios()">Cargar servicios sugeridos</button>
-			<button mat-button color="primary" (click)="irAlHistorial()">
-				<mat-icon>history</mat-icon>
-				Historial diario
-			</button>
-		</div>
-	</div>
+<div class="page-container">
+  
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Servicios 💅</h1>
+      <p>Selecciona un servicio para agregar a la venta</p>
+      
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" 
+               placeholder="Buscar servicio..." 
+               [ngModel]="searchTerm()" 
+               (ngModelChange)="setSearch($event)">
+        @if (searchTerm()) {
+          <button mat-icon-button (click)="setSearch('')"><mat-icon>close</mat-icon></button>
+        }
+      </div>
 
-	<div class="toolbar">
-		<mat-form-field appearance="outline" class="search-field">
-			<mat-label>Buscar servicio</mat-label>
-			<mat-icon matPrefix>search</mat-icon>
-			<input matInput type="text" placeholder="Nombre" [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)" />
-		</mat-form-field>
-	</div>
+      <div class="quick-actions">
+        <button mat-flat-button class="btn-new" (click)="nuevoServicio()">
+          <mat-icon>add</mat-icon> NUEVO
+        </button>
+        <button mat-stroked-button class="btn-seed" (click)="seedServicios()">
+          <mat-icon>cloud_download</mat-icon> SUGERIDOS
+        </button>
+      </div>
+    </div>
+  </header>
 
-	<div class="catalog-grid">
-		@for (item of filteredItems(); track item.id) {
-			<mat-card class="item-card">
-				<div class="card-content">
-					<div class="info">
-						<span class="nombre">{{ item.nombre }}</span>
-						<span class="badge servicio">SERVICIO</span>
-					</div>
-					<div class="precio">${{ item.precio }}</div>
-				</div>
-				<div class="actions">
-					<button mat-button (click)="seleccionar(item.id)">Editar</button>
-					<button mat-stroked-button color="primary" (click)="abrirDialogoPrecio(item)">Agregar a venta</button>
-				</div>
-			</mat-card>
-		} @empty {
-			<p class="no-items">No hay servicios. Usa "Cargar servicios sugeridos" o agrega uno nuevo.</p>
-		}
-	</div>
+  <div class="catalog-container">
+    
+    @if (filteredItems().length === 0) {
+      <div class="empty-state">
+        <mat-icon>spa</mat-icon>
+        <p>No se encontraron servicios.</p>
+      </div>
+    } @else {
+      
+      <div class="services-grid"> 
+        
+        @for (item of filteredItems(); track item.id) {
+          <div class="service-card elevation-z2" (click)="abrirDialogoPrecio(item)">
+            
+            <div class="card-top">
+              <div class="icon-square">
+                {{ item.nombre.charAt(0).toUpperCase() }}
+              </div>
+              <div class="price-badge">${{ item.precio }}</div>
+            </div>
 
-		<ng-template #serviceFormDialog>
-			<h2 mat-dialog-title>{{ selectedId() ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
-			<mat-dialog-content class="dialog-content">
-				<div class="form-sub">Completa nombre y precio para guardar.</div>
-				<div class="form-grid dialog-grid">
-					<mat-form-field appearance="outline">
-						<mat-label>Nombre</mat-label>
-						<input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" />
-					</mat-form-field>
+            <div class="card-info">
+              <span class="name">{{ item.nombre }}</span>
+              <span class="type">Servicio</span>
+            </div>
 
-					<mat-form-field appearance="outline">
-						<mat-label>Precio</mat-label>
-						<input matInput type="number" [ngModel]="form().precio" (ngModelChange)="updateField('precio', +$event)" />
-					</mat-form-field>
-				</div>
-			</mat-dialog-content>
-			<mat-dialog-actions align="end" class="dialog-actions">
-				<button mat-stroked-button color="warn" mat-dialog-close (click)="cancelar()">Cancelar</button>
-				<button mat-flat-button color="primary" (click)="guardar()" [disabled]="!form().nombre">{{ selectedId() ? 'Actualizar' : 'Guardar' }}</button>
-			</mat-dialog-actions>
-		</ng-template>
+            <div class="card-actions">
+              <button mat-icon-button (click)="seleccionar(item.id); $event.stopPropagation()">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-flat-button color="primary" class="btn-add">
+                AGREGAR
+              </button>
+            </div>
+
+          </div>
+        }
+
+      </div> 
+      }
+  </div>
+
+  <ng-template #serviceFormDialog>
+  <div class="dialog-header-modern">
+    <h2 mat-dialog-title>{{ selectedId() ? 'Editar Servicio ✏️' : 'Nuevo Servicio ✨' }}</h2>
+    <button mat-icon-button mat-dialog-close tabindex="-1" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="modern-content">
+    <p class="subtitle">Completa los detalles para el catálogo.</p>
+    
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nombre del servicio</mat-label>
+        <mat-icon matPrefix>spa</mat-icon> <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" placeholder="Ej. Manicura Gel" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Precio Base</mat-label>
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <input matInput type="number" [ngModel]="form().precio" (ngModelChange)="updateField('precio', +$event)" placeholder="0.00" />
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="modern-actions">
+    <button mat-button mat-dialog-close (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!form().nombre">
+      {{ selectedId() ? 'Actualizar' : 'Guardar' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
 </div>

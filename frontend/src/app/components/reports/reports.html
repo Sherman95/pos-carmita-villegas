@@ -1,347 +1,299 @@
-<div class="reports-container">
-  <div class="page-header">
-    <div>
-      <p class="eyebrow">Reportes</p>
-      <h1>Resumen de ventas</h1>
-      <p class="lead">Filtra, revisa y descarga los movimientos por periodo, cliente o servicio.</p>
+<div class="page-container">
+  
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Reportes 📊</h1>
+      <p>Resumen y descarga de movimientos</p>
+
+      <div class="actions-bar">
+        @if (canExport()) {
+          <button mat-flat-button class="btn-pdf" (click)="exportPDF()">
+            <mat-icon>picture_as_pdf</mat-icon> Descargar PDF
+          </button>
+        } @else {
+          <div class="hint-pill">
+            <mat-icon>info</mat-icon> Aplica un filtro para descargar
+          </div>
+        }
+      </div>
     </div>
-    <div class="actions-bar">
-      <button mat-stroked-button color="primary" (click)="exportPDF()" [disabled]="!canExport()">
-        <mat-icon>picture_as_pdf</mat-icon>
-        Descargar PDF
+
+    <div class="tabs-container">
+      <button class="tab-btn" [class.active]="activeTab() === 'general'" (click)="activeTab.set('general')">
+        <mat-icon>insights</mat-icon> General
       </button>
-      <span class="hint" *ngIf="!canExport()">Aplica un filtro para habilitar la descarga</span>
+      <button class="tab-btn" [class.active]="activeTab() === 'client'" (click)="activeTab.set('client')">
+        <mat-icon>person</mat-icon> Cliente
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'service'" (click)="activeTab.set('service')">
+        <mat-icon>build</mat-icon> Servicio
+      </button>
     </div>
+  </header>
+
+  <div class="content-container">
+
+    @if (activeTab() === 'general') {
+      <mat-card class="filter-panel elevation-z2">
+        <div class="panel-header">
+          <div class="titles">
+            <h3>Ventas Generales</h3>
+            <span class="pill-range">{{ rangeLabel('General', periodGeneral(), fromGeneral(), toGeneral()) }}</span>
+          </div>
+          
+          <div class="filters-grid">
+            <mat-form-field appearance="outline" class="dense">
+              <mat-label>Periodo</mat-label>
+              <mat-select [ngModel]="periodGeneral()" (ngModelChange)="periodGeneral.set($event)">
+                <mat-option value="today">Hoy</mat-option>
+                <mat-option value="week">Semana</mat-option>
+                <mat-option value="month">Mes</mat-option>
+                <mat-option value="year">Año</mat-option>
+                <mat-option value="custom">Personalizado</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if (periodGeneral() === 'custom') {
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Desde</mat-label>
+                <input matInput type="date" [ngModel]="fromGeneral()" (ngModelChange)="fromGeneral.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Hasta</mat-label>
+                <input matInput type="date" [ngModel]="toGeneral()" (ngModelChange)="toGeneral.set($event)" />
+              </mat-form-field>
+            }
+            
+            <button mat-flat-button color="primary" (click)="loadGeneral()">Aplicar</button>
+          </div>
+        </div>
+
+        <div class="sales-list-wrapper">
+          @if (loadingGeneral()) {
+            <p class="loading">Cargando...</p>
+          } @else if (salesGeneral().length === 0) {
+            <div class="empty-state">Sin ventas en el periodo.</div>
+          } @else {
+            @for (sale of salesGeneral(); track sale.id) {
+              <div class="sale-card" (click)="toggleDetalles(sale.id)">
+                <div class="card-main">
+                  <div class="info-block">
+                    <span class="time">{{ formatearHora(sale.created_at) }}</span>
+                    <span class="client">{{ sale.client_nombre || 'Consumidor final' }}</span>
+                    <div class="meta">
+                      <span class="badge">{{ sale.metodo_pago || 'N/D' }}</span>
+                      <span class="id">ID: {{ sale.id.slice(0,8) }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="money-block">
+                    <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
+                      <div class="row-small"><span>Sub:</span> ${{ val.subtotal | number:'1.2-2' }}</div>
+                      <div class="row-small"><span>IVA:</span> ${{ val.iva | number:'1.2-2' }}</div>
+                      <div class="row-total">${{ val.total | number:'1.2-2' }}</div>
+                    </ng-container>
+                  </div>
+                </div>
+
+                @if (selectedSaleId() === sale.id) {
+                  <div class="card-details">
+                    <div class="detail-header">Detalle de la venta</div>
+                    @if (loadingDetail()) {
+                      <p class="loading-sm">Cargando...</p>
+                    } @else {
+                      @for (d of saleDetails()[sale.id]; track d.id) {
+                         <div class="detail-item">
+                           <div class="prod-name">{{ d.nombre_producto }} <small>x{{ d.cantidad }}</small></div>
+                           <div class="prod-price">${{ d.subtotal | number:'1.2-2' }}</div>
+                         </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </mat-card>
+    }
+
+    @if (activeTab() === 'client') {
+      <mat-card class="filter-panel elevation-z2">
+        <div class="panel-header">
+          <div class="titles">
+            <h3>Por Cliente</h3>
+            <span class="pill-range">{{ rangeLabel('Cliente', periodClient(), fromClient(), toClient()) }}</span>
+          </div>
+
+          <div class="filters-grid">
+            
+            <mat-form-field appearance="outline" class="dense full-w">
+              <mat-label>Seleccionar Cliente</mat-label>
+              <mat-select [ngModel]="selectedClientId()" 
+                          (ngModelChange)="selectedClientId.set($event)" 
+                          panelClass="custom-client-panel"> <mat-option value="">-- Seleccione --</mat-option>
+                
+                <mat-option *ngFor="let c of clients()" [value]="c.id" class="client-option-row">
+                   <div class="option-flex">
+                      <div class="avatar-mini">
+                        {{ c.nombre.charAt(0).toUpperCase() }}
+                      </div>
+                      <div class="text-group">
+                        <span class="name">{{ c.nombre }}</span>
+                        <small class="cedula" *ngIf="c.cedula">CI: {{ c.cedula }}</small>
+                      </div>
+                   </div>
+                </mat-option>
+
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="dense">
+              <mat-label>Periodo</mat-label>
+              <mat-select [ngModel]="periodClient()" (ngModelChange)="periodClient.set($event)">
+                <mat-option value="today">Hoy</mat-option>
+                <mat-option value="week">Semana</mat-option>
+                <mat-option value="month">Mes</mat-option>
+                <mat-option value="year">Año</mat-option>
+                <mat-option value="custom">Personalizado</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if (periodClient() === 'custom') {
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Desde</mat-label>
+                <input matInput type="date" [ngModel]="fromClient()" (ngModelChange)="fromClient.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Hasta</mat-label>
+                <input matInput type="date" [ngModel]="toClient()" (ngModelChange)="toClient.set($event)" />
+              </mat-form-field>
+            }
+            <button mat-flat-button color="primary" (click)="loadByClient()" [disabled]="!selectedClientId()">Aplicar</button>
+          </div>
+        </div>
+
+        <div class="sales-list-wrapper">
+          @if (loadingClient()) {
+            <p class="loading">Cargando...</p>
+          } @else if (salesClient().length === 0) {
+            <div class="empty-state">Sin ventas para este cliente.</div>
+          } @else {
+            @for (sale of salesClient(); track sale.id) {
+               <div class="sale-card" (click)="toggleDetalles(sale.id)">
+                <div class="card-main">
+                  <div class="info-block">
+                    <span class="time">{{ formatearHora(sale.created_at) }}</span>
+                    <span class="client">{{ sale.client_nombre || 'Consumidor' }}</span>
+                    <div class="meta">
+                      <span class="badge">{{ sale.metodo_pago }}</span>
+                    </div>
+                  </div>
+                  <div class="money-block">
+                    <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
+                      <div class="row-total">${{ val.total | number:'1.2-2' }}</div>
+                    </ng-container>
+                  </div>
+                </div>
+
+                @if (selectedSaleId() === sale.id) {
+                  <div class="card-details">
+                    <div class="detail-header">Detalle</div>
+                    @if (loadingDetail()) { <p class="loading-sm">...</p> } 
+                    @else {
+                      @for (d of saleDetails()[sale.id]; track d.id) {
+                         <div class="detail-item">
+                           <div class="prod-name">{{ d.nombre_producto }} x{{ d.cantidad }}</div>
+                           <div class="prod-price">${{ d.subtotal | number:'1.2-2' }}</div>
+                         </div>
+                      }
+                    }
+                  </div>
+                }
+               </div>
+            }
+          }
+        </div>
+      </mat-card>
+    }
+
+    @if (activeTab() === 'service') {
+      <mat-card class="filter-panel elevation-z2">
+        <div class="panel-header">
+          <div class="titles">
+             <h3>Por Servicio</h3>
+             <span class="pill-range">{{ rangeLabel('Servicio', periodService(), fromService(), toService()) }}</span>
+          </div>
+
+          <div class="filters-grid">
+            <mat-form-field appearance="outline" class="dense full-w">
+              <mat-label>Seleccionar Servicio</mat-label>
+              <mat-select [ngModel]="selectedServiceId()" (ngModelChange)="selectedServiceId.set($event)">
+                <mat-option value="">-- Seleccione --</mat-option>
+                <mat-option *ngFor="let s of servicios()" [value]="s.id">{{ s.nombre }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="dense">
+              <mat-label>Periodo</mat-label>
+              <mat-select [ngModel]="periodService()" (ngModelChange)="periodService.set($event)">
+                 <mat-option value="today">Hoy</mat-option>
+                 <mat-option value="week">Semana</mat-option>
+                 <mat-option value="month">Mes</mat-option>
+                 <mat-option value="year">Año</mat-option>
+                 <mat-option value="custom">Pers.</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+             @if (periodService() === 'custom') {
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Desde</mat-label>
+                <input matInput type="date" [ngModel]="fromService()" (ngModelChange)="fromService.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense">
+                <mat-label>Hasta</mat-label>
+                <input matInput type="date" [ngModel]="toService()" (ngModelChange)="toService.set($event)" />
+              </mat-form-field>
+            }
+            <button mat-flat-button color="primary" (click)="loadByService()" [disabled]="!selectedServiceId()">Aplicar</button>
+          </div>
+        </div>
+
+        <div class="sales-list-wrapper">
+          @if (loadingService()) {
+             <p class="loading">Cargando...</p>
+          } @else if (salesServiceList().length === 0) {
+             <div class="empty-state">Sin ventas para este servicio.</div>
+          } @else {
+             @for (sale of salesServiceList(); track sale.id) {
+               <div class="sale-card" (click)="toggleDetalles(sale.id)">
+                 <div class="card-main">
+                    <div class="info-block">
+                      <span class="time">{{ formatearHora(sale.created_at) }}</span>
+                      <span class="client">{{ sale.client_nombre }}</span>
+                    </div>
+                    <div class="money-block">
+                       <ng-container *ngIf="getValues(sale.total, 'additive', sale.tax_rate) as val">
+                          <div class="row-total">${{ val.total | number:'1.2-2' }}</div>
+                       </ng-container>
+                    </div>
+                 </div>
+                  @if (selectedSaleId() === sale.id) {
+                    <div class="card-details">
+                      @for (d of saleDetails()[sale.id]; track d.id) {
+                         <div class="detail-item">
+                           <div class="prod-name">{{ d.nombre_producto }} x{{ d.cantidad }}</div>
+                           <div class="prod-price">${{ d.subtotal | number:'1.2-2' }}</div>
+                         </div>
+                      }
+                    </div>
+                  }
+               </div>
+             }
+          }
+        </div>
+      </mat-card>
+    }
+
   </div>
-
-  <div class="tabs">
-    <button mat-button [class.active]="activeTab() === 'general'" (click)="activeTab.set('general')">
-      <mat-icon>insights</mat-icon>
-      General
-    </button>
-    <button mat-button [class.active]="activeTab() === 'client'" (click)="activeTab.set('client')">
-      <mat-icon>person</mat-icon>
-      Cliente
-    </button>
-    <button mat-button [class.active]="activeTab() === 'service'" (click)="activeTab.set('service')">
-      <mat-icon>build</mat-icon>
-      Servicio
-    </button>
-  </div>
-
-  @if (activeTab() === 'general') {
-  <mat-card class="panel">
-    <div class="panel-header">
-      <div>
-        <div class="title">Ventas generales</div>
-        <div class="subtitle">Semana, mes, año o rango personalizado</div>
-        <div class="pill">{{ rangeLabel('General', periodGeneral(), fromGeneral(), toGeneral()) }}</div>
-      </div>
-      <div class="filters-row">
-        <mat-form-field appearance="outline" class="period">
-          <mat-label>Periodo</mat-label>
-          <mat-select [ngModel]="periodGeneral()" (ngModelChange)="periodGeneral.set($event)">
-            <mat-option value="today">Hoy</mat-option>
-            <mat-option value="week">Semana</mat-option>
-            <mat-option value="month">Mes</mat-option>
-            <mat-option value="year">Año</mat-option>
-            <mat-option value="custom">Personalizado</mat-option>
-          </mat-select>
-        </mat-form-field>
-        @if (periodGeneral() === 'custom') {
-        <mat-form-field appearance="outline">
-          <mat-label>Desde</mat-label>
-          <input matInput type="date" [ngModel]="fromGeneral()" (ngModelChange)="fromGeneral.set($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Hasta</mat-label>
-          <input matInput type="date" [ngModel]="toGeneral()" (ngModelChange)="toGeneral.set($event)" />
-        </mat-form-field>
-        }
-        <button mat-flat-button color="primary" (click)="loadGeneral()">Aplicar</button>
-      </div>
-    </div>
-
-    <div class="sales-list" *ngIf="!loadingGeneral(); else loadingTpl">
-      <div *ngIf="salesGeneral().length === 0" class="empty">Sin ventas en el periodo.</div>
-
-      <mat-card class="sale" *ngFor="let sale of salesGeneral()" (click)="toggleDetalles(sale.id)">
-        <div class="sale-header">
-          <div>
-            <div class="time">{{ formatearHora(sale.created_at) }}</div>
-            <div class="chips">
-              <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
-              <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
-            </div>
-          </div>
-          
-          <div class="money-col">
-            <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
-              <div class="money-row small">
-                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row small">
-                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row total">
-                ${{ val.total | number:'1.2-2' }}
-              </div>
-            </ng-container>
-          </div>
-        </div>
-
-        @if (selectedSaleId() === sale.id) {
-        <div class="details">
-          <div class="details-header">Detalle de venta</div>
-          @if (loadingDetail()) {
-          <p class="loading">Cargando detalle...</p>
-          } @else {
-          @if ((saleDetails()[sale.id] || []).length === 0) {
-          <p class="empty">Sin detalles.</p>
-          } @else {
-          <div class="detail-row detail-head">
-            <div style="flex: 2;">Concepto</div>
-            <div class="text-center">Cant.</div>
-            <div class="text-right">P.Unit</div>
-            <div class="text-right">Sub</div>
-            <div class="text-right">IVA</div>
-            <div class="text-right">Total</div>
-          </div>
-          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
-            <div class="text-center">x{{ d.cantidad }}</div>
-            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
-            
-            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
-                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
-                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
-                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
-            </ng-container>
-          </div>
-          }
-          }
-        </div>
-        }
-      </mat-card>
-    </div>
-  </mat-card>
-  }
-
-  @if (activeTab() === 'client') {
-  <mat-card class="panel">
-    <div class="panel-header">
-      <div>
-        <div class="title">Por cliente</div>
-        <div class="subtitle">Historial por persona</div>
-        <div class="pill">{{ rangeLabel('Cliente', periodClient(), fromClient(), toClient()) }}</div>
-      </div>
-      <div class="filters-row">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Cliente</mat-label>
-          <mat-select [ngModel]="selectedClientId()" (ngModelChange)="selectedClientId.set($event)">
-            <mat-option value="">Selecciona cliente</mat-option>
-            <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}{{ c.cedula ? ' · ' + c.cedula : ''
-              }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="period">
-          <mat-label>Periodo</mat-label>
-          <mat-select [ngModel]="periodClient()" (ngModelChange)="periodClient.set($event)">
-            <mat-option value="today">Hoy</mat-option>
-            <mat-option value="week">Semana</mat-option>
-            <mat-option value="month">Mes</mat-option>
-            <mat-option value="year">Año</mat-option>
-            <mat-option value="custom">Personalizado</mat-option>
-          </mat-select>
-        </mat-form-field>
-        @if (periodClient() === 'custom') {
-        <mat-form-field appearance="outline">
-          <mat-label>Desde</mat-label>
-          <input matInput type="date" [ngModel]="fromClient()" (ngModelChange)="fromClient.set($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Hasta</mat-label>
-          <input matInput type="date" [ngModel]="toClient()" (ngModelChange)="toClient.set($event)" />
-        </mat-form-field>
-        }
-        <button mat-flat-button color="primary" (click)="loadByClient()" [disabled]="!selectedClientId()">Aplicar</button>
-      </div>
-    </div>
-
-    <div class="sales-list" *ngIf="!loadingClient(); else loadingTpl">
-      <div *ngIf="salesClient().length === 0" class="empty">Sin ventas para este cliente.</div>
-
-      <mat-card class="sale" *ngFor="let sale of salesClient()" (click)="toggleDetalles(sale.id)">
-        <div class="sale-header">
-          <div>
-            <div class="time">{{ formatearHora(sale.created_at) }}</div>
-            <div class="chips">
-              <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
-              <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
-            </div>
-          </div>
-          
-          <div class="money-col">
-            <ng-container *ngIf="getValues(sale.total, 'inclusive', sale.tax_rate) as val">
-              <div class="money-row small">
-                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row small">
-                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row total">
-                ${{ val.total | number:'1.2-2' }}
-              </div>
-            </ng-container>
-          </div>
-        </div>
-
-        @if (selectedSaleId() === sale.id) {
-        <div class="details">
-          <div class="details-header">Detalle de venta</div>
-          @if (loadingDetail()) {
-          <p class="loading">Cargando detalle...</p>
-          } @else {
-          @if ((saleDetails()[sale.id] || []).length === 0) {
-          <p class="empty">Sin detalles.</p>
-          } @else {
-          <div class="detail-row detail-head">
-            <div style="flex: 2;">Concepto</div>
-            <div class="text-center">Cant.</div>
-            <div class="text-right">P.Unit</div>
-            <div class="text-right">Sub</div>
-            <div class="text-right">IVA</div>
-            <div class="text-right">Total</div>
-          </div>
-          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
-            <div class="text-center">x{{ d.cantidad }}</div>
-            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
-            
-            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
-                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
-                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
-                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
-            </ng-container>
-          </div>
-          }
-          }
-        </div>
-        }
-      </mat-card>
-    </div>
-  </mat-card>
-  }
-
-  @if (activeTab() === 'service') {
-  <mat-card class="panel">
-    <div class="panel-header">
-      <div>
-        <div class="title">Por servicio</div>
-        <div class="subtitle">Filtra un servicio específico</div>
-        <div class="pill">{{ rangeLabel('Servicio', periodService(), fromService(), toService()) }}</div>
-      </div>
-      <div class="filters-row">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Servicio</mat-label>
-          <mat-select [ngModel]="selectedServiceId()" (ngModelChange)="selectedServiceId.set($event)">
-            <mat-option value="">Selecciona servicio</mat-option>
-            <mat-option *ngFor="let s of servicios()" [value]="s.id">{{ s.nombre }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="period">
-          <mat-label>Periodo</mat-label>
-          <mat-select [ngModel]="periodService()" (ngModelChange)="periodService.set($event)">
-            <mat-option value="today">Hoy</mat-option>
-            <mat-option value="week">Semana</mat-option>
-            <mat-option value="month">Mes</mat-option>
-            <mat-option value="year">Año</mat-option>
-            <mat-option value="custom">Personalizado</mat-option>
-          </mat-select>
-        </mat-form-field>
-        @if (periodService() === 'custom') {
-        <mat-form-field appearance="outline">
-          <mat-label>Desde</mat-label>
-          <input matInput type="date" [ngModel]="fromService()" (ngModelChange)="fromService.set($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Hasta</mat-label>
-          <input matInput type="date" [ngModel]="toService()" (ngModelChange)="toService.set($event)" />
-        </mat-form-field>
-        }
-        <button mat-flat-button color="primary" (click)="loadByService()" [disabled]="!selectedServiceId()">Aplicar</button>
-      </div>
-    </div>
-
-    <div class="sales-list" *ngIf="!loadingService(); else loadingTpl">
-      <div *ngIf="salesServiceList().length === 0" class="empty">Sin ventas para este servicio.</div>
-
-      <mat-card class="sale" *ngFor="let sale of salesServiceList()" (click)="toggleDetalles(sale.id)">
-        <div class="sale-header">
-          <div>
-            <div class="time">{{ formatearHora(sale.created_at) }}</div>
-            <div class="chips">
-              <span class="chip">{{ sale.client_nombre || 'Consumidor final' }}</span>
-              <span class="chip muted">{{ sale.metodo_pago || 'Método N/D' }}</span>
-              <span class="chip muted">ID: {{ sale.id.slice(0,8) }}...</span>
-            </div>
-          </div>
-          
-          <div class="money-col">
-            <ng-container *ngIf="getValues(sale.total, 'additive', sale.tax_rate) as val">
-              <div class="money-row small">
-                <span>Sub:</span> <span>${{ val.subtotal | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row small">
-                <span>IVA:</span> <span>${{ val.iva | number:'1.2-2' }}</span>
-              </div>
-              <div class="money-row total">
-                ${{ val.total | number:'1.2-2' }}
-              </div>
-            </ng-container>
-          </div>
-        </div>
-
-        @if (selectedSaleId() === sale.id) {
-        <div class="details">
-          <div class="details-header">Detalle de venta</div>
-          @if (loadingDetail()) {
-          <p class="loading">Cargando detalle...</p>
-          } @else {
-          @if ((saleDetails()[sale.id] || []).length === 0) {
-          <p class="empty">Sin detalles.</p>
-          } @else {
-          <div class="detail-row detail-head">
-            <div style="flex: 2;">Concepto</div>
-            <div class="text-center">Cant.</div>
-            <div class="text-right">P.Unit</div>
-            <div class="text-right">Sub</div>
-            <div class="text-right">IVA</div>
-            <div class="text-right">Total</div>
-          </div>
-          <div class="detail-row" *ngFor="let d of saleDetails()[sale.id]">
-            <div class="name" style="flex: 2;">{{ d.nombre_producto }}</div>
-            <div class="text-center">x{{ d.cantidad }}</div>
-            <div class="text-right">${{ d.precio_unitario | number:'1.2-2' }}</div>
-            
-            <ng-container *ngIf="getValues(d.subtotal, 'additive', sale.tax_rate) as val">
-                <div class="text-right muted">${{ val.subtotal | number:'1.2-2' }}</div>
-                <div class="text-right muted">${{ val.iva | number:'1.2-2' }}</div>
-                <div class="text-right bold">${{ val.total | number:'1.2-2' }}</div>
-            </ng-container>
-          </div>
-          }
-          }
-        </div>
-        }
-      </mat-card>
-    </div>
-  </mat-card>
-  }
-
-  <ng-template #loadingTpl>
-    <p class="loading">Cargando...</p>
-  </ng-template>
 </div>

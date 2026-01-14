@@ -1,0 +1,118 @@
+// CONTENEDOR PRINCIPAL
+.dialog-container {
+  padding: 10px;
+  // Asegura que se vea bien en móviles
+  min-width: 300px;
+}
+
+// HEADER
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 20px 0;
+  
+  span {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #4b1e3a; // Vino Tinto
+  }
+
+  mat-icon {
+    color: #ddd;
+    font-size: 28px;
+    width: 28px; height: 28px;
+  }
+}
+
+// CONTENIDO
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 20px !important; // Fix Material padding
+
+  // RESUMEN DEL PRODUCTO
+  .product-summary {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+
+    .icon-box {
+      width: 45px; height: 45px;
+      border-radius: 10px;
+      background: #fce4ec; // Rosado claro
+      color: #880e4f;      // Letra oscura
+      font-weight: 700;
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .info {
+      display: flex; flex-direction: column;
+      .name { font-weight: 600; font-size: 1.1rem; color: #333; line-height: 1.2; }
+      .base { font-size: 0.85rem; color: #888; margin-top: 2px; }
+    }
+  }
+
+  // INPUT GIGANTE
+  .price-input-wrapper {
+    text-align: center;
+    
+    .huge-input {
+      width: 100%;
+      font-size: 1.5rem; // Texto muy grande
+      
+      // Estilo del símbolo $
+      .currency {
+        font-weight: 700;
+        color: #4b1e3a;
+        margin-right: 5px;
+        font-size: 1.5rem;
+      }
+
+      // El input en sí
+      input {
+        font-weight: 800;
+        color: #333;
+        text-align: center;
+        caret-color: #4b1e3a; // Cursor color vino
+      }
+    }
+  }
+}
+
+// BOTONES
+.dialog-actions {
+  padding: 10px 0 0 0;
+  border-top: 1px dashed #eee;
+  
+  .btn-cancel {
+    color: #888;
+    font-weight: 600;
+  }
+
+  .btn-confirm {
+    background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%); // Gradiente Vino
+    color: white;
+    padding: 0 25px;
+    height: 48px;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(75, 30, 58, 0.3);
+    
+    mat-icon { margin-left: 8px; }
+  }
+}
+
+// Fix para quitar flechas del input number
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

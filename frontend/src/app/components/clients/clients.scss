@@ -1,137 +1,164 @@
-.clients-container {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 16px;
-  max-width: 1080px;
-  margin: 0 auto;
+.page-container {
+  display: flex; flex-direction: column; height: 100%;
+  background-color: #f8f9fa; overflow-y: auto;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.title {
-  font-weight: 800;
-  font-size: 22px;
-  color: #3a2735;
-}
-
-.subtitle {
-  color: #5c4c56;
-  font-size: 13px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.dialog-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 280px;
-}
-
-.dialog-actions {
-  gap: 8px;
-}
-
-.search-field {
-  min-width: 240px;
-  max-width: 320px;
-  width: 100%;
-}
-
-.form-card {
-  padding: 18px;
-  border-radius: 14px;
-  border: 1px solid rgba(122, 41, 79, 0.12);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-  background: #fff;
-}
-
-.form-header {
-  margin-bottom: 8px;
-}
-
-.form-title {
-  font-weight: 700;
-  color: #3a2735;
-}
-
-.form-sub {
-  color: #6b4b60;
-  font-size: 12px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.clients-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.client {
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(122, 41, 79, 0.12);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
-  background: #fff;
-}
-
-.client .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.client-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.client .name {
-  font-weight: 700;
-  color: #3a2735;
-}
-
-.client .meta {
-  color: #6b4b60;
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.loading, .empty {
+// HEADER (Se adapta el ancho)
+.header-section {
+  background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%);
+  color: white;
+  padding: 30px 20px 60px;
+  border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
   text-align: center;
-  color: #666;
-}
+  box-shadow: 0 4px 20px rgba(75, 30, 58, 0.4);
 
-@media (min-width: 900px) {
-  .clients-container {
-    padding: 18px;
+  // En PC, el header no necesita ser tan alto
+  @media (min-width: 900px) {
+    padding-bottom: 80px; 
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  h1 { font-size: 1.8rem; margin: 0; font-weight: 700; }
+  p { opacity: 0.8; margin: 5px 0 20px; font-size: 0.95rem; }
+
+  .search-box {
+    background: white; border-radius: 50px; height: 55px;
+    display: flex; align-items: center; padding: 0 15px 0 20px;
+    width: 100%; max-width: 600px; // Tope de ancho en PC
+    margin: 0 auto 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+    .search-icon { color: #4b1e3a; margin-right: 10px; }
+    input { border: none; outline: none; flex: 1; font-size: 1rem; color: #333; background: transparent; }
+  }
+
+  .btn-add {
+    background: rgba(255,255,255,0.15); color: white;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 25px;
+    padding: 0 25px; height: 45px; font-weight: 600; cursor: pointer;
+    &:hover { background: rgba(255,255,255,0.25); }
   }
 }
+
+// LISTA RESPONSIVA
+.list-container {
+  padding: 0 20px 40px;
+  margin-top: -40px;
+  // En PC permitimos que sea más ancho
+  max-width: 1200px; 
+  margin-left: auto; margin-right: auto;
+  position: relative; z-index: 2;
+
+  // --- AQUÍ ESTÁ LA MAGIA RESPONSIVA ---
+  display: grid;
+  grid-template-columns: 1fr; // Móvil: 1 columna
+  gap: 15px; // Espacio entre tarjetas
+
+  // Tablet: 2 columnas
+  @media (min-width: 700px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  // PC: 3 columnas
+  @media (min-width: 1100px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .client-card {
+    background: white; border-radius: 16px; padding: 15px;
+    // Quitamos margin-bottom porque usamos GAP del grid
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.02);
+    cursor: pointer; transition: transform 0.1s, box-shadow 0.2s;
+
+    &:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); } // Efecto hover en PC
+
+    .card-content {
+      display: flex; align-items: center; gap: 15px; flex: 1; overflow: hidden;
+      
+      .avatar-circle {
+        width: 45px; height: 45px; border-radius: 50%;
+        background: #f3e5f5; color: #4b1e3a; font-weight: 700; font-size: 1.2rem;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+
+      .text-info {
+        display: flex; flex-direction: column; overflow: hidden;
+        .name { font-weight: 600; font-size: 1rem; color: #333; }
+        .details { font-size: 0.85rem; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .secondary { font-size: 0.75rem; color: #999; margin-top: 1px; }
+      }
+    }
+  }
+
+  // Mensaje cuando está vacío (ocupa todo el ancho)
+  .state-message {
+    grid-column: 1 / -1; // Expandir a todas las columnas
+    text-align: center; margin-top: 60px; color: #666;
+    mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.3; }
+  }
+}
+/* ESTILOS PARA DIÁLOGOS MODERNOS (Copiar en catalog.scss y clients.scss) */
+
+// 1. EL HEADER CON DEGRADADO
+.dialog-header-modern {
+  background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%); // Vino Tinto
+  padding: 20px 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: white;
+  margin: -24px -24px 0 -24px; // Rompe el padding por defecto de Material
+  
+  h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: white; }
+  
+  .close-btn { 
+    color: rgba(255,255,255,0.8); 
+    &:hover { background: rgba(255,255,255,0.1); }
+  }
+}
+
+// 2. EL CONTENIDO
+.modern-content {
+  padding-top: 20px !important; // Espacio extra arriba
+  min-width: 320px;
+  
+  .subtitle { color: #666; margin-bottom: 20px; font-size: 0.9rem; }
+
+  // Inputs con iconos Vino Tinto
+  mat-icon { color: #4b1e3a; opacity: 0.7; margin-right: 5px; }
+}
+
+// 3. GRID DE 2 COLUMNAS (Para Clientes)
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Dos columnas iguales
+  gap: 15px; // Espacio entre inputs
+
+  // Inputs que ocupan todo el ancho (Nombre, Dirección)
+  .col-span-2 { grid-column: span 2; }
+  
+  // En celular, todo se vuelve de 1 columna
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    .col-span-2 { grid-column: span 1; }
+  }
+}
+
+// GRID SIMPLE (Para Servicios)
+.form-grid {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+// 4. ACCIONES (BOTONES)
+.modern-actions {
+  padding: 15px 24px 20px !important;
+  border-top: 1px dashed #eee;
+  background: #fafafa;
+  margin: 0 -24px -24px -24px; // Rompe márgenes
+}
+
+// Utilidad para inputs
+.full-width { width: 100%; }
+
+.full-width { width: 100%; margin-bottom: 5px; }
+.form-sub { font-size: 0.8rem; color: #777; margin-bottom: 15px; }

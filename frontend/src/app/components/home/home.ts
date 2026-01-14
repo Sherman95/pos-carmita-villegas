@@ -1,13 +1,13 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input'; // <--- IMPORTANTE: Nuevo
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatDividerModule } from '@angular/material/divider'; // <--- IMPORTANTE: Nuevo
+import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { ClientsService, Client } from '../../services/clients.service';
 import { CartService } from '../../services/cart.service';
@@ -22,9 +22,9 @@ import { CartService } from '../../services/cart.service';
     MatButtonModule, 
     MatIconModule, 
     MatFormFieldModule, 
-    MatInputModule,        // <--- Agregado
+    MatInputModule,
     MatAutocompleteModule,
-    MatDividerModule  // <--- Agregado (y quitamos MatSelectModule)
+    MatDividerModule
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss'
@@ -32,36 +32,32 @@ import { CartService } from '../../services/cart.service';
 export class HomeComponent implements OnInit {
   private router = inject(Router);
   private clientsService = inject(ClientsService);
-  private cartService = inject(CartService);
+  public cartService = inject(CartService);
 
-  // Lista completa de clientes traída del servicio
+  // Para poder abrir la lista manualmente
+  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
+
   clients = signal<Client[]>([]);
-  
-  // Lo que el usuario escribe en el input
   searchText = signal(''); 
   
-  // El ID real que se usará para la venta
-  selectedClientId = signal<string>('anon');
-
-  // Filtro en tiempo real para el Autocomplete
+  // LOGICA LISTA DESPLEGABLE:
   filteredClients = computed(() => {
     const term = this.searchText().toLowerCase().trim();
-    // Si no escribe nada, devolvemos toda la lista (o vacía si prefieres no mostrar nada al inicio)
+    
+    // CAMBIO IMPORTANTE: Si está vacío, devolvemos TODA la lista (para hacer scroll)
     if (!term) return this.clients();
     
     return this.clients().filter((c) =>
       (c.nombre || '').toLowerCase().includes(term) || 
-      (c.cedula || '').toLowerCase().includes(term)
+      (c.cedula || '').toLowerCase().includes(term) ||
+      (c.telefono || '').includes(term)
     );
   });
 
   ngOnInit(): void {
     this.cargarClientes();
-    
-    // Configuración inicial: Consumidor Final
-    this.selectedClientId.set('anon');
-    this.searchText.set('Consumidor Final');
     this.cartService.setCliente(null);
+    this.searchText.set('');
   }
 
   cargarClientes() {
@@ -71,42 +67,50 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // Se ejecuta cuando el usuario hace clic en una opción de la lista
-  onOptionSelected(event: any) {
-    const val = event.option.value; // Puede ser el objeto cliente o el string 'anon'
+  onSearchChange(val: string) {
+    this.searchText.set(val);
+  }
 
-    if (val === 'anon') {
-      this.selectedClientId.set('anon');
-      this.searchText.set('Consumidor Final');
-    } else {
-      // Es un cliente real
-      this.selectedClientId.set(val.id);
-      this.searchText.set(val.nombre); // Dejamos el nombre visible en el input
+  // Al tocar la barra, nos aseguramos que se abra la lista
+  onFocus() {
+    if (!this.searchText()) {
+       // Pequeño hack para forzar apertura si ya estaba en foco
+       this.autocompleteTrigger?.openPanel();
     }
   }
 
-  // Opcional: Limpiar búsqueda al hacer focus (si quieres que sea fácil buscar otro)
+  onOptionSelected(event: any) {
+    const val = event.option.value;
+
+    if (val === 'anon') {
+      this.cartService.setCliente(null);
+      this.searchText.set('Consumidor Final');
+    } 
+    else if (val === 'NEW_CLIENT') {
+      const nombrePosible = this.searchText();
+      if(confirm(`¿Deseas ir a registrar a "${nombrePosible}" ahora?`)) {
+        this.router.navigate(['/clients']);
+      } else {
+        this.limpiarBusqueda();
+      }
+    } 
+    else {
+      this.cartService.setCliente(val);
+      this.searchText.set(val.nombre);
+    }
+  }
+
   limpiarBusqueda() {
-    // Descomenta si quieres que se borre el texto al hacer clic en el input
-    // this.searchText.set('');
+    this.searchText.set('');
+    this.cartService.setCliente(null);
+    // Al limpiar, volvemos a abrir la lista completa
+    setTimeout(() => this.autocompleteTrigger?.openPanel(), 100);
   }
 
   irAVenta() {
-    const cid = this.selectedClientId();
-    // Guardamos en el servicio antes de navegar
-    this.cartService.setCliente(cid === 'anon' ? null : cid);
     this.router.navigate(['/catalog']);
   }
-
-  irAClientes() {
-    this.router.navigate(['/clients']);
-  }
-
-  irAReportes() {
-    this.router.navigate(['/reports']);
-  }
-
-  irAHistorial() {
-    this.router.navigate(['/history']);
-  }
+  irAClientes() { this.router.navigate(['/clients']); }
+  irAReportes() { this.router.navigate(['/reports']); }
+  irAHistorial() { this.router.navigate(['/history']); }
 }

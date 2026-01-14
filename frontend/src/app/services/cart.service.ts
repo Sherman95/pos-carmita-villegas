@@ -1,10 +1,10 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Item } from '../interfaces/interfaces';
+import { Client } from './clients.service'; // <--- 1. IMPORTANTE: Importar interfaz Client
 
-// Definimos qué es un renglón del ticket
 export interface CartItem {
   item: Item;
-  precioVenta: number; // El precio final (puede ser diferente al de lista)
+  precioVenta: number;
   cantidad: number;
   subtotal: number;
 }
@@ -13,44 +13,38 @@ export interface CartItem {
   providedIn: 'root'
 })
 export class CartService {
-  // 1. La lista de compras (empieza vacía)
   items = signal<CartItem[]>([]);
 
-  // Cliente asociado a la venta (null = consumidor final)
-  clienteId = signal<string | null>(null);
+  // 2. CAMBIO CLAVE: Ya no guardamos string, guardamos el Objeto Cliente o null
+  cliente = signal<Client | null>(null); 
 
-  // 2. El TOTAL ($) calculado automáticamente
   total = computed(() => {
     return this.items().reduce((acc, current) => acc + current.subtotal, 0);
   });
 
-  // 3. El contador de items (para el globito rojo)
   contadorItems = computed(() => {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
-  setCliente(id: string | null) {
-    this.clienteId.set(id);
+  // 3. CAMBIO CLAVE: Recibimos el objeto completo
+  setCliente(c: Client | null) {
+    this.cliente.set(c);
   }
 
   agregar(producto: Item, precioFinal: number) {
+    // ... (Tu código de agregar se queda igualito, está perfecto) ...
     const precioVenta = Number(precioFinal);
     const precioProducto = Number(producto.precio);
     const precioValido = Number.isFinite(precioVenta) ? precioVenta : (Number.isFinite(precioProducto) ? precioProducto : 0);
 
     const itemsActuales = this.items();
-    
-    // Buscamos si ya existe ese producto CON ESE MISMO PRECIO en el carrito
     const existe = itemsActuales.find(i => i.item.id === producto.id && i.precioVenta === precioValido);
 
     if (existe) {
-      // Si ya existe, solo sumamos 1 a la cantidad
       existe.cantidad++;
       existe.subtotal = existe.cantidad * existe.precioVenta;
-      // Actualizamos la señal (truco para que Angular detecte el cambio profundo)
       this.items.set([...itemsActuales]); 
     } else {
-      // Si no existe, agregamos un renglón nuevo
       const nuevoItem: CartItem = {
         item: producto,
         precioVenta: precioValido,
@@ -59,12 +53,11 @@ export class CartService {
       };
       this.items.set([...itemsActuales, nuevoItem]);
     }
-    
-    console.log('🛒 Carrito actual:', this.items());
+    console.log('🛒 Carrito:', this.items());
   }
 
   limpiarCarrito() {
     this.items.set([]);
-    this.clienteId.set(null);
+    this.cliente.set(null); // Limpiamos el objeto
   }
 }

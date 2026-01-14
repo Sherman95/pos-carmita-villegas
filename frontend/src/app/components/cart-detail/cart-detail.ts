@@ -82,7 +82,11 @@ export class CartDetailComponent implements OnInit { // <--- NOMBRE CORRECTO DE 
   constructor(public dialogRef: MatDialogRef<CartDetailComponent>) {}
 
   ngOnInit(): void {
-    const cid = this.cartService.clienteId();
+    // 1. Obtenemos el objeto cliente completo (o null)
+    const clienteActual = this.cartService.cliente();
+
+    // 2. Si existe cliente, sacamos su ID. Si no, mandamos null (Consumidor Final)
+    const cid = clienteActual ? clienteActual.id : null;
     this.selectedClientId.set(cid ?? 'anon');
     this.cargarClientes();
   }

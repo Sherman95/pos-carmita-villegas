@@ -1,24 +1,41 @@
-<h2 mat-dialog-title>Cobrar Servicio</h2>
-
-<mat-dialog-content>
-  <p style="font-size: 1.1rem; margin-bottom: 5px;">
-    <strong>{{ data.nombre }}</strong>
-  </p>
-  <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
-    Precio sugerido: ${{ data.precioBase }}
-  </p>
+<div class="dialog-container">
   
-  <mat-form-field appearance="outline" style="width: 100%;">
-    <mat-label>Precio a Cobrar</mat-label>
-    <span matPrefix style="font-size: 1.2rem; font-weight: bold;">$ &nbsp;</span>
-    
-    <input matInput type="number" [(ngModel)]="precioFinal" style="font-size: 1.5rem; font-weight: bold;">
-  </mat-form-field>
-</mat-dialog-content>
+  <h2 mat-dialog-title class="dialog-header">
+    <span>Cobrar Servicio</span>
+    <mat-icon>payments</mat-icon>
+  </h2>
 
-<mat-dialog-actions align="end" style="margin-bottom: 10px; margin-right: 10px;">
-  <button mat-button (click)="cancelar()" color="warn">CANCELAR</button>
-  <button mat-raised-button color="primary" (click)="confirmar()" style="padding: 20px 30px;">
-    AGREGAR
-  </button>
-</mat-dialog-actions>
+  <mat-dialog-content class="dialog-content">
+    
+    <div class="product-summary">
+      <div class="icon-box">
+        {{ data.nombre.charAt(0).toUpperCase() }}
+      </div>
+      <div class="info">
+        <span class="name">{{ data.nombre }}</span>
+        <span class="base">Precio sugerido: ${{ data.precioBase }}</span>
+      </div>
+    </div>
+
+    <div class="price-input-wrapper">
+      <mat-form-field appearance="outline" class="huge-input">
+        <mat-label>Precio Final</mat-label>
+        <span matPrefix class="currency">$</span>
+        <input matInput 
+               type="number" 
+               [(ngModel)]="precioFinal" 
+               (focus)="$event.target.select()"
+               cdkFocusInitial> </mat-form-field>
+    </div>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button (click)="cancelar()" class="btn-cancel">CANCELAR</button>
+    <button mat-flat-button class="btn-confirm" (click)="confirmar()">
+      AGREGAR AHORA
+      <mat-icon iconPositionEnd>check</mat-icon>
+    </button>
+  </mat-dialog-actions>
+
+</div>

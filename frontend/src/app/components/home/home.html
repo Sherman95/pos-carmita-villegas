@@ -1,97 +1,108 @@
-<div class="home">
-  <section class="hero">
-    <div class="hero-copy">
-      <div class="badge">Caja</div>
-      <h1>Punto de venta</h1>
-      <p class="subtitle">Elige cliente y arranca la sesión de cobro con un clic.</p>
-      <div class="pill">Listo para cobrar</div>
-    </div>
-
-    <mat-card class="hero-card">
-      <div class="card-title">Cliente de la venta</div>
-      <div class="card-subtitle">Puedes dejar "Consumidor final" si no deseas asociar.</div>
+<div class="home-container">
+  
+  <header class="hero-section">
+    <div class="hero-content">
+      <div class="greeting">
+        <h1>Hola, Carmita 👋</h1>
+        <p>¿A quién consentimos hoy?</p>
+      </div>
       
-      <div class="form-row">
-        
-        <mat-form-field appearance="outline" class="client-field">
-          <mat-label>Buscar Cliente</mat-label>
+      <div class="search-container">
+        <mat-card class="search-card elevation-z4">
+          <mat-icon class="search-icon">search</mat-icon>
           
           <input type="text"
-                 matInput
-                 placeholder="Escribe nombre o cédula..."
+                 class="pro-input"
+                 placeholder="Buscar cliente..."
                  [ngModel]="searchText()"
-                 (ngModelChange)="searchText.set($event)"
+                 (ngModelChange)="onSearchChange($event)"
                  [matAutocomplete]="auto"
-                 (focus)="limpiarBusqueda()">
+                 (click)="onFocus()"
+                 (focus)="onFocus()"
+                 #searchInput>
 
-          @if (searchText() && searchText() !== 'Consumidor Final') {
-            <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
-                <mat-icon>close</mat-icon>
+          @if (searchText()) {
+            <button mat-icon-button class="clear-btn" (click)="limpiarBusqueda(); $event.stopPropagation()">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <button mat-icon-button class="clear-btn" (click)="onFocus()">
+               <mat-icon>expand_more</mat-icon>
             </button>
           }
+        </mat-card>
 
-          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)">
-            
-            <mat-option value="anon">
-              <mat-icon>person_outline</mat-icon>
-              <span>Consumidor Final</span>
-            </mat-option>
+        <mat-autocomplete #auto="matAutocomplete" 
+                          (optionSelected)="onOptionSelected($event)"
+                          class="custom-scroll-panel">
+           
+           <mat-option value="anon" class="option-anon">
+             <div class="row-content">
+               <div class="avatar-circle"><mat-icon>person_outline</mat-icon></div>
+               <div class="text-info">
+                 <span class="main-text">Consumidor Final</span>
+                 <span class="sub-text">Venta rápida</span>
+               </div>
+             </div>
+           </mat-option>
 
-            <mat-divider></mat-divider>
+           <mat-divider></mat-divider>
 
-            @for (c of filteredClients(); track c.id) {
-              <mat-option [value]="c">
-                <span style="font-weight: 500;">{{ c.nombre }}</span>
-                <small style="color: gray; margin-left: 8px;">{{ c.cedula }}</small>
-              </mat-option>
-            }
+           @for (c of filteredClients(); track c.id) {
+             <mat-option [value]="c" class="option-client">
+               <div class="row-content">
+                 <div class="avatar-circle client">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                 <div class="text-info">
+                   <span class="main-text">{{ c.nombre }}</span>
+                   <span class="sub-text">{{ c.cedula || 'S/N' }}</span>
+                 </div>
+               </div>
+             </mat-option>
+           }
 
-            @if (filteredClients().length === 0 && searchText()) {
-              <mat-option disabled>No se encontraron resultados</mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
-        <button mat-flat-button color="primary" class="cta" (click)="irAVenta()">
-          <mat-icon>point_of_sale</mat-icon>
-          Ir a cobrar
-        </button>
+           @if (searchText() && filteredClients().length === 0) {
+             <mat-option [value]="'NEW_CLIENT'" class="option-create">
+               <div class="row-content create">
+                 <div class="avatar-circle add"><mat-icon>add</mat-icon></div>
+                 <div class="text-info">
+                   <span class="main-text">Crear: "{{ searchText() }}"</span>
+                 </div>
+               </div>
+             </mat-option>
+           }
+
+        </mat-autocomplete>
       </div>
-      
-      <div class="helper">Tip: puedes cambiar el cliente después desde la venta.</div>
-    </mat-card>
-  </section>
+    </div>
+  </header>
 
-  <section class="actions-grid">
-    <mat-card class="action" (click)="irAVenta()">
-      <div class="icon-circle"><mat-icon>play_circle</mat-icon></div>
-      <div>
-        <div class="label">Nueva venta</div>
-        <div class="hint">Ingresa productos y cobra</div>
+  <section class="dashboard-grid">
+    
+    <div class="dashboard-card primary big-action" (click)="irAVenta()">
+      <div class="content-flex">
+        <div class="icon-box"><mat-icon>point_of_sale</mat-icon></div>
+        <div class="text-box">
+          <h3>Cobrar</h3>
+          <p>Ir al catálogo</p>
+        </div>
+        <mat-icon class="arrow">arrow_forward</mat-icon>
       </div>
-    </mat-card>
+    </div>
 
-    <mat-card class="action" (click)="irAHistorial()">
-      <div class="icon-circle"><mat-icon>history</mat-icon></div>
-      <div>
-        <div class="label">Historial diario</div>
-        <div class="hint">Revisa movimientos de hoy</div>
-      </div>
-    </mat-card>
+    <div class="dashboard-card info" (click)="irAHistorial()">
+      <div class="icon-box"><mat-icon>history</mat-icon></div>
+      <h3>Historial</h3>
+    </div>
 
-    <mat-card class="action" (click)="irAReportes()">
-      <div class="icon-circle"><mat-icon>insights</mat-icon></div>
-      <div>
-        <div class="label">Reportes</div>
-        <div class="hint">Descarga PDF y totales</div>
-      </div>
-    </mat-card>
+    <div class="dashboard-card success" (click)="irAReportes()">
+      <div class="icon-box"><mat-icon>trending_up</mat-icon></div>
+      <h3>Reportes</h3>
+    </div>
 
-    <mat-card class="action" (click)="irAClientes()">
-      <div class="icon-circle"><mat-icon>people</mat-icon></div>
-      <div>
-        <div class="label">Clientes</div>
-        <div class="hint">Gestiona fichas y contactos</div>
-      </div>
-    </mat-card>
+    <div class="dashboard-card warn" (click)="irAClientes()">
+      <div class="icon-box"><mat-icon>group</mat-icon></div>
+      <h3>Clientes</h3>
+    </div>
+
   </section>
 </div>

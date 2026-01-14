@@ -1,14 +1,14 @@
 @if (cartService.contadorItems() > 0) {
-  <div class="footer-container">
+  <div class="floating-bar elevation-z4">
     
-    <div class="total-info">
-      <span class="label">Total a Cobrar:</span>
-      <span class="monto">${{ cartService.total() | number:'1.2-2' }}</span>
+    <div class="info-group">
+      <span class="label">Total a cobrar</span>
+      <span class="amount">${{ cartService.total() | number:'1.2-2' }}</span>
     </div>
 
-    <button mat-raised-button color="accent" class="btn-cobrar" (click)="verTicket()">
-      VER TICKET ({{ cartService.contadorItems() }})
-      <mat-icon>receipt_long</mat-icon>
+    <button mat-flat-button class="btn-checkout" (click)="verTicket()">
+      <span>VER PEDIDO</span>
+      <div class="badge-count">{{ cartService.contadorItems() }}</div>
     </button>
 
   </div>

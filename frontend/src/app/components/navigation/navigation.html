@@ -1,14 +1,16 @@
-<nav class="bottom-nav">
-  <button
-    mat-button
-    class="nav-btn"
-    *ngFor="let item of navItems"
-    [routerLink]="item.path"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-  >
-    <mat-icon>{{ item.icon }}</mat-icon>
-    <span class="label">{{ item.label }}</span>
-  </button>
-
+<nav class="bottom-nav elevation-z6">
+  @for (item of navItems; track item.path) {
+    <button mat-button 
+            class="nav-item" 
+            [routerLink]="item.path" 
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.path === '/' }">
+      
+      <div class="icon-container">
+        <mat-icon>{{ item.icon }}</mat-icon>
+      </div>
+      <span class="label">{{ item.label }}</span>
+      
+    </button>
+  }
 </nav>

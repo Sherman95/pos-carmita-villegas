@@ -1,110 +1,123 @@
-<section class="profile-shell">
-  <div class="profile-card" *ngIf="user(); else emptyState">
-    <div class="identity">
-      <div class="avatar">{{ (user()?.username || 'U')[0] | uppercase }}</div>
-      <div class="identity-text">
-        <div class="eyebrow">Perfil</div>
-        <div class="headline">{{ user()?.username }}</div>
-        <div class="meta-row">
-          <span class="badge role">{{ user()?.role || 'N/A' }}</span>
-          <span class="status-dot"></span>
-          <span class="muted">Sesión activa en este dispositivo</span>
-        </div>
-      </div>
+<div class="page-container">
+  
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Perfil de Usuario 👤</h1>
+      <p>Configura tu cuenta y los datos del negocio</p>
     </div>
+  </header>
 
-    <div class="content-grid">
-      <div class="card-section">
-        <div class="section-title">Datos de cuenta</div>
-        <div class="info">
-          <div class="info-item">
-            <span class="label">Usuario</span>
-            <span class="value">{{ user()?.username }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Rol</span>
-            <span class="value badge">{{ user()?.role || 'N/A' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Estado</span>
-            <span class="value">Activo</span>
+  <div class="profile-container">
+
+    @if (user(); as u) {
+      
+      <div class="identity-card elevation-z4">
+        <div class="avatar-circle">
+          {{ (u.username || 'U')[0] | uppercase }}
+        </div>
+        <div class="identity-info">
+          <h2 class="username">{{ u.username }}</h2>
+          <span class="role-badge">{{ u.role || 'Usuario' }}</span>
+          <div class="status">
+            <span class="dot"></span> Sesión activa
           </div>
         </div>
+        <button mat-icon-button color="warn" class="btn-logout-icon" (click)="logout()" matTooltip="Cerrar sesión">
+           <mat-icon>logout</mat-icon>
+        </button>
       </div>
 
-      <div class="card-section">
-        <div class="section-title">Preferencias locales</div>
-        <form (ngSubmit)="save()" autocomplete="off" class="edit-form">
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Editar usuario (local)</mat-label>
-            <input matInput [(ngModel)]="username" name="username" required />
-            <mat-hint>Solo cambia el nombre guardado en este dispositivo</mat-hint>
-          </mat-form-field>
-
-          <div class="actions">
-            <button mat-stroked-button color="primary" type="submit">Guardar</button>
-            <button mat-flat-button color="warn" type="button" (click)="logout()">
-              <mat-icon>logout</mat-icon>
-              <span>Cerrar sesión</span>
-            </button>
+      <div class="grid-layout">
+        
+        <mat-card class="section-card">
+          <div class="card-header">
+            <mat-icon>manage_accounts</mat-icon> Datos de Cuenta
           </div>
+          <div class="card-body">
+            <form (ngSubmit)="save()" autocomplete="off" class="form-grid">
+              
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Nombre de usuario (Local)</mat-label>
+                <input matInput [(ngModel)]="username" name="username" required />
+                <mat-hint>Visible solo en este dispositivo</mat-hint>
+              </mat-form-field>
 
-          <div class="hint" *ngIf="message()">{{ message() }}</div>
-        </form>
-      </div>
-
-      <div class="card-section">
-        <div class="section-title">Datos del recibo / factura simulada</div>
-        <form (ngSubmit)="saveBusiness()" autocomplete="off" class="edit-form">
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Nombre comercial</mat-label>
-            <input matInput [(ngModel)]="business().name" name="bizName" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>RUC</mat-label>
-            <input matInput [(ngModel)]="business().ruc" name="bizRuc" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Dirección</mat-label>
-            <input matInput [(ngModel)]="business().address" name="bizAddress" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Teléfono</mat-label>
-            <input matInput [(ngModel)]="business().phone" name="bizPhone" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>IVA (decimal, ej. 0.15)</mat-label>
-            <input matInput type="number" step="0.01" [(ngModel)]="taxRateInput" name="bizIva" />
-            <mat-hint>Se aplicará al cobrar y en el ticket</mat-hint>
-          </mat-form-field>
-
-          <div class="actions">
-            <button mat-stroked-button color="primary" type="submit">Guardar datos</button>
+              <div class="actions">
+                <button mat-flat-button color="primary" type="submit">
+                  GUARDAR CAMBIOS
+                </button>
+              </div>
+            </form>
           </div>
+        </mat-card>
 
-          <div class="hint" *ngIf="message()">{{ message() }}</div>
-        </form>
+        <mat-card class="section-card">
+          <div class="card-header">
+            <mat-icon>storefront</mat-icon> Datos del Negocio
+            <small>(Para imprimir en recibos)</small>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="saveBusiness()" autocomplete="off" class="form-grid">
+              
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Nombre Comercial</mat-label>
+                <input matInput [(ngModel)]="business().name" name="bizName" placeholder="Ej. Estética Carmita" />
+                <mat-icon matSuffix>badge</mat-icon>
+              </mat-form-field>
+
+              <div class="row-inputs">
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>RUC / CI</mat-label>
+                  <input matInput [(ngModel)]="business().ruc" name="bizRuc" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Teléfono</mat-label>
+                  <input matInput [(ngModel)]="business().phone" name="bizPhone" />
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Dirección</mat-label>
+                <input matInput [(ngModel)]="business().address" name="bizAddress" />
+                <mat-icon matSuffix>place</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>IVA (Decimal)</mat-label>
+                <input matInput type="number" step="0.01" [(ngModel)]="taxRateInput" name="bizIva" placeholder="0.15" />
+                <mat-hint>Ejemplo: 0.15 para 15%</mat-hint>
+                <span matPrefix>% &nbsp;</span>
+              </mat-form-field>
+
+              <div class="actions">
+                <button mat-stroked-button color="primary" type="submit">
+                  ACTUALIZAR DATOS
+                </button>
+              </div>
+
+              @if (message()) {
+                <div class="success-msg">
+                  <mat-icon>check_circle</mat-icon> {{ message() }}
+                </div>
+              }
+            </form>
+          </div>
+        </mat-card>
+
+        <button mat-stroked-button color="warn" class="btn-logout-mobile" (click)="logout()">
+          <mat-icon>logout</mat-icon> CERRAR SESIÓN
+        </button>
+
       </div>
-    </div>
+
+    } @else {
+      <div class="empty-state">
+        <mat-icon>no_accounts</mat-icon>
+        <h2>No se encontró usuario</h2>
+        <button mat-flat-button color="primary" (click)="logout()">IR A LOGIN</button>
+      </div>
+    }
+
   </div>
-
-  <ng-template #emptyState>
-    <div class="profile-card empty">
-      <div class="header">
-        <div class="avatar">?</div>
-        <div>
-          <h2>Sin datos de usuario</h2>
-          <p>Inicia sesión nuevamente para cargar tu perfil</p>
-        </div>
-      </div>
-      <button mat-flat-button color="primary" (click)="logout()">
-        <mat-icon>login</mat-icon>
-        <span>Ir a iniciar sesión</span>
-      </button>
-    </div>
-  </ng-template>
-</section>
+</div>

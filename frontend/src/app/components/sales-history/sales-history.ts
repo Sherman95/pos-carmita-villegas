@@ -9,6 +9,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { SalesService } from '../../services/sales.service';
 import { ClientsService, Client } from '../../services/clients.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { SettingsService } from '../../services/settings.service'; // <--- Importante para datos del perfil
+
+// Importamos el diálogo del ticket (sin .component)
+import { MatDialog } from '@angular/material/dialog';
+import { TicketDialogComponent, TicketData } from '../ticket-dialog/ticket-dialog';
 
 interface Sale {
   id: string;
@@ -31,13 +38,15 @@ interface SaleDetail {
 @Component({
   selector: 'app-sales-history',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, FormsModule, MatFormFieldModule, MatSelectModule, MatInputModule],
-  templateUrl: './sales-history.html',
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, FormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatProgressSpinnerModule,MatTooltipModule],
+  templateUrl: './sales-history.html', // <--- ESTO ES LO CORRECTO (No cart-detail.html)
   styleUrl: './sales-history.scss'
 })
 export class SalesHistoryComponent implements OnInit {
   private salesService = inject(SalesService);
   private clientsService = inject(ClientsService);
+  private dialog = inject(MatDialog);
+  private settingsService = inject(SettingsService);
 
   sales = signal<Sale[]>([]);
   selectedSaleId = signal<string | null>(null);
@@ -50,7 +59,8 @@ export class SalesHistoryComponent implements OnInit {
   filterTo = signal<string>('');
   clientReceipts = signal<any[]>([]);
   loadingReceipts = signal<boolean>(false);
-  downloadingSaleId = signal<string | null>(null);
+  
+  openingTicketId = signal<string | null>(null);
 
   totalHoy = computed(() => {
     const hoy = new Date();
@@ -74,14 +84,14 @@ export class SalesHistoryComponent implements OnInit {
   cargarVentas() {
     this.salesService.getSales().subscribe({
       next: (data) => this.sales.set(data),
-      error: (err) => console.error('Error cargando ventas', err)
+      error: (err: any) => console.error('Error cargando ventas', err)
     });
   }
 
   cargarClientes() {
     this.clientsService.getClients().subscribe({
       next: (data) => this.clients.set(data || []),
-      error: (err) => console.error('Error cargando clientes', err)
+      error: (err: any) => console.error('Error cargando clientes', err)
     });
   }
 
@@ -93,12 +103,13 @@ export class SalesHistoryComponent implements OnInit {
     this.selectedSaleId.set(id);
     if (this.saleDetails()[id]) return;
     this.loadingDetail.set(true);
+    
     this.salesService.getSaleDetails(id).subscribe({
       next: (data) => {
         this.saleDetails.set({ ...this.saleDetails(), [id]: data.details || [] });
         this.loadingDetail.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando detalle de venta', err);
         this.loadingDetail.set(false);
       }
@@ -111,33 +122,57 @@ export class SalesHistoryComponent implements OnInit {
   }
 
   // =========================================================
-  // CORRECCIÓN: Eliminamos la referencia a pdfBase64
+  // FUNCIÓN MAESTRA: VER RECIBO (Con datos dinámicos)
   // =========================================================
-  descargarRecibo(saleId: string) {
-    this.downloadingSaleId.set(saleId);
+  verRecibo(saleId: string) {
+    this.openingTicketId.set(saleId);
     
-    // El servicio ahora retorna un Blob (archivo binario), no un objeto JSON
-    this.salesService.getReceipt(saleId).subscribe({
-      next: (blob: Blob) => {
-        // Creamos la URL directamente del blob
-        const url = window.URL.createObjectURL(blob);
+    // 1. OBTENEMOS LOS DATOS DEL PERFIL DEL NEGOCIO
+    const business = this.settingsService.settings(); 
+
+    this.salesService.getSaleDetails(saleId).subscribe({
+      next: (resp: any) => {
         
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recibo-${saleId}.pdf`;
-        a.target = '_blank';
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        this.downloadingSaleId.set(null);
+        // 2. MATEMÁTICA DEL IVA (Blindaje)
+        let tasaSegura = Number(resp.sale.tax_rate);
+        if (isNaN(tasaSegura) || resp.sale.tax_rate === null || resp.sale.tax_rate === undefined) {
+            tasaSegura = 0.15; 
+        }
+
+        const dataParaTicket: TicketData = {
+          fecha: new Date(resp.sale.created_at),
+          cliente: resp.sale.client_nombre,
+          identificacion: resp.sale.client_cedula,
+          total: Number(resp.sale.total),
+          taxRate: tasaSegura,
+
+          // 3. DATOS DEL NEGOCIO (Igual que en el carrito)
+          businessName: business.name || 'Carmita Villegas',
+          businessRuc: business.ruc || '9999999999001',
+          businessAddress: business.address || 'Dirección no registrada',
+          businessPhone: business.phone || '099 999 9999',
+
+          items: resp.details.map((d: any) => ({
+             nombre: d.nombre_producto,
+             cantidad: d.cantidad,
+             precio: Number(d.precio_unitario),
+             subtotal: Number(d.subtotal)
+          }))
+        };
+
+        this.openingTicketId.set(null);
+
+        // 4. ABRIMOS EL DIÁLOGO
+        this.dialog.open(TicketDialogComponent, {
+          data: dataParaTicket,
+          width: '400px',
+          disableClose: false
+        });
       },
-      error: (err) => {
-        console.error('No se pudo obtener el recibo', err);
-        this.downloadingSaleId.set(null);
+      error: (err: any) => {
+        console.error('Error al abrir recibo', err);
+        this.openingTicketId.set(null);
+        alert('No se pudo cargar el recibo.');
       }
     });
   }
@@ -154,15 +189,15 @@ export class SalesHistoryComponent implements OnInit {
         this.clientReceipts.set(data || []);
         this.loadingReceipts.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error obteniendo recibos por cliente', err);
         this.loadingReceipts.set(false);
       }
     });
   }
 
-  descargarReciboCliente(receipt: any) {
+  verReciboCliente(receipt: any) {
     if (!receipt.sale_id) return;
-    this.descargarRecibo(receipt.sale_id);
+    this.verRecibo(receipt.sale_id);
   }
 }

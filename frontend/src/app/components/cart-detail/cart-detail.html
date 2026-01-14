@@ -1,104 +1,127 @@
-<h2 mat-dialog-title>Resumen de Cuenta</h2>
+<div class="cart-container">
+  
+  <div class="cart-header">
+    <div class="header-info">
+      <h2>Resumen de Cuenta 🧾</h2>
+      <p>Revisa los ítems y el cliente</p>
+    </div>
+    <button mat-icon-button class="close-btn" (click)="cerrar()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
-<mat-dialog-content>
-  <div class="client-card">
-    <div class="client-header">
-      <div class="icon-circle"><mat-icon>person</mat-icon></div>
-      <div class="client-meta">
-        <div class="eyebrow">Cliente actual</div>
-        <div class="client-name">{{ clienteLabel() }}</div>
+  <div class="cart-scroll-content">
+
+    <div class="client-card elevation-z1">
+      <div class="current-client">
+        <div class="icon-box">
+          <mat-icon>person</mat-icon>
+        </div>
+        <div class="meta">
+          <span class="label">Cliente Asignado</span>
+          <span class="value">{{ clienteLabel() }}</span>
+        </div>
+      </div>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput 
+               placeholder="Buscar o cambiar cliente..." 
+               [ngModel]="searchText()"
+               (ngModelChange)="searchText.set($event)"
+               [matAutocomplete]="auto"
+               (focus)="limpiarBusqueda($event)">
+        
+        @if (searchText() && searchText() !== 'Consumidor Final') {
+          <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
+              <mat-icon>close</mat-icon>
+          </button>
+        }
+
+        <mat-autocomplete #auto="matAutocomplete" 
+                          (optionSelected)="onOptionSelected($event)"
+                          class="custom-autocomplete">
+          
+          <mat-option value="anon" class="option-row">
+            <div class="row-flex">
+              <div class="avatar-mini"><mat-icon>person_outline</mat-icon></div>
+              <span>Consumidor Final</span>
+            </div>
+          </mat-option>
+
+          @for (c of filteredClients(); track c.id) {
+            <mat-option [value]="c" class="option-row">
+              <div class="row-flex">
+                <div class="avatar-mini text">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                <div class="text-col">
+                  <span class="name">{{ c.nombre }}</span>
+                  <small *ngIf="c.cedula">{{ c.cedula }}</small>
+                </div>
+              </div>
+            </mat-option>
+          }
+
+          @if (filteredClients().length === 0 && searchText()) {
+             <mat-option disabled>No se encontraron clientes</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <div class="items-list">
+      @if (cartService.items().length === 0) {
+        <div class="empty-state">
+          <mat-icon>shopping_cart_off</mat-icon>
+          <p>El carrito está vacío</p>
+        </div>
+      } @else {
+        @for (linea of cartService.items(); track $index) {
+          <div class="cart-item">
+            <button mat-icon-button color="warn" class="btn-delete" (click)="eliminar($index)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+            
+            <div class="qty-badge">x{{ linea.cantidad }}</div>
+            
+            <div class="item-desc">
+              <div class="name">{{ linea.item.nombre }}</div>
+              <div class="unit">Unit: ${{ linea.precioVenta }}</div>
+            </div>
+            
+            <div class="item-total">
+              ${{ linea.subtotal | number:'1.2-2' }}
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+  </div>
+
+  <div class="cart-footer-panel">
+    <div class="totals-block">
+      <div class="row">
+        <span>Subtotal</span>
+        <span class="num">${{ subtotal() | number:'1.2-2' }}</span>
+      </div>
+      <div class="row">
+        <span>IVA ({{ taxRate() * 100 | number:'1.0-0' }}%)</span>
+        <span class="num">${{ taxAmount() | number:'1.2-2' }}</span>
+      </div>
+      <div class="divider"></div>
+      <div class="row grand-total">
+        <span>TOTAL A PAGAR</span>
+        <span>${{ grandTotal() | number:'1.2-2' }}</span>
       </div>
     </div>
 
-    <mat-form-field appearance="outline" class="client-field">
-      <mat-label>Buscar / Cambiar Cliente</mat-label>
-      
-      <input type="text"
-             matInput
-             placeholder="Escribe nombre o cédula..."
-             [ngModel]="searchText()"
-             (ngModelChange)="searchText.set($event)"
-             [matAutocomplete]="auto"
-             (focus)="limpiarBusqueda($event)">
-             
-      @if (searchText() && searchText() !== 'Consumidor Final') {
-        <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
-            <mat-icon>close</mat-icon>
-        </button>
-      }
-
-      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)">
-        
-        <mat-option value="anon">
-          <mat-icon>person_outline</mat-icon>
-          <span>Consumidor Final</span>
-        </mat-option>
-
-        <mat-divider></mat-divider>
-
-        @for (c of filteredClients(); track c.id) {
-          <mat-option [value]="c">
-            <span style="font-weight: 500;">{{ c.nombre }}</span>
-            <small style="color: gray; margin-left: 8px;">{{ c.cedula }}</small>
-          </mat-option>
-        }
-        
-        @if (filteredClients().length === 0 && searchText()) {
-            <mat-option disabled>No se encontraron clientes</mat-option>
-        }
-
-      </mat-autocomplete>
-    </mat-form-field>
+    <div class="actions-row">
+      <button mat-stroked-button color="primary" (click)="cerrar()">SEGUIR AGREGANDO</button>
+      <button mat-flat-button class="btn-pay" (click)="cobrar()" [disabled]="cartService.items().length === 0">
+        COBRAR
+        <mat-icon iconPositionEnd>payments</mat-icon>
+      </button>
+    </div>
   </div>
 
-  <mat-divider class="section-divider"></mat-divider>
-  
-  <mat-list>
-     @for (linea of cartService.items(); track $index) {
-        <mat-list-item class="item-lista">
-             <button mat-icon-button matListItemAvatar color="warn" (click)="eliminar($index)">
-                 <mat-icon>delete</mat-icon>
-             </button>
-             <div matListItemTitle class="titulo">
-                 {{ linea.item.nombre }} <span class="cantidad">x{{ linea.cantidad }}</span>
-             </div>
-             <div matListItemLine class="detalle-precio">
-                 Precio Unit: ${{ linea.precioVenta }}
-             </div>
-             <div matListItemMeta class="subtotal">
-                 ${{ linea.subtotal | number:'1.2-2' }}
-             </div>
-        </mat-list-item>
-        <mat-divider></mat-divider>
-     }
-  </mat-list>
-
-  <div class="summary-section">
-    
-    <div class="summary-row">
-      <span class="label">Subtotal:</span>
-      <span class="value">${{ subtotal() | number:'1.2-2' }}</span>
-    </div>
-
-    <div class="summary-row">
-      <span class="label">IVA ({{ taxRate() * 100 | number:'1.0-0' }}%):</span>
-      <span class="value">${{ taxAmount() | number:'1.2-2' }}</span>
-    </div>
-
-    <mat-divider style="margin: 10px 0; border-color: #ddd;"></mat-divider>
-
-    <div class="total-row">
-      <span class="label">TOTAL A PAGAR:</span>
-      <span class="monto-total">${{ grandTotal() | number:'1.2-2' }}</span>
-    </div>
-
-  </div>
-
-</mat-dialog-content>
-
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cerrar()">SEGUIR AGREGANDO</button>
-  <button mat-raised-button color="primary" class="btn-cobrar" (click)="cobrar()">
-    COBRAR
-  </button>
-</mat-dialog-actions>
+</div>
