@@ -4,22 +4,27 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Render (y otros hosts) a veces resuelve Supabase a IPv6; si el entorno no tiene salida IPv6
-// la conexión falla con ENETUNREACH. Forzamos a preferir IPv4.
+// Configuración DNS para Render
 try {
     dns.setDefaultResultOrder('ipv4first');
 } catch {
-    // No-op: en versiones viejas de Node esta API puede no existir
+    // No-op
 }
 
 const databaseUrl = process.env.DATABASE_URL;
 
-// Configura la conexión usando DATABASE_URL (prod) o variables separadas (local)
-// Si hay DATABASE_URL, SIEMPRE usamos SSL con rejectUnauthorized: false para Supabase
+// LOG 1: Saber qué configuración estamos usando
+console.log(`[DB] 🔧 Iniciando configuración...`);
+console.log(`[DB] 🌍 DATABASE_URL detectada: ${databaseUrl ? 'SÍ (Modo Producción)' : 'NO (Modo Local)'}`);
+
 const pool = databaseUrl
     ? new Pool({
           connectionString: databaseUrl,
           ssl: { rejectUnauthorized: false },
+          // Opcional: limitar conexiones para evitar saturar Supabase en plan free
+          max: 20, 
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
       })
     : new Pool({
           host: process.env.DB_HOST || 'localhost',
@@ -30,14 +35,24 @@ const pool = databaseUrl
           ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
       });
 
-// Agrega un console.log cuando se conecte exitosamente
+// LOG 2: Cuando se crea una conexión nueva en el pool
 pool.on('connect', () => {
-    console.log('🔥 Conexión a Base de Datos CARMITA VILLEGAS exitosa');
+    console.log('🔥 [DB] Nuevo cliente conectado al pool');
 });
 
-// Loguea errores del pool para diagnosticar problemas de conexión
+// LOG 3: Errores críticos de conexión
 pool.on('error', (err) => {
-    console.error('Error en el pool de PostgreSQL:', err);
+    console.error('❌ [DB] Error INESPERADO en el pool:', err.message);
 });
+
+// LOG 4: Prueba de conexión inmediata al iniciar
+// Esto nos avisa apenas arranca el servidor si la BD responde
+pool.query('SELECT NOW()')
+    .then((res) => {
+        console.log(`✅ [DB] Conexión VERIFICADA exitosamente. Hora BD: ${res.rows[0].now}`);
+    })
+    .catch((err) => {
+        console.error(`❌ [DB] FALLÓ la conexión inicial: ${err.message}`);
+    });
 
 export default pool;
