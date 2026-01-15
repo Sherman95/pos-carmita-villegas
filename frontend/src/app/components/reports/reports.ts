@@ -55,14 +55,16 @@ export class ReportsComponent implements OnInit {
   clients = signal<Client[]>([]);
   servicios = signal<Item[]>([]);
 
-  periodGeneral = signal<Period>('week');
+  // GENERAL
+  periodGeneral = signal<Period>('today');
   fromGeneral = signal<string>('');
   toGeneral = signal<string>('');
   salesGeneral = signal<SaleRow[]>([]);
   summaryGeneral = signal<{ count: number; total: number }>({ count: 0, total: 0 });
   loadingGeneral = signal<boolean>(false);
 
-  periodClient = signal<Period>('week');
+  // CLIENTE
+  periodClient = signal<Period>('month'); // Mes por defecto es más seguro
   fromClient = signal<string>('');
   toClient = signal<string>('');
   selectedClientId = signal<string>('');
@@ -70,13 +72,15 @@ export class ReportsComponent implements OnInit {
   summaryClient = signal<{ count: number; total: number }>({ count: 0, total: 0 });
   loadingClient = signal<boolean>(false);
 
-  periodService = signal<Period>('week');
+  // SERVICIO
+  periodService = signal<Period>('month');
   fromService = signal<string>('');
   toService = signal<string>('');
   selectedServiceId = signal<string>('');
   salesServiceList = signal<SaleRow[]>([]);
   summaryService = signal<{ count: number; total: number }>({ count: 0, total: 0 });
   loadingService = signal<boolean>(false);
+
   taxRate = signal<number>(0);
 
   selectedSaleId = signal<string | null>(null);
@@ -90,17 +94,16 @@ export class ReportsComponent implements OnInit {
     this.taxRate.set(settings.taxRate || 0);
     this.loadClients();
     this.loadServicios();
-    const today = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    this.periodGeneral.set('today');
-    this.fromGeneral.set(iso(today));
-    this.toGeneral.set(iso(today));
-    this.periodClient.set('today');
-    this.fromClient.set(iso(today));
-    this.toClient.set(iso(today));
-    this.periodService.set('today');
-    this.fromService.set(iso(today));
-    this.toService.set(iso(today));
+    
+    // Inicializar inputs de fecha con el día local (solo visual)
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    
+    this.fromGeneral.set(today); this.toGeneral.set(today);
+    this.fromClient.set(today);  this.toClient.set(today);
+    this.fromService.set(today); this.toService.set(today);
+
+    // Cargar datos iniciales
+    this.loadGeneral();
   }
 
   loadClients() {
@@ -117,40 +120,122 @@ export class ReportsComponent implements OnInit {
     });
   }
 
-  private periodRange(period: Period, from: string, to: string) {
-    if (period === 'custom') return { from, to };
-    
+  // =========================================================================
+  // 🔥 CORRECCIÓN DE ZONA HORARIA (La clave para ver ventas de la noche)
+  // =========================================================================
+  private getRangeParams(period: Period, customFrom: string, customTo: string) {
     const now = new Date();
     
-    // CORRECCIÓN: Usar hora local en lugar de UTC
-    const iso = (d: Date) => {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
+    // 1. Definimos Inicio y Fin del día LOCALMENTE (00:00 a 23:59 Ecuador)
+    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
     if (period === 'today') {
-      return { from: iso(now), to: iso(now) };
+      // Ya está configurado arriba
+    } 
+    else if (period === 'week') {
+      start.setDate(now.getDate() - 6); // Últimos 7 días
+    } 
+    else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    } 
+    else if (period === 'year') {
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    } 
+    else if (period === 'custom') {
+      // Truco: Agregamos hora explícita para que new Date() use la zona local
+      start = new Date(customFrom + 'T00:00:00');
+      end = new Date(customTo + 'T23:59:59');
     }
-    if (period === 'week') {
-      const start = new Date(now);
-      start.setDate(now.getDate() - 6);
-      return { from: iso(start), to: iso(now) };
-    }
-    if (period === 'month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { from: iso(start), to: iso(now) };
-    }
-    // Año
-    const start = new Date(now.getFullYear(), 0, 1);
-    return { from: iso(start), to: iso(now) };
+
+    // 2. Convertimos a ISO String (UTC)
+    // Esto enviará a Supabase algo como "2026-01-15T04:59:59Z", 
+    // cubriendo así las horas de la noche de Ecuador.
+    return {
+      from: start.toISOString(),
+      to: end.toISOString()
+    };
   }
 
-  private apiPeriod(period: Period): 'week' | 'month' | 'year' | undefined {
-    if (period === 'custom' || period === 'today') return undefined;
-    return period;
+  // =========================================================================
+  // CARGA DE DATOS (Usando la nueva función getRangeParams)
+  // =========================================================================
+
+  loadGeneral() {
+    this.loadingGeneral.set(true);
+    // Usamos la nueva función con corrección horaria
+    const { from, to } = this.getRangeParams(this.periodGeneral(), this.fromGeneral(), this.toGeneral());
+    
+    // Para el summary, pasamos las fechas ISO exactas
+    const summaryOpts = { from, to };
+    
+    this.reportsService.getSummary(summaryOpts).subscribe({
+      next: (data) => this.summaryGeneral.set(data || { count: 0, total: 0 }),
+      error: (err) => console.error('Error resumen general', err)
+    });
+
+    this.reportsService.getByRange(from, to).subscribe({
+      next: (rows) => {
+        this.salesGeneral.set(rows || []);
+        this.loadingGeneral.set(false);
+        this.canExport.set(true);
+      },
+      error: (err) => {
+        console.error('Error ventas generales', err);
+        this.loadingGeneral.set(false);
+      }
+    });
   }
+
+  loadByClient() {
+    if (!this.selectedClientId()) return;
+    this.loadingClient.set(true);
+    const { from, to } = this.getRangeParams(this.periodClient(), this.fromClient(), this.toClient());
+    
+    const opts = { from, to }; // Ya no necesitamos 'period' apiPeriod, usamos fechas exactas
+    
+    this.reportsService.getByClient(this.selectedClientId(), opts).subscribe({
+      next: (data) => {
+        const fixedSales = (data.sales || []).map((s: any) => ({
+            ...s,
+            id: s.id || s.sale_id
+        }));
+        this.salesClient.set(fixedSales);
+        this.summaryClient.set(data.summary || { count: 0, total: 0 });
+        this.loadingClient.set(false);
+        this.canExport.set(true);
+      },
+      error: () => this.loadingClient.set(false)
+    });
+  }
+
+  loadByService() {
+    if (!this.selectedServiceId()) return;
+    this.loadingService.set(true);
+    const { from, to } = this.getRangeParams(this.periodService(), this.fromService(), this.toService());
+    
+    const opts = { from, to };
+
+    this.reportsService.getByItem(this.selectedServiceId(), opts).subscribe({
+      next: (data) => {
+        const fixedSales = (data.sales || []).map((s: any) => ({
+            ...s,
+            id: s.id || s.sale_id
+        }));
+        this.salesServiceList.set(fixedSales);
+        this.summaryService.set(data.summary || { count: 0, total: 0 });
+        this.loadingService.set(false);
+        this.canExport.set(true);
+      },
+      error: () => this.loadingService.set(false)
+    });
+  }
+
+  // =========================================================================
+  // DETALLES Y PDF
+  // =========================================================================
 
   private async ensureDetails(rows: SaleRow[]) {
     const pending = rows.filter((r) => !this.saleDetails()[r.id]);
@@ -165,27 +250,19 @@ export class ReportsComponent implements OnInit {
     }
   }
 
-  
-
-  // =========================================================================
-  // 2. EXPORTAR PDF (Corregido con lógica aditiva para items)
-  //
   async exportPDF() {
     if (!this.canExport()) return;
     
     const doc = new jsPDF();
     const generatedAt = new Date();
-    // Tasa por defecto (solo informativa en el header)
     const currentTaxRate = this.taxRate(); 
     let cursorY = 16;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
     doc.setFontSize(16);
     doc.text('Reporte de ventas detallado', 14, cursorY);
     doc.setFontSize(10);
-    doc.text(`Generado: ${generatedAt.toLocaleString()}`, 14, cursorY + 6);
-    // Nota: El % mostrado aquí es el actual, aunque cada venta tenga el suyo
+    doc.text(`Generado: ${generatedAt.toLocaleString('es-EC')}`, 14, cursorY + 6);
     doc.text(`IVA Actual Configurado: ${(currentTaxRate * 100).toFixed(0)}%`, 14, cursorY + 11);
 
     const addSection = async (title: string, subtitle: string, rows: SaleRow[]) => {
@@ -209,10 +286,7 @@ export class ReportsComponent implements OnInit {
       let sectionTotal = 0;
 
       for (const sale of rows) {
-        // DETECTAR TASA: Si la venta tiene tasa guardada, úsala. Si no, usa la actual.
         const tasaVenta = sale.tax_rate !== undefined ? Number(sale.tax_rate) : currentTaxRate;
-
-        // A. VENTA (Inclusive): Usamos 'tasaVenta'
         const valsVenta = this.getValues(sale.total, 'inclusive', tasaVenta);
         
         sectionSubtotal += valsVenta.subtotal;
@@ -233,8 +307,6 @@ export class ReportsComponent implements OnInit {
         for (const d of details) {
           const cantidad = Number(d.cantidad) || 0;
           const baseItem = Number(d.subtotal) || 0; 
-
-          // B. ÍTEM (Additive): Usamos la MISMA 'tasaVenta' del padre
           const valsItem = this.getValues(baseItem, 'additive', tasaVenta); 
 
           body.push({
@@ -309,7 +381,6 @@ export class ReportsComponent implements OnInit {
     if (this.activeTab() === 'general') {
         const generalSubtitle = this.rangeLabel('General', this.periodGeneral(), this.fromGeneral(), this.toGeneral());
         await addSection('Ventas generales', generalSubtitle, this.salesGeneral());
-        // Sumamos considerando la tasa de cada venta
         totalGlobal = (this.salesGeneral() || []).reduce((acc, r) => {
              const tasa = r.tax_rate !== undefined ? Number(r.tax_rate) : currentTaxRate;
              return acc + this.getValues(r.total, 'inclusive', tasa).total;
@@ -344,95 +415,6 @@ export class ReportsComponent implements OnInit {
     doc.save(`reporte-${this.activeTab()}-${generatedAt.toISOString().slice(0, 10)}.pdf`);
   }
 
-  rangeLabel(prefix: string, period: Period, from: string, to: string) {
-    const range = this.periodRange(period, from, to);
-    const label =
-      period === 'custom'
-        ? 'Rango personalizado'
-        : period === 'today'
-          ? 'Hoy'
-          : period === 'week'
-            ? 'Ultimos 7 dias'
-            : period === 'month'
-              ? 'Mes en curso'
-              : 'Anio en curso';
-    return `${prefix} · ${label} (${range.from} al ${range.to})`;
-  }
-
-  loadGeneral() {
-    const { from, to } = this.periodRange(this.periodGeneral(), this.fromGeneral(), this.toGeneral());
-    this.fromGeneral.set(from);
-    this.toGeneral.set(to);
-    this.loadingGeneral.set(true);
-    const apiPeriod = this.apiPeriod(this.periodGeneral());
-    const summaryOpts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
-    this.reportsService.getSummary(summaryOpts).subscribe({
-      next: (data) => this.summaryGeneral.set(data || { count: 0, total: 0 }),
-      error: (err) => console.error('Error resumen general', err)
-    });
-    this.reportsService.getByRange(from, to).subscribe({
-      next: (rows) => {
-        this.salesGeneral.set(rows || []);
-        this.loadingGeneral.set(false);
-        this.canExport.set(true);
-      },
-      error: (err) => {
-        console.error('Error ventas generales', err);
-        this.loadingGeneral.set(false);
-      }
-    });
-  }
-
-  loadByClient() {
-    if (!this.selectedClientId()) return;
-    const { from, to } = this.periodRange(this.periodClient(), this.fromClient(), this.toClient());
-    this.fromClient.set(from);
-    this.toClient.set(to);
-    this.loadingClient.set(true);
-    const apiPeriod = this.apiPeriod(this.periodClient());
-    const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
-    this.reportsService.getByClient(this.selectedClientId(), opts).subscribe({
-      next: (data) => {
-        // CORRECCIÓN: Mapear los datos para asegurar que 'id' exista
-        const fixedSales = (data.sales || []).map((s: any) => ({
-            ...s,
-            id: s.id || s.sale_id // <--- SI NO HAY ID, USA SALE_ID
-        }));
-
-        this.salesClient.set(fixedSales);
-        this.summaryClient.set(data.summary || { count: 0, total: 0 });
-        this.loadingClient.set(false);
-        this.canExport.set(true);
-      },
-      error: (err) => { /* ... */ }
-    });
-  }
-
-  loadByService() {
-    if (!this.selectedServiceId()) return;
-    const { from, to } = this.periodRange(this.periodService(), this.fromService(), this.toService());
-    this.fromService.set(from);
-    this.toService.set(to);
-    this.loadingService.set(true);
-    const apiPeriod = this.apiPeriod(this.periodService());
-    const opts = apiPeriod ? { period: apiPeriod, from, to } : { from, to };
-    this.reportsService.getByItem(this.selectedServiceId(), opts).subscribe({
-      next: (data) => {
-        // CORRECCIÓN: Mapear los datos aquí también
-        const fixedSales = (data.sales || []).map((s: any) => ({
-            ...s,
-            id: s.id || s.sale_id // <--- ASEGURAMOS EL ID
-        }));
-
-        this.salesServiceList.set(fixedSales);
-        this.summaryService.set(data.summary || { count: 0, total: 0 });
-        this.loadingService.set(false);
-        this.canExport.set(true);
-      },
-      error: (err) => { /* ... */ }
-    });
-  }
-
   toggleDetalles(id: string) {
     if (this.selectedSaleId() === id) {
       this.selectedSaleId.set(null);
@@ -454,23 +436,16 @@ export class ReportsComponent implements OnInit {
   }
 
   formatearHora(fechaIso: string): string {
-    const d = new Date(fechaIso);
-    return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-  }
+  const d = new Date(fechaIso);
+  // CAMBIO: Agregamos 'es-EC' aquí
+  return d.toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
+}
 
   getValues(monto: number | string | undefined, type: 'inclusive' | 'additive' = 'inclusive', customRate?: number) {
     const valor = Number(monto) || 0;
-    
-    // PRIORIDAD:
-    // 1. Si la venta trae su tasa (customRate), ÚSALA. (Inmutabilidad)
-    // 2. Si no trae nada (es null), usa la del perfil (this.taxRate()).
-    const rate = (customRate !== undefined && customRate !== null) 
-                 ? Number(customRate) 
-                 : this.taxRate();
+    const rate = (customRate !== undefined && customRate !== null) ? Number(customRate) : this.taxRate();
 
-    let subtotal = 0;
-    let iva = 0;
-    let total = 0;
+    let subtotal = 0, iva = 0, total = 0;
 
     if (type === 'inclusive') {
       total = valor;
@@ -481,8 +456,25 @@ export class ReportsComponent implements OnInit {
       iva = subtotal * rate;
       total = subtotal + iva;
     }
-
     return { subtotal, iva, total };
   }
 
+  // Helper visual para etiquetas de rango
+  rangeLabel(prefix: string, period: Period, from: string, to: string) {
+    // Solo para mostrar visualmente las fechas seleccionadas
+    const fromLabel = from.includes('T') ? from.split('T')[0] : from;
+    const toLabel = to.includes('T') ? to.split('T')[0] : to;
+
+    const label =
+      period === 'custom'
+        ? 'Rango personalizado'
+        : period === 'today'
+          ? 'Hoy'
+          : period === 'week'
+            ? 'Últimos 7 días'
+            : period === 'month'
+              ? 'Mes en curso'
+              : 'Año en curso';
+    return `${prefix} · ${label} (${fromLabel} al ${toLabel})`;
+  }
 }

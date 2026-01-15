@@ -78,13 +78,21 @@
       <mat-icon>history</mat-icon> Ventas Recientes
     </div>
 
-    <div class="sales-list-grid">
-      @if (sales().length === 0) {
-        <div class="state-msg empty">No hay ventas registradas hoy.</div>
-      } @else {
-        @for (sale of sales(); track sale.id) {
-          <mat-card class="sale-card elevation-z1" (click)="toggleDetalles(sale.id)">
-            
+   <div class="sales-list-grid">
+  @if (groupedSales().length === 0) {
+    <div class="state-msg empty">No hay ventas registradas.</div>
+  } @else {
+    
+    @for (group of groupedSales(); track group.date) {
+      
+      <div class="date-separator">
+        <span class="line"></span>
+        <span class="text">{{ group.label }}</span> <span class="line"></span>
+      </div>
+
+      @for (sale of group.sales; track sale.id) {
+        
+        <mat-card class="sale-card elevation-z1" (click)="toggleDetalles(sale.id)">
             <div class="card-header">
               <div class="time-badge">{{ formatearHora(sale.created_at) }}</div>
               <div class="total-badge">${{ sale.total | number:'1.2-2' }}</div>
@@ -125,11 +133,9 @@
                 }
               </div>
             }
+        </mat-card>
 
-          </mat-card>
-        }
       }
-    </div>
-
-  </div>
+    }
+  }
 </div>

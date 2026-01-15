@@ -11,9 +11,9 @@ import { SalesService } from '../../services/sales.service';
 import { ClientsService, Client } from '../../services/clients.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SettingsService } from '../../services/settings.service'; // <--- Importante para datos del perfil
+import { SettingsService } from '../../services/settings.service';
 
-// Importamos el diálogo del ticket (sin .component)
+// Importamos el diálogo del ticket
 import { MatDialog } from '@angular/material/dialog';
 import { TicketDialogComponent, TicketData } from '../ticket-dialog/ticket-dialog';
 
@@ -25,6 +25,7 @@ interface Sale {
   client_nombre?: string | null;
   client_cedula?: string | null;
   created_at: string;
+  tax_rate?: number; // Agregado para tipado seguro
 }
 
 interface SaleDetail {
@@ -38,8 +39,8 @@ interface SaleDetail {
 @Component({
   selector: 'app-sales-history',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, FormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatProgressSpinnerModule,MatTooltipModule],
-  templateUrl: './sales-history.html', // <--- ESTO ES LO CORRECTO (No cart-detail.html)
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, FormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatProgressSpinnerModule, MatTooltipModule],
+  templateUrl: './sales-history.html',
   styleUrl: './sales-history.scss'
 })
 export class SalesHistoryComponent implements OnInit {
@@ -61,6 +62,39 @@ export class SalesHistoryComponent implements OnInit {
   loadingReceipts = signal<boolean>(false);
   
   openingTicketId = signal<string | null>(null);
+
+  // 1. NUEVA LÓGICA: Agrupar ventas por días
+  groupedSales = computed(() => {
+    const rawSales = this.sales();
+    const map = new Map<string, Sale[]>();
+
+    rawSales.forEach(sale => {
+      // Convertir fecha UTC a fecha Local del navegador (Ecuador)
+      const dateObj = new Date(sale.created_at);
+      // Obtener llave YYYY-MM-DD local
+      // 'en-CA' da formato año-mes-dia estándar
+      const key = dateObj.toLocaleDateString('en-CA'); 
+      
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)?.push(sale);
+    });
+
+    // Transformar mapa a array
+    const groups: { date: string; label: string; sales: Sale[] }[] = [];
+    
+    map.forEach((list, key) => {
+      groups.push({
+        date: key,
+        label: this.getFriendlyDateLabel(key),
+        sales: list
+      });
+    });
+
+    // Ordenar: fechas más recientes primero
+    return groups.sort((a, b) => b.date.localeCompare(a.date));
+  });
 
   totalHoy = computed(() => {
     const hoy = new Date();
@@ -118,22 +152,45 @@ export class SalesHistoryComponent implements OnInit {
 
   formatearHora(fechaIso: string): string {
     const d = new Date(fechaIso);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Usamos 'es-EC' explícito para formato de hora local
+    return d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  // 2. NUEVA FUNCIÓN AUXILIAR: Etiquetas de fecha (Hoy, Ayer...)
+  getFriendlyDateLabel(dateStr: string): string {
+    // dateStr viene como YYYY-MM-DD
+    // Agregamos T00:00:00 para asegurar que JS lo tome como día local
+    const date = new Date(dateStr + 'T00:00:00'); 
+    
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    // Comparamos cadenas de fecha local
+    const dString = date.toLocaleDateString('en-CA');
+    const tString = today.toLocaleDateString('en-CA');
+    const yString = yesterday.toLocaleDateString('en-CA');
+
+    if (dString === tString) return 'Hoy';
+    if (dString === yString) return 'Ayer';
+    
+    // Formato largo en español: "lunes, 12 de enero"
+    // Capitalizamos la primera letra para que se vea bien
+    const label = date.toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
   // =========================================================
-  // FUNCIÓN MAESTRA: VER RECIBO (Con datos dinámicos)
+  // FUNCIÓN MAESTRA: VER RECIBO
   // =========================================================
   verRecibo(saleId: string) {
     this.openingTicketId.set(saleId);
     
-    // 1. OBTENEMOS LOS DATOS DEL PERFIL DEL NEGOCIO
     const business = this.settingsService.settings(); 
 
     this.salesService.getSaleDetails(saleId).subscribe({
       next: (resp: any) => {
         
-        // 2. MATEMÁTICA DEL IVA (Blindaje)
         let tasaSegura = Number(resp.sale.tax_rate);
         if (isNaN(tasaSegura) || resp.sale.tax_rate === null || resp.sale.tax_rate === undefined) {
             tasaSegura = 0.15; 
@@ -146,7 +203,6 @@ export class SalesHistoryComponent implements OnInit {
           total: Number(resp.sale.total),
           taxRate: tasaSegura,
 
-          // 3. DATOS DEL NEGOCIO (Igual que en el carrito)
           businessName: business.name || 'Carmita Villegas',
           businessRuc: business.ruc || '9999999999001',
           businessAddress: business.address || 'Dirección no registrada',
@@ -162,7 +218,6 @@ export class SalesHistoryComponent implements OnInit {
 
         this.openingTicketId.set(null);
 
-        // 4. ABRIMOS EL DIÁLOGO
         this.dialog.open(TicketDialogComponent, {
           data: dataParaTicket,
           width: '400px',

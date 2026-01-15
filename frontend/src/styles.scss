@@ -90,27 +90,78 @@ body {
   color: #ffffff !important;
 }
 /* You can add global styles to this file, and also import other style files */
+
+
 /* ============================================================
-   AGREGA ESTO AL FINAL DE TU ARCHIVO src/styles.scss GLOBAL
+   ARREGLOS VISUALES PARA LISTAS (HOME Y REPORTES)
+   Pega esto al final de tu styles.scss
 ============================================================ */
 
-/* Forza un fondo blanco sólido para el panel del autocompletado */
-.mat-mdc-autocomplete-panel {
-  background-color: #ffffff !important; /* Color blanco imperativo */
+/* 1. HOME: Autocomplete (Más ancho y alto) */
+.custom-scroll-panel {
+  background-color: white !important;
   
-  /* Agrega una sombra estándar de Material Design para que resalte */
-  box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 
-              0px 8px 10px 1px rgba(0,0,0,0.14), 
-              0px 3px 14px 2px rgba(0,0,0,0.12) !important;
-              
-  /* Asegura que los bordes estén definidos si usas un tema claro */
-  border: 1px solid rgba(0,0,0,0.12); 
+  /* ALTURA: Muestra 6-7 clientes a la vez (soluciona lo de "reducida") */
+  max-height: 450px !important; 
   
-  /* Opcional: asegura que esté por encima de otros elementos */
-  z-index: 1000;
+  /* ANCHO: Fuerza a ser ancho aunque el input sea pequeño */
+  min-width: 340px !important;    
+  max-width: 95vw !important;
+  
+  border-radius: 0 0 20px 20px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+  margin-top: 8px !important;
 }
 
-/* Asegura que el texto de las opciones sea legible */
-.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__primary-text {
-    color: rgba(0, 0, 0, 0.87); /* Color de texto estándar oscuro */
+/* Altura de cada fila */
+.custom-scroll-panel .mat-mdc-option {
+  height: 75px !important;     
+  padding: 0 20px !important;
+  border-bottom: 1px solid #f8f8f8;
 }
+
+/* Estilos internos HOME (Avatar y Textos) */
+.custom-scroll-panel .row-content { display: flex; align-items: center; gap: 15px; width: 100%; }
+.custom-scroll-panel .avatar-circle {
+  width: 45px; height: 45px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-weight: 700; font-size: 1.1rem;
+  background: #f3e5f5; color: #4b1e3a;
+}
+.custom-scroll-panel .avatar-circle.add { background: #e8f5e9; color: #2e7d32; }
+.custom-scroll-panel .text-info { display: flex; flex-direction: column; line-height: 1.3; flex: 1; overflow: hidden; }
+.custom-scroll-panel .main-text { font-weight: 600; font-size: 1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom-scroll-panel .sub-text { font-size: 0.8rem; color: #888; }
+
+
+/* 2. REPORTES: Select (Arreglo "Aplastado") */
+.custom-client-panel {
+  background-color: white !important;
+  
+  /* ANCHO: Fuerza 350px aunque el botón de filtro sea pequeño */
+  min-width: 350px !important; 
+  max-width: 90vw !important;
+  max-height: 450px !important; 
+
+  border-radius: 0 0 15px 15px !important;
+  margin-top: 5px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+}
+
+.custom-client-panel .mat-mdc-option {
+  height: 70px !important;
+  padding: 0 15px !important;
+  border-bottom: 1px solid #f8f8f8;
+}
+
+/* Estilos internos REPORTES */
+.custom-client-panel .option-flex { display: flex; align-items: center; gap: 15px; width: 100%; }
+.custom-client-panel .avatar-mini {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: #f3e5f5; color: #4b1e3a;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0;
+}
+.custom-client-panel .text-group { display: flex; flex-direction: column; min-width: 0; }
+.custom-client-panel .name { font-weight: 600; font-size: 1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom-client-panel .cedula { font-size: 0.8rem; color: #888; }
