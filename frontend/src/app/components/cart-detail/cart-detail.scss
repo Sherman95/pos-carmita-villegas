@@ -145,3 +145,99 @@
 
 // Ajustes Material
 ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+// --- ESTILOS DEL AUTOCOMPLETE (Avatares) ---
+::ng-deep {
+  // 1. Forzar fondo blanco en CUALQUIER panel de autocompletado dentro de este componente
+  .mat-mdc-autocomplete-panel, 
+  .custom-autocomplete {
+    background-color: #ffffff !important; /* EL FIX PRINCIPAL */
+    background: #ffffff !important;
+    border-radius: 0 0 12px 12px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important; /* Sombra más fuerte para que destaque */
+    
+    // Asegurar que las opciones también tengan fondo
+    .mat-mdc-option {
+      background: white;
+      height: 60px !important; 
+      padding: 0 15px !important;
+      border-bottom: 1px solid #f8f8f8;
+
+      // Efecto Hover
+      &:hover, &.mat-mdc-option-active {
+        background-color: #f3e5f5 !important; // Un moradito suave al pasar el mouse
+      }
+
+      .row-flex {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        
+        .avatar-mini {
+          width: 36px; height: 36px; border-radius: 50%;
+          background: #eee; color: #666;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          font-weight: 700;
+
+          &.text { background: #f3e5f5; color: #4b1e3a; }
+          mat-icon { font-size: 20px; width: 20px; height: 20px; }
+        }
+
+        .text-col {
+          display: flex; flex-direction: column; line-height: 1.2;
+          .name { font-weight: 600; font-size: 0.95rem; color: #333; }
+          small { font-size: 0.75rem; color: #999; }
+        }
+      }
+    }
+  }
+}
+
+// --- ESTILOS DEL AUTOCOMPLETE (Avatares) ---
+::ng-deep {
+  // 1. Forzar fondo blanco en CUALQUIER panel de autocompletado dentro de este componente
+  .mat-mdc-autocomplete-panel, 
+  .custom-autocomplete {
+    background-color: #ffffff !important; /* EL FIX PRINCIPAL */
+    background: #ffffff !important;
+    border-radius: 0 0 12px 12px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important; /* Sombra más fuerte para que destaque */
+    
+    // Asegurar que las opciones también tengan fondo
+    .mat-mdc-option {
+      background: white;
+      height: 60px !important; 
+      padding: 0 15px !important;
+      border-bottom: 1px solid #f8f8f8;
+
+      // Efecto Hover
+      &:hover, &.mat-mdc-option-active {
+        background-color: #f3e5f5 !important; // Un moradito suave al pasar el mouse
+      }
+
+      .row-flex {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        
+        .avatar-mini {
+          width: 36px; height: 36px; border-radius: 50%;
+          background: #eee; color: #666;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          font-weight: 700;
+
+          &.text { background: #f3e5f5; color: #4b1e3a; }
+          mat-icon { font-size: 20px; width: 20px; height: 20px; }
+        }
+
+        .text-col {
+          display: flex; flex-direction: column; line-height: 1.2;
+          .name { font-weight: 600; font-size: 0.95rem; color: #333; }
+          small { font-size: 0.75rem; color: #999; }
+        }
+      }
+    }
+  }
+}
+
+
+
+// Ajustes Material (Ocultar wrappers innecesarios)
+::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
