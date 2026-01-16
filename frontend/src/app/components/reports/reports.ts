@@ -102,8 +102,7 @@ export class ReportsComponent implements OnInit {
     this.fromClient.set(today);  this.toClient.set(today);
     this.fromService.set(today); this.toService.set(today);
 
-    // Cargar datos iniciales
-    this.loadGeneral();
+    
   }
 
   loadClients() {
