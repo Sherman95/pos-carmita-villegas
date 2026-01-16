@@ -119,7 +119,6 @@ export const getSales = async (_req: Request, res: Response) => {
 };
 
 export const getSalesByRange = async (req: Request, res: Response) => {
-    // Recibimos las fechas completas (con hora) desde el Frontend
     const { from, to } = req.query as { from?: string; to?: string };
 
     if (!from || !to) {
@@ -136,7 +135,7 @@ export const getSalesByRange = async (req: Request, res: Response) => {
                 s.tax_rate
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
-             -- CORRECCIÓN: Usamos timestamptz para respetar la hora exacta (05:00 UTC)
+             -- 🔥 CORRECCIÓN CLAVE: Usamos timestamptz (NO date)
              WHERE s.created_at >= $1::timestamptz AND s.created_at <= $2::timestamptz
              ORDER BY s.created_at DESC`,
             [from, to]
