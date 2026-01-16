@@ -57,29 +57,33 @@ export class ReportsService {
   }
 
   // ===========================================================================
-  // 🧠 LÓGICA DE ZONA HORARIA (ECUADOR UTC-5)
+  // 🧠 LÓGICA DE ZONA HORARIA (ECUADOR UTC-5) - VERSIÓN AGRESIVA
   // ===========================================================================
 
-  // Convierte "2026-01-14" (00:00 EC) -> "2026-01-14T05:00:00Z" (UTC)
+  // Convierte "2026-01-15" (o "2026-01-15T00:00...") -> "2026-01-15T05:00:00.000Z"
+  // Esto asegura que el día empiece a las 00:00 de Ecuador (05:00 UTC)
   private toEcuadorStart(dateStr: string): string {
-    // Si ya viene con formato largo, no lo tocamos
-    if (dateStr.includes('T')) return dateStr; 
-    return `${dateStr}T05:00:00.000Z`;
+    // 1. Nos quedamos solo con la parte de la fecha YYYY-MM-DD, ignoramos la hora que venga
+    const dateOnly = dateStr.split('T')[0];
+    
+    // 2. Le pegamos el inicio de día ecuatoriano (05:00 UTC)
+    return `${dateOnly}T05:00:00.000Z`;
   }
 
-  // Convierte "2026-01-14" (23:59 EC) -> "2026-01-15T04:59:59Z" (UTC del día siguiente)
+  // Convierte "2026-01-15" -> "2026-01-16T04:59:59.999Z"
+  // Esto asegura que el día termine a las 23:59:59 de Ecuador
   private toEcuadorEnd(dateStr: string): string {
-    if (dateStr.includes('T')) return dateStr;
+    // 1. Limpiamos la hora
+    const dateOnly = dateStr.split('T')[0];
 
-    // Creamos la fecha base
-    const date = new Date(dateStr);
-    // Le sumamos 1 día para irnos al día siguiente
+    // 2. Creamos fecha base y sumamos 1 día
+    const date = new Date(dateOnly);
     date.setDate(date.getDate() + 1);
     
-    // Obtenemos el string YYYY-MM-DD del día siguiente
+    // 3. Obtenemos el YYYY-MM-DD del día siguiente
     const nextDay = date.toISOString().split('T')[0];
     
-    // Retornamos las 04:59:59 AM UTC (que son las 23:59:59 PM Ecuador del día anterior)
+    // 4. Retornamos justo antes de las 05:00 AM UTC del día siguiente
     return `${nextDay}T04:59:59.999Z`;
   }
 }
