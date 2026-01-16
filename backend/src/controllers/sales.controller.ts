@@ -119,10 +119,11 @@ export const getSales = async (_req: Request, res: Response) => {
 };
 
 export const getSalesByRange = async (req: Request, res: Response) => {
+    // Recibimos las fechas completas (con hora) desde el Frontend
     const { from, to } = req.query as { from?: string; to?: string };
 
     if (!from || !to) {
-        return res.status(400).json({ error: 'from y to son requeridos (YYYY-MM-DD)' });
+        return res.status(400).json({ error: 'from y to son requeridos' });
     }
 
     try {
@@ -132,13 +133,11 @@ export const getSalesByRange = async (req: Request, res: Response) => {
                 COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                 COALESCE(s.client_cedula, c.cedula) AS client_cedula,
                 s.created_at,
-
-                -- ¡¡¡ ESTO TAMBIÉN FALTABA AQUÍ !!!
                 s.tax_rate
-
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
-             WHERE s.created_at >= $1::date AND s.created_at < ($2::date + INTERVAL '1 day')
+             -- CORRECCIÓN: Usamos timestamptz para respetar la hora exacta (05:00 UTC)
+             WHERE s.created_at >= $1::timestamptz AND s.created_at <= $2::timestamptz
              ORDER BY s.created_at DESC`,
             [from, to]
         );
@@ -172,10 +171,17 @@ export const getSalesSummary = async (req: Request, res: Response) => {
             start = `${y}-01-01`;
             end = `${y + 1}-01-01`;
         } else if (from && to) {
-            start = from;
-            const toDate = new Date(to);
-            toDate.setDate(toDate.getDate() + 1);
-            end = toDate.toISOString().slice(0, 10);
+            // CORRECCIÓN: Si ya viene con hora (formato ISO completo), la respetamos.
+            if (from.includes('T')) {
+                start = from;
+                end = to;
+            } else {
+                // Si es fecha corta (YYYY-MM-DD), mantenemos la lógica vieja
+                start = from;
+                const toDate = new Date(to);
+                toDate.setDate(toDate.getDate() + 1);
+                end = toDate.toISOString().slice(0, 10);
+            }
         } else {
             return res.status(400).json({ error: 'Proporciona period=month|year o from/to' });
         }
@@ -183,7 +189,8 @@ export const getSalesSummary = async (req: Request, res: Response) => {
         const { rows } = await pool.query(
             `SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total
              FROM sales
-             WHERE created_at >= $1::date AND created_at < $2::date`,
+             -- CORRECCIÓN: Usamos timestamptz y <= para incluir el último milisegundo
+             WHERE created_at >= $1::timestamptz AND created_at <= $2::timestamptz`,
             [start, end]
         );
 
