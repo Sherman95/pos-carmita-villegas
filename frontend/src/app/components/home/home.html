@@ -33,8 +33,9 @@
         </mat-card>
 
         <mat-autocomplete #auto="matAutocomplete" 
-                          (optionSelected)="onOptionSelected($event)"
-                          class="custom-scroll-panel">
+                  (optionSelected)="onOptionSelected($event)"
+                  class="custom-scroll-panel" 
+                  panelClass="custom-scroll-panel">
            
            <mat-option value="anon" class="option-anon">
              <div class="row-content">

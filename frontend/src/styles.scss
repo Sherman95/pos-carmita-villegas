@@ -89,79 +89,127 @@ body {
 .brand-text-light {
   color: #ffffff !important;
 }
-/* You can add global styles to this file, and also import other style files */
 
 
 /* ============================================================
-   ARREGLOS VISUALES PARA LISTAS (HOME Y REPORTES)
-   Pega esto al final de tu styles.scss
+   ESTILOS PREMIUM: DROPDOWN RESPONSIVE (MOVIL vs PC)
 ============================================================ */
 
-/* 1. HOME: Autocomplete (Más ancho y alto) */
-.custom-scroll-panel {
-  background-color: white !important;
+/* 1. EL CONTENEDOR PADRE (POSICIONAMIENTO INTELIGENTE) */
+div.cdk-overlay-pane:has(.custom-scroll-panel) {
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  margin-top: 10px !important;
   
-  /* ALTURA: Muestra 6-7 clientes a la vez (soluciona lo de "reducida") */
-  max-height: 450px !important; 
-  
-  /* ANCHO: Fuerza a ser ancho aunque el input sea pequeño */
-  min-width: 340px !important;    
-  max-width: 95vw !important;
-  
-  border-radius: 0 0 20px 20px !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
-  margin-top: 8px !important;
+  /* 💻 MODO PC (Pantallas grandes) */
+  @media (min-width: 768px) {
+    width: 700px !important; /* Ancho fijo igual al buscador */
+  }
+
+  /* 📱 MODO MÓVIL (Pantallas pequeñas) */
+  @media (max-width: 767px) {
+    width: 95vw !important; /* 95% del ancho de la pantalla */
+    max-width: 400px !important; /* Que no se haga gigante en tablets chicas */
+  }
 }
 
-/* Altura de cada fila */
+/* 2. EL PANEL VISIBLE (MÁS ALTO AHORA) 📏 */
+.mat-mdc-autocomplete-panel.custom-scroll-panel {
+  /* Fondo y Color */
+  background-color: #ffffff !important;
+  color: #1f1722 !important;
+  
+  /* Estética "Premium" */
+  border-radius: 20px !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  box-shadow: 0 20px 60px -10px rgba(75, 30, 58, 0.25) !important;
+  padding: 8px !important;
+  
+  /* 🔥 AQUÍ ESTÁ EL CAMBIO DE ALTURA 🔥 */
+  /* Antes: 450px. Ahora: 600px (o 80% de la pantalla, lo que sea menor) */
+  max-height: 500px !important; 
+  max-height: 70vh !important; /* Seguridad para pantallas bajitas */
+  
+  /* Scrollbar Personalizado */
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+  &::-webkit-scrollbar-thumb:hover { background: #bdbdbd; }
+  
+  /* Variables de Color */
+  --mat-autocomplete-background-color: #ffffff !important;
+  --mat-option-label-text-color: #1f1722 !important;
+}
+
+/* 3. LAS TARJETAS (CADA CLIENTE) */
 .custom-scroll-panel .mat-mdc-option {
-  height: 75px !important;     
-  padding: 0 20px !important;
-  border-bottom: 1px solid #f8f8f8;
-}
-
-/* Estilos internos HOME (Avatar y Textos) */
-.custom-scroll-panel .row-content { display: flex; align-items: center; gap: 15px; width: 100%; }
-.custom-scroll-panel .avatar-circle {
-  width: 45px; height: 45px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; font-weight: 700; font-size: 1.1rem;
-  background: #f3e5f5; color: #4b1e3a;
-}
-.custom-scroll-panel .avatar-circle.add { background: #e8f5e9; color: #2e7d32; }
-.custom-scroll-panel .text-info { display: flex; flex-direction: column; line-height: 1.3; flex: 1; overflow: hidden; }
-.custom-scroll-panel .main-text { font-weight: 600; font-size: 1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.custom-scroll-panel .sub-text { font-size: 0.8rem; color: #888; }
-
-
-/* 2. REPORTES: Select (Arreglo "Aplastado") */
-.custom-client-panel {
   background-color: white !important;
-  
-  /* ANCHO: Fuerza 350px aunque el botón de filtro sea pequeño */
-  min-width: 350px !important; 
-  max-width: 90vw !important;
-  max-height: 450px !important; 
-
-  border-radius: 0 0 15px 15px !important;
-  margin-top: 5px !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
-}
-
-.custom-client-panel .mat-mdc-option {
-  height: 70px !important;
+  min-height: 75px !important;
+  margin-bottom: 5px !important;
+  border-radius: 15px !important; /* Bordes redondos en cada ítem */
   padding: 0 15px !important;
-  border-bottom: 1px solid #f8f8f8;
+  border: 1px solid transparent !important; /* Preparar para hover */
+  transition: all 0.2s ease !important; /* Animación suave */
 }
 
-/* Estilos internos REPORTES */
-.custom-client-panel .option-flex { display: flex; align-items: center; gap: 15px; width: 100%; }
-.custom-client-panel .avatar-mini {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: #f3e5f5; color: #4b1e3a;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; flex-shrink: 0;
+/* Efecto Hover (Al pasar el mouse o dedo) */
+.custom-scroll-panel .mat-mdc-option:hover,
+.custom-scroll-panel .mat-mdc-option.mat-mdc-option-active {
+  background-color: #fff0f5 !important; /* Rosado muy suave */
+  border-color: #f8bbd0 !important;      /* Borde rosadito */
+  transform: translateY(-2px);           /* Pequeño salto hacia arriba */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
 }
-.custom-client-panel .text-group { display: flex; flex-direction: column; min-width: 0; }
-.custom-client-panel .name { font-weight: 600; font-size: 1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.custom-client-panel .cedula { font-size: 0.8rem; color: #888; }
+
+/* 4. SECCIONES ESPECIALES (CONSUMIDOR FINAL / CREAR) */
+/* Diferenciar la opción de "Consumidor Final" */
+.custom-scroll-panel .option-anon {
+  background-color: #fafafa !important; /* Un gris muy clarito */
+  border-bottom: 2px dashed #eee !important;
+}
+
+/* 5. TEXTO Y CONTENIDO (ARREGLO DE FORMATO) */
+.custom-scroll-panel .mdc-list-item__primary-text {
+  width: 100% !important;
+  white-space: normal !important;
+  line-height: normal !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+/* Estructura Interna */
+.custom-scroll-panel .row-content { 
+  display: flex; align-items: center; gap: 15px; width: 100%; 
+}
+
+/* Avatar - Diseño Mejorado */
+.custom-scroll-panel .avatar-circle {
+  width: 48px; height: 48px; 
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05); /* Sombrita en el avatar */
+  
+  /* Colores por defecto */
+  background: #f3e5f5 !important; color: #4b1e3a !important; 
+}
+
+/* Avatar Verde para "Crear Cliente" */
+.custom-scroll-panel .avatar-circle.add { 
+  background: #e8f5e9 !important; color: #2e7d32 !important; 
+}
+
+/* Textos */
+.custom-scroll-panel .text-info { display: flex; flex-direction: column; }
+
+.custom-scroll-panel .main-text { 
+  font-weight: 700; font-size: 1rem; color: #333; 
+  display: block; margin-bottom: 2px;
+}
+
+.custom-scroll-panel .sub-text { 
+  font-size: 0.85rem; color: #777; display: block; 
+}
