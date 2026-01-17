@@ -20,10 +20,10 @@ export const createSale = async (req: Request, res: Response) => {
     try {
         // 1. Recibimos 'tax_rate' del frontend (además de lo demás)
         const { total, items, metodo_pago, client_id, tax_rate } = req.body;
-
+    
         let clientNombre: string | null = null;
         let clientCedula: string | null = null;
-
+        
         // Búsqueda de datos del cliente (si existe)
         if (client_id) {
             const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
@@ -332,7 +332,8 @@ export const getSaleWithDetails = async (req: Request, res: Response) => {
                 s.id, s.total, s.metodo_pago, s.client_id,
                 COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                 COALESCE(s.client_cedula, c.cedula) AS client_cedula,
-                s.created_at
+                s.created_at,
+                s.tax_rate
             FROM sales s
             LEFT JOIN clients c ON s.client_id = c.id
             WHERE s.id = $1

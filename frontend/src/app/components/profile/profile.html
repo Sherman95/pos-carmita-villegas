@@ -84,11 +84,17 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>IVA (Decimal)</mat-label>
-                <input matInput type="number" step="0.01" [(ngModel)]="taxRateInput" name="bizIva" placeholder="0.15" />
-                <mat-hint>Ejemplo: 0.15 para 15%</mat-hint>
-                <span matPrefix>% &nbsp;</span>
-              </mat-form-field>
+                  <mat-label>IVA (Decimal)</mat-label>
+  
+                  <input matInput type="number" step="0.01" 
+                   [ngModel]="taxRateInput()" 
+                  (ngModelChange)="taxRateInput.set($event)"
+                  name="bizIva" 
+                 placeholder="0.15" />
+
+            <mat-hint>Ejemplo: 0.15 para 15%</mat-hint>
+           <span matPrefix>% &nbsp;</span>
+          </mat-form-field>
 
               <div class="actions">
                 <button mat-stroked-button color="primary" type="submit">

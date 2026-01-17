@@ -191,17 +191,24 @@ export class SalesHistoryComponent implements OnInit {
     this.salesService.getSaleDetails(saleId).subscribe({
       next: (resp: any) => {
         
-        let tasaSegura = Number(resp.sale.tax_rate);
-        if (isNaN(tasaSegura) || resp.sale.tax_rate === null || resp.sale.tax_rate === undefined) {
-            tasaSegura = 0.15; 
-        }
+        // 🔥 LÓGICA CORREGIDA:
+        // 1. Obtenemos el valor crudo del backend
+        const rawRate = resp.sale.tax_rate;
+
+        // 2. Si viene null o undefined (ventas viejas), asumimos 0.15.
+        //    Si viene 0 (ventas nuevas sin iva), respetamos el 0.
+        //    Si viene 0.12, respetamos el 0.12.
+        const tasaSegura = (rawRate !== null && rawRate !== undefined) 
+                           ? Number(rawRate) 
+                           : 0.15;
 
         const dataParaTicket: TicketData = {
           fecha: new Date(resp.sale.created_at),
           cliente: resp.sale.client_nombre,
           identificacion: resp.sale.client_cedula,
           total: Number(resp.sale.total),
-          taxRate: tasaSegura,
+          
+          taxRate: tasaSegura, // ✅ Ahora sí enviamos el 0 real
 
           businessName: business.name || 'Carmita Villegas',
           businessRuc: business.ruc || '9999999999001',

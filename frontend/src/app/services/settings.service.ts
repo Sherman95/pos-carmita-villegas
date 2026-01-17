@@ -5,16 +5,19 @@ export interface BusinessSettings {
   ruc: string;
   address: string;
   phone: string;
-  taxRate: number; // e.g. 0.15 for 15%
+  taxRate: number; 
 }
 
-const STORAGE_KEY = 'business_settings_v1';
+// 🔥 CAMBIO 1: Cambiamos 'v1' a 'v2' para obligar a borrar la memoria vieja en todos los navegadores
+const STORAGE_KEY = 'business_settings_v2';
+
 const DEFAULT_SETTINGS: BusinessSettings = {
   name: 'Carmita Villegas - Salón de Belleza',
   ruc: '1799999999001',
   address: 'Av. Siempre Viva 123',
   phone: '099 999 9999',
-  taxRate: 0.15
+  // 🔥 CAMBIO 2: ¡MUERE, 15%! Ponemos 0 por defecto.
+  taxRate: 0 
 };
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +42,7 @@ export class SettingsService {
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
+        // Validación extra: si viene basura, usa el default (que ahora es 0)
         taxRate: typeof parsed?.taxRate === 'number' ? parsed.taxRate : DEFAULT_SETTINGS.taxRate
       } as BusinessSettings;
     } catch {

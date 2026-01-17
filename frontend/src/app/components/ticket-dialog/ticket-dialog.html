@@ -54,7 +54,7 @@
         <span>{{ subtotal | number:'1.2-2' }}</span>
       </div>
       <div class="row">
-        <span>IVA {{ (data.taxRate || 0.15) * 100 | number:'1.0-2' }}%</span>
+        <span>IVA {{ (data.taxRate ?? 0) * 100 | number:'1.0-0' }}%</span>
         <span>{{ iva | number:'1.2-2' }}</span>
       </div>
       <div class="row total">

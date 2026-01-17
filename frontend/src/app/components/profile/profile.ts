@@ -1,4 +1,4 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,68 +13,120 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule,MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   templateUrl: './profile.html',
   styleUrl: './profile.scss'
 })
-export class ProfileComponent {
-  user = signal<{ id: string; username: string; role: string } | null>(null);
+export class ProfileComponent implements OnInit {
+  user = signal<{ id: string; username: string; role: string; tax_rate?: number } | null>(null);
   username = signal('');
   role = signal('');
   message = signal('');
+  
+  // Datos del negocio (Visuales)
   business = signal<BusinessSettings>({
     name: '',
     ruc: '',
     address: '',
     phone: '',
-    taxRate: 0.15
+    taxRate: 0 
   });
-  taxRateInput = signal('0.15');
+  
+  // 🔥 CAMBIO 1: Lo inicializamos como número (para coincidir con el HTML type="number")
+  taxRateInput = signal<number>(0);
 
-  constructor(private auth: AuthService, private router: Router, private settings: SettingsService) {
-    effect(() => {
-      const current = this.auth.currentUser();
-      this.user.set(current);
-      this.username.set(current?.username ?? '');
-      this.role.set(current?.role ?? '');
-    });
+  constructor(
+    private auth: AuthService, 
+    private router: Router, 
+    private settings: SettingsService
+  ) {}
 
-    effect(() => {
-      const s = this.settings.settings();
-      this.business.set(s);
-      this.taxRateInput.set(s.taxRate.toString());
+  ngOnInit() {
+    this.cargarDatos();
+  }
+
+  cargarDatos() {
+    // 1. Cargar Usuario (Desde la memoria del Auth)
+    const currentUser = this.auth.currentUser();
+    
+    if (currentUser) {
+      this.user.set(currentUser);
+      this.username.set(currentUser.username);
+      this.role.set(currentUser.role);
+
+      // 🔥 CAMBIO 2: Si el usuario tiene IVA en la BD, lo ponemos en el input
+      const taxFromDB = Number(currentUser.tax_rate || 0);
+      this.taxRateInput.set(taxFromDB);
+    }
+
+    // 2. Cargar Datos del Negocio (SettingsService - Solo visuales como Nombre/RUC)
+    const businessData = this.settings.settings();
+    
+    this.business.set({
+      ...businessData,
+      // Forzamos que el IVA del negocio sea el que dice el Usuario (BD), no el local
+      taxRate: this.taxRateInput() 
     });
   }
 
+  // Guardar Nombre de Usuario (En la Nube)
   save() {
-    const current = this.user();
     const nextUsername = this.username().trim();
-    if (!current || !nextUsername) {
+    
+    if (!nextUsername) {
       this.message.set('Completa el usuario');
       return;
     }
-    // Solo persiste en localStorage para este cliente
-    this.auth.setUserLocal({ ...current, username: nextUsername });
-    this.message.set('Guardado localmente');
+
+    this.message.set('Guardando nombre... ⏳');
+
+    // Llamamos al Backend para guardar el nombre
+    this.auth.updateProfile({ 
+      username: nextUsername,
+      tax_rate: this.taxRateInput() // Enviamos el IVA actual para que no se pierda
+    }).subscribe({
+      next: () => {
+        this.message.set('Nombre actualizado en la nube ✅');
+      },
+      error: (err) => {
+        console.error(err);
+        this.message.set('Error al guardar nombre ❌');
+      }
+    });
   }
 
+  // Guardar Datos del Negocio e IVA (En la Nube)
   saveBusiness() {
     const current = this.business();
-    const next: BusinessSettings = {
-      name: current.name?.trim() || 'Carmita Villegas - Salón de Belleza',
-      ruc: current.ruc?.trim() || '1799999999001',
-      address: current.address?.trim() || 'Av. Siempre Viva 123',
-      phone: current.phone?.trim() || '099 999 9999',
-      taxRate: this.parseRate(this.taxRateInput())
-    };
-    this.settings.update(next);
-    this.message.set('Datos del recibo guardados');
-  }
+    // Leemos el valor directo del signal numérico
+    const nuevaTasa = this.taxRateInput(); 
 
-  private parseRate(raw: string): number {
-    const n = Number(raw);
-    if (Number.isNaN(n) || n < 0) return 0;
-    return n;
+    // 1. Guardamos configuración visual (Nombre tienda, RUC, etc.) en Local
+    const nextSettings: BusinessSettings = {
+      name: current.name?.trim() || 'Negocio',
+      ruc: current.ruc?.trim() || '9999999999001',
+      address: current.address?.trim() || 'Dirección',
+      phone: current.phone?.trim() || '0999999999',
+      taxRate: nuevaTasa
+    };
+    this.settings.update(nextSettings);
+    
+    // 2. 🔥 EL GRAN CAMBIO: Enviamos el IVA a la Base de Datos
+    this.message.set('Sincronizando con la nube... ☁️');
+
+    this.auth.updateProfile({ 
+      tax_rate: nuevaTasa,
+      username: this.username() // Mantenemos el nombre actual
+    }).subscribe({
+      next: (resp) => {
+        // Al volver, el auth.service ya actualizó el currentUser automáticamente
+        this.message.set('¡Guardado y Sincronizado! ✅');
+      },
+      error: (err) => {
+        console.error('Error guardando en nube', err);
+        this.message.set('Error de conexión ⚠️');
+      }
+    });
   }
 
   logout() {

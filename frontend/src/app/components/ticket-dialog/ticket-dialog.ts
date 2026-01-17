@@ -20,7 +20,7 @@ export interface TicketData {
   businessRuc?: string;
   businessAddress?: string;
   businessPhone?: string;
-  taxRate?: number; // decimal, ej. 0.15
+  taxRate?: number; // Puede ser 0, 0.12, 0.15 o undefined
 }
 
 @Component({
@@ -44,8 +44,12 @@ export class TicketDialogComponent {
     this.dialogRef.close();
   }
 
+  // ✅ CORRECCIÓN EN EL CÁLCULO
   get subtotal(): number {
-    const rate = typeof this.data.taxRate === 'number' ? this.data.taxRate : 0.15;
+    // Si taxRate viene (incluso si es 0), lo usamos.
+    // Solo si es null/undefined usamos 0.15 (para compatibilidad con ventas viejas)
+    const rate = this.data.taxRate ?? 0.15; 
+    
     const divisor = 1 + rate;
     return this.redondear(this.data.total / divisor);
   }

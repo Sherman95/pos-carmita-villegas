@@ -1,6 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http'; // 👈 1. Necesitamos HTTP
 import { Item } from '../interfaces/interfaces';
-import { Client } from './clients.service'; // <--- 1. IMPORTANTE: Importar interfaz Client
+import { Client } from './clients.service';
+import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment'; // 👈 2. La URL de la API
 
 export interface CartItem {
   item: Item;
@@ -13,26 +16,62 @@ export interface CartItem {
   providedIn: 'root'
 })
 export class CartService {
-  items = signal<CartItem[]>([]);
+  // Inyecciones
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+  
+  private apiUrl = `${environment.apiBaseUrl}/api/sales`;
 
-  // 2. CAMBIO CLAVE: Ya no guardamos string, guardamos el Objeto Cliente o null
-  cliente = signal<Client | null>(null); 
+  items = signal<CartItem[]>([]);
+  cliente = signal<Client | null>(null);
+
+  // ✅ CÁLCULO VIVO DEL IVA (Tu lógica maestra)
+  taxRate = computed(() => {
+    const user = this.auth.currentUser();
+    return Number(user?.tax_rate) || 0; 
+  });
 
   total = computed(() => {
     return this.items().reduce((acc, current) => acc + current.subtotal, 0);
+  });
+
+  baseImponible = computed(() => {
+    const total = this.total();
+    const tasa = this.taxRate();
+    if (tasa === 0) return total;
+    return total / (1 + tasa);
+  });
+
+  iva = computed(() => {
+    return this.total() - this.baseImponible();
   });
 
   contadorItems = computed(() => {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
-  // 3. CAMBIO CLAVE: Recibimos el objeto completo
+  // 🔥 AQUÍ ESTÁ LA MAGIA QUE FALTABA 🔥
+  // Esta función empaqueta todo y se lo manda al backend
+  confirmSale(metodoPago: string = 'EFECTIVO') {
+    const payload = {
+      items: this.items(),
+      total: this.total(),
+      metodo_pago: metodoPago,
+      client_id: this.cliente()?.id || null,
+      
+      // 👇 ¡ESTA ES LA LÍNEA DE ORO! 👇
+      // Enviamos explícitamente la tasa que usó este carrito (0, 0.12 o 0.15)
+      tax_rate: this.taxRate() 
+    };
+
+    return this.http.post(this.apiUrl, payload);
+  }
+
   setCliente(c: Client | null) {
     this.cliente.set(c);
   }
 
   agregar(producto: Item, precioFinal: number) {
-    // ... (Tu código de agregar se queda igualito, está perfecto) ...
     const precioVenta = Number(precioFinal);
     const precioProducto = Number(producto.precio);
     const precioValido = Number.isFinite(precioVenta) ? precioVenta : (Number.isFinite(precioProducto) ? precioProducto : 0);
@@ -53,11 +92,10 @@ export class CartService {
       };
       this.items.set([...itemsActuales, nuevoItem]);
     }
-    console.log('🛒 Carrito:', this.items());
   }
 
   limpiarCarrito() {
     this.items.set([]);
-    this.cliente.set(null); // Limpiamos el objeto
+    this.cliente.set(null);
   }
 }
