@@ -20,33 +20,28 @@ export class CartService {
   private auth = inject(AuthService);
   
   private apiUrl = `${environment.apiBaseUrl}/api/sales`;
-  private clientsUrl = `${environment.apiBaseUrl}/api/clients`; // ✅ URL para buscar clientes
 
   items = signal<CartItem[]>([]);
-  cliente = signal<Client | null>(null);
 
-  // Variable para guardar al Consumidor Final y no buscarlo a cada rato
-  private consumidorFinalDefault: Client | null = null;
+  // ⚡ TRUCO MAESTRO:
+  // Copiamos el ID que nos dio tu consulta SQL. 
+  // Así el sistema arranca con el cliente LISTO, sin esperar a internet.
+  private defaultClient: Client = {
+    id: '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d', // 👈 ¡EL ID REAL DE TU BD!
+    nombre: 'Consumidor Final',
+    cedula: '9999999999999',
+    direccion: 'S/D',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  // Inicializamos la señal DIRECTAMENTE con el cliente real
+  cliente = signal<Client | null>(this.defaultClient);
 
   constructor() {
-    // 🚀 AL INICIAR: Buscamos automáticamente al Consumidor Final
-    this.cargarConsumidorFinal();
-  }
-
-  // 👇 ESTA ES LA FUNCIÓN NUEVA
-  cargarConsumidorFinal() {
-    this.http.get<Client[]>(this.clientsUrl).subscribe({
-      next: (clientes) => {
-        // Buscamos al dueño del RUC 999...
-        const cf = clientes.find(c => c.cedula === '9999999999999');
-        if (cf) {
-          this.consumidorFinalDefault = cf;
-          this.cliente.set(cf); // ✅ ¡Asignado automáticamente al iniciar!
-          console.log('✅ Carrito inicializado con:', cf.nombre);
-        }
-      },
-      error: (err) => console.error('Error cargando cliente por defecto', err)
-    });
+    // Ya no necesitamos llamar a cargarConsumidorFinal() aquí obligatoriamente
+    // porque ya lo tenemos "quemado" y listo para usar.
+    console.log('🚀 Carrito listo con Consumidor Final (ID Fijo)');
   }
 
   taxRate = computed(() => {
@@ -73,14 +68,23 @@ export class CartService {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
-  confirmSale(metodoPago: string = 'EFECTIVO') {
+ confirmSale(metodoPago: string = 'EFECTIVO') {
+    let clienteIdFinal = this.cliente()?.id;
+
+    if (!clienteIdFinal || clienteIdFinal === 'temp-id') {
+      clienteIdFinal = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
+    }
+
     const payload = {
       items: this.items(),
       total: this.total(),
       metodo_pago: metodoPago,
-      client_id: this.cliente()?.id || null, // Ahora esto llevará el ID real del 999...
+      client_id: clienteIdFinal,
       tax_rate: this.taxRate() 
     };
+
+    // 🕵️‍♂️ ¡EL CHIVATO! Míralo en la consola del navegador (F12)
+    console.log('📦 PAYLOAD QUE SALE:', payload); 
 
     return this.http.post(this.apiUrl, payload);
   }
@@ -114,14 +118,7 @@ export class CartService {
 
   limpiarCarrito() {
     this.items.set([]);
-    
-    // 🧠 LOGICA INTELIGENTE:
-    // Si tenemos guardado al consumidor final, lo volvemos a poner por defecto.
-    // Si no, ponemos null.
-    if (this.consumidorFinalDefault) {
-      this.cliente.set(this.consumidorFinalDefault);
-    } else {
-      this.cliente.set(null);
-    }
+    // Al limpiar, volvemos INMEDIATAMENTE al ID real fijo
+    this.cliente.set(this.defaultClient);
   }
 }
