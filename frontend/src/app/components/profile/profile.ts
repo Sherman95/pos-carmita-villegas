@@ -32,7 +32,6 @@ export class ProfileComponent implements OnInit {
     taxRate: 0 
   });
   
-  // 🔥 CAMBIO 1: Lo inicializamos como número (para coincidir con el HTML type="number")
   taxRateInput = signal<number>(0);
 
   constructor(
@@ -46,30 +45,32 @@ export class ProfileComponent implements OnInit {
   }
 
   cargarDatos() {
-    // 1. Cargar Usuario (Desde la memoria del Auth)
-    const currentUser = this.auth.currentUser();
+    // 1. Cargar Usuario (Desde la memoria del Auth - Base de Datos)
+    const currentUser: any = this.auth.currentUser(); // Tipado any para acceder a campos nuevos
     
     if (currentUser) {
       this.user.set(currentUser);
       this.username.set(currentUser.username);
       this.role.set(currentUser.role);
 
-      // 🔥 CAMBIO 2: Si el usuario tiene IVA en la BD, lo ponemos en el input
+      // Cargamos el IVA de la BD
       const taxFromDB = Number(currentUser.tax_rate || 0);
       this.taxRateInput.set(taxFromDB);
-    }
 
-    // 2. Cargar Datos del Negocio (SettingsService - Solo visuales como Nombre/RUC)
-    const businessData = this.settings.settings();
-    
-    this.business.set({
-      ...businessData,
-      // Forzamos que el IVA del negocio sea el que dice el Usuario (BD), no el local
-      taxRate: this.taxRateInput() 
-    });
+      // 🔥 CAMBIO CRÍTICO: 
+      // Si la BD trae datos del negocio, úsalos. Si no, usa valores vacíos.
+      // Ya no dependemos solo del localStorage.
+      this.business.set({
+        name: currentUser.business_name || '',
+        ruc: currentUser.business_ruc || '',
+        address: currentUser.business_address || '',
+        phone: currentUser.business_phone || '',
+        taxRate: taxFromDB
+      });
+    }
   }
 
-  // Guardar Nombre de Usuario (En la Nube)
+  // Guardar Nombre de Usuario
   save() {
     const nextUsername = this.username().trim();
     
@@ -80,10 +81,9 @@ export class ProfileComponent implements OnInit {
 
     this.message.set('Guardando nombre... ⏳');
 
-    // Llamamos al Backend para guardar el nombre
     this.auth.updateProfile({ 
       username: nextUsername,
-      tax_rate: this.taxRateInput() // Enviamos el IVA actual para que no se pierda
+      tax_rate: this.taxRateInput() 
     }).subscribe({
       next: () => {
         this.message.set('Nombre actualizado en la nube ✅');
@@ -95,13 +95,12 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // Guardar Datos del Negocio e IVA (En la Nube)
+  // Guardar Datos del Negocio e IVA
   saveBusiness() {
     const current = this.business();
-    // Leemos el valor directo del signal numérico
     const nuevaTasa = this.taxRateInput(); 
 
-    // 1. Guardamos configuración visual (Nombre tienda, RUC, etc.) en Local
+    // 1. Guardamos configuración visual en Local (SettingsService)
     const nextSettings: BusinessSettings = {
       name: current.name?.trim() || 'Negocio',
       ruc: current.ruc?.trim() || '9999999999001',
@@ -111,15 +110,22 @@ export class ProfileComponent implements OnInit {
     };
     this.settings.update(nextSettings);
     
-    // 2. 🔥 EL GRAN CAMBIO: Enviamos el IVA a la Base de Datos
+    // 2. 🔥 EL GRAN FIX: Enviamos TODO a la Base de Datos
     this.message.set('Sincronizando con la nube... ☁️');
 
-    this.auth.updateProfile({ 
+    // Mapeamos los nombres del formulario (name, ruc) a los de la BD (business_name, business_ruc)
+    const payload = {
       tax_rate: nuevaTasa,
-      username: this.username() // Mantenemos el nombre actual
-    }).subscribe({
+      username: this.username(),
+      business_name: nextSettings.name,
+      business_ruc: nextSettings.ruc,
+      business_address: nextSettings.address,
+      business_phone: nextSettings.phone
+    };
+
+    this.auth.updateProfile(payload).subscribe({
       next: (resp) => {
-        // Al volver, el auth.service ya actualizó el currentUser automáticamente
+        console.log('✅ Respuesta del servidor:', resp);
         this.message.set('¡Guardado y Sincronizado! ✅');
       },
       error: (err) => {
