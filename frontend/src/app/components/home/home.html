@@ -37,22 +37,16 @@
                   class="custom-scroll-panel" 
                   panelClass="custom-scroll-panel">
            
-           <mat-option value="anon" class="option-anon">
-             <div class="row-content">
-               <div class="avatar-circle"><mat-icon>person_outline</mat-icon></div>
-               <div class="text-info">
-                 <span class="main-text">Consumidor Final</span>
-                 <span class="sub-text">Venta rápida</span>
-               </div>
-             </div>
-           </mat-option>
-
-           <mat-divider></mat-divider>
-
            @for (c of filteredClients(); track c.id) {
              <mat-option [value]="c" class="option-client">
                <div class="row-content">
-                 <div class="avatar-circle client">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                 
+                 @if (c.cedula === '9999999999999') {
+                    <div class="avatar-circle"><mat-icon>person_outline</mat-icon></div>
+                 } @else {
+                    <div class="avatar-circle client">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                 }
+
                  <div class="text-info">
                    <span class="main-text">{{ c.nombre }}</span>
                    <span class="sub-text">{{ c.cedula || 'S/N' }}</span>

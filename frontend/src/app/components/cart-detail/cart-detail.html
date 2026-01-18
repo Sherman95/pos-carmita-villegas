@@ -1,5 +1,5 @@
 <div class="cart-container">
-  
+
   <div class="cart-header">
     <div class="header-info">
       <h2>Resumen de Cuenta 🧾</h2>
@@ -15,7 +15,11 @@
     <div class="client-card elevation-z1">
       <div class="current-client">
         <div class="icon-box">
-          <mat-icon>person</mat-icon>
+          @if (clienteLabel() === 'Consumidor Final' || clienteLabel() === '.Consumidor Final') {
+            <mat-icon>person_outline</mat-icon>
+          } @else {
+            <mat-icon>person</mat-icon>
+          }
         </div>
         <div class="meta">
           <span class="label">Cliente Asignado</span>
@@ -28,41 +32,42 @@
         <input matInput 
                placeholder="Buscar o cambiar cliente..." 
                [ngModel]="searchText()"
-               (ngModelChange)="searchText.set($event)"
-               [matAutocomplete]="auto"
+               (ngModelChange)="searchText.set($event)" 
+               [matAutocomplete]="auto" 
                (focus)="limpiarBusqueda($event)">
-        
+
         @if (searchText() && searchText() !== 'Consumidor Final') {
           <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
-              <mat-icon>close</mat-icon>
+            <mat-icon>close</mat-icon>
           </button>
         }
 
         <mat-autocomplete #auto="matAutocomplete" 
-                  (optionSelected)="onOptionSelected($event)"
-                  panelClass="custom-autocomplete">
-          
-          <mat-option value="anon" class="option-row">
-            <div class="row-flex">
-              <div class="avatar-mini"><mat-icon>person_outline</mat-icon></div>
-              <span>Consumidor Final</span>
-            </div>
-          </mat-option>
+                          (optionSelected)="onOptionSelected($event)"
+                          panelClass="custom-autocomplete">
 
           @for (c of filteredClients(); track c.id) {
             <mat-option [value]="c" class="option-row">
               <div class="row-flex">
-                <div class="avatar-mini text">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+
+                @if (c.cedula === '9999999999999') {
+                  <div class="avatar-mini"><mat-icon>person_outline</mat-icon></div>
+                } @else {
+                  <div class="avatar-mini text">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                }
+
                 <div class="text-col">
                   <span class="name">{{ c.nombre }}</span>
-                  <small *ngIf="c.cedula">{{ c.cedula }}</small>
+                  @if (c.cedula !== '9999999999999') {
+                    <small>{{ c.cedula }}</small>
+                  }
                 </div>
               </div>
             </mat-option>
           }
 
           @if (filteredClients().length === 0 && searchText()) {
-             <mat-option disabled>No se encontraron clientes</mat-option>
+            <mat-option disabled>No se encontraron clientes</mat-option>
           }
         </mat-autocomplete>
       </mat-form-field>
@@ -80,14 +85,14 @@
             <button mat-icon-button color="warn" class="btn-delete" (click)="eliminar($index)">
               <mat-icon>delete_outline</mat-icon>
             </button>
-            
+
             <div class="qty-badge">x{{ linea.cantidad }}</div>
-            
+
             <div class="item-desc">
               <div class="name">{{ linea.item.nombre }}</div>
               <div class="unit">Unit: ${{ linea.precioVenta }}</div>
             </div>
-            
+
             <div class="item-total">
               ${{ linea.subtotal | number:'1.2-2' }}
             </div>
