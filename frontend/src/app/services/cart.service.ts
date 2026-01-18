@@ -1,9 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http'; // 👈 1. Necesitamos HTTP
+import { HttpClient } from '@angular/common/http';
 import { Item } from '../interfaces/interfaces';
 import { Client } from './clients.service';
 import { AuthService } from './auth.service';
-import { environment } from '../../environments/environment'; // 👈 2. La URL de la API
+import { environment } from '../../environments/environment';
 
 export interface CartItem {
   item: Item;
@@ -16,16 +16,39 @@ export interface CartItem {
   providedIn: 'root'
 })
 export class CartService {
-  // Inyecciones
   private http = inject(HttpClient);
   private auth = inject(AuthService);
   
   private apiUrl = `${environment.apiBaseUrl}/api/sales`;
+  private clientsUrl = `${environment.apiBaseUrl}/api/clients`; // ✅ URL para buscar clientes
 
   items = signal<CartItem[]>([]);
   cliente = signal<Client | null>(null);
 
-  // ✅ CÁLCULO VIVO DEL IVA (Tu lógica maestra)
+  // Variable para guardar al Consumidor Final y no buscarlo a cada rato
+  private consumidorFinalDefault: Client | null = null;
+
+  constructor() {
+    // 🚀 AL INICIAR: Buscamos automáticamente al Consumidor Final
+    this.cargarConsumidorFinal();
+  }
+
+  // 👇 ESTA ES LA FUNCIÓN NUEVA
+  cargarConsumidorFinal() {
+    this.http.get<Client[]>(this.clientsUrl).subscribe({
+      next: (clientes) => {
+        // Buscamos al dueño del RUC 999...
+        const cf = clientes.find(c => c.cedula === '9999999999999');
+        if (cf) {
+          this.consumidorFinalDefault = cf;
+          this.cliente.set(cf); // ✅ ¡Asignado automáticamente al iniciar!
+          console.log('✅ Carrito inicializado con:', cf.nombre);
+        }
+      },
+      error: (err) => console.error('Error cargando cliente por defecto', err)
+    });
+  }
+
   taxRate = computed(() => {
     const user = this.auth.currentUser();
     return Number(user?.tax_rate) || 0; 
@@ -50,17 +73,12 @@ export class CartService {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
-  // 🔥 AQUÍ ESTÁ LA MAGIA QUE FALTABA 🔥
-  // Esta función empaqueta todo y se lo manda al backend
   confirmSale(metodoPago: string = 'EFECTIVO') {
     const payload = {
       items: this.items(),
       total: this.total(),
       metodo_pago: metodoPago,
-      client_id: this.cliente()?.id || null,
-      
-      // 👇 ¡ESTA ES LA LÍNEA DE ORO! 👇
-      // Enviamos explícitamente la tasa que usó este carrito (0, 0.12 o 0.15)
+      client_id: this.cliente()?.id || null, // Ahora esto llevará el ID real del 999...
       tax_rate: this.taxRate() 
     };
 
@@ -96,6 +114,14 @@ export class CartService {
 
   limpiarCarrito() {
     this.items.set([]);
-    this.cliente.set(null);
+    
+    // 🧠 LOGICA INTELIGENTE:
+    // Si tenemos guardado al consumidor final, lo volvemos a poner por defecto.
+    // Si no, ponemos null.
+    if (this.consumidorFinalDefault) {
+      this.cliente.set(this.consumidorFinalDefault);
+    } else {
+      this.cliente.set(null);
+    }
   }
 }
