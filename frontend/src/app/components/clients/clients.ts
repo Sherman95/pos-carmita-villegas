@@ -1,6 +1,15 @@
-import { Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  TemplateRef,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -8,19 +17,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+
 import { ClientsService, Client } from '../../services/clients.service';
 
 @Component({
   selector: 'app-clients',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    MatCardModule, 
-    MatFormFieldModule, 
-    MatInputModule, 
-    MatButtonModule, 
-    MatDialogModule, 
+    CommonModule,
+    FormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatDialogModule,
     MatIconModule,
     MatTooltipModule
   ],
@@ -28,36 +38,59 @@ import { ClientsService, Client } from '../../services/clients.service';
   styleUrl: './clients.scss'
 })
 export class ClientsComponent implements OnInit {
+
   private clientsService = inject(ClientsService);
   private dialog = inject(MatDialog);
   private dialogRef?: MatDialogRef<unknown>;
 
   @ViewChild('clientFormDialog') formDialog!: TemplateRef<unknown>;
 
+  // =========================
   // SIGNALS
+  // =========================
   clients = signal<Client[]>([]);
   loading = signal<boolean>(false);
   searchTerm = signal<string>('');
 
-  // Computado para el buscador
+  // Error dentro del modal
+  formError = signal<string | null>(null);
+
+  // =========================
+  // FORMULARIO
+  // =========================
+  form = signal<{
+    nombre: string;
+    cedula?: string;
+    telefono?: string;
+    email?: string;
+    direccion?: string;
+  }>({
+    nombre: '',
+    cedula: '',
+    telefono: '',
+    email: '',
+    direccion: ''
+  });
+
+  selectedClientId = signal<string | null>(null);
+
+  // =========================
+  // COMPUTED
+  // =========================
   filteredClients = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     if (!term) return this.clients();
-    return this.clients().filter((c) =>
+
+    return this.clients().filter(c =>
       c.nombre.toLowerCase().includes(term) ||
       (c.cedula || '').toLowerCase().includes(term) ||
       (c.email || '').toLowerCase().includes(term)
     );
   });
 
-  // DATOS DEL FORMULARIO
-  form = signal<{ nombre: string; cedula?: string; telefono?: string; email?: string; direccion?: string }>({ 
-    nombre: '', cedula: '', telefono: '', email: '', direccion: '' 
-  });
-  
-  // ID DEL CLIENTE SELECCIONADO (Signal)
-  selectedClientId = signal<string | null>(null);
-
+  // =========================
+  // INIT
+  // =========================
   ngOnInit(): void {
     this.loadClients();
   }
@@ -65,21 +98,20 @@ export class ClientsComponent implements OnInit {
   loadClients() {
     this.loading.set(true);
     this.clientsService.getClients().subscribe({
-      next: (data) => {
+      next: data => {
         this.clients.set(data || []);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: err => {
         console.error('Error cargando clientes', err);
         this.loading.set(false);
       }
     });
   }
 
-  // =========================================================
-  // FUNCIONES PARA LA LISTA (Nombres en Inglés para coincidir con tu HTML)
-  // =========================================================
-
+  // =========================
+  // LISTA
+  // =========================
   showCreateForm() {
     this.resetForm();
     this.openDialog();
@@ -98,39 +130,46 @@ export class ClientsComponent implements OnInit {
   }
 
   deleteClient(id: string) {
-    if(!confirm('¿Estás seguro de eliminar este cliente?')) return;
-    
+    if (!confirm('¿Eliminar este cliente?')) return;
+
     this.clientsService.deleteClient(id).subscribe({
-      next: () => this.clients.set(this.clients().filter((c) => c.id !== id)),
-      error: (err) => console.error('Error eliminando cliente', err)
+      next: () => {
+        this.clients.set(this.clients().filter(c => c.id !== id));
+      },
+      error: err => console.error('Error eliminando cliente', err)
     });
   }
 
-  // =========================================================
-  // FUNCIONES PARA EL MODAL (Nombres en Español para el nuevo diseño)
-  // =========================================================
-
+  // =========================
+  // MODAL
+  // =========================
   guardar() {
     const payload = this.form();
     if (!payload.nombre) return;
 
+    this.formError.set(null);
+
     if (this.selectedClientId()) {
-      // Editar
-      this.clientsService.updateClient(this.selectedClientId()!, payload).subscribe({
-        next: (updated) => {
-          this.clients.set(this.clients().map((c) => (c.id === updated.id ? updated : c)));
-          this.closeDialog();
-        },
-        error: (err) => console.error('Error actualizando cliente', err)
-      });
+      // EDITAR
+      this.clientsService
+        .updateClient(this.selectedClientId()!, payload)
+        .subscribe({
+          next: updated => {
+            this.clients.set(
+              this.clients().map(c => c.id === updated.id ? updated : c)
+            );
+            this.closeDialog();
+          },
+          error: err => this.manejarErrorBackend(err)
+        });
     } else {
-      // Crear
+      // CREAR
       this.clientsService.createClient(payload).subscribe({
-        next: (created) => {
+        next: created => {
           this.clients.set([created, ...this.clients()]);
           this.closeDialog();
         },
-        error: (err) => console.error('Error creando cliente', err)
+        error: err => this.manejarErrorBackend(err)
       });
     }
   }
@@ -139,21 +178,56 @@ export class ClientsComponent implements OnInit {
     this.closeDialog();
   }
 
-  updateField<K extends keyof ReturnType<typeof this.form>>(key: K, value: ReturnType<typeof this.form>[K]) {
+  updateField<K extends keyof ReturnType<typeof this.form>>(
+    key: K,
+    value: ReturnType<typeof this.form>[K]
+  ) {
     this.form.set({ ...this.form(), [key]: value });
   }
 
-  // =========================================================
-  // UTILIDADES PRIVADAS
-  // =========================================================
+  // =========================
+  // MANEJO DE ERRORES
+  // =========================
+  private manejarErrorBackend(err: any) {
+    const errorBody = err.error;
+    const mensajeServidor =
+      errorBody?.error ||
+      errorBody?.message ||
+      JSON.stringify(errorBody) ||
+      '';
 
+    const mensajeLower = mensajeServidor.toLowerCase();
+    let mensaje = 'Ocurrió un error al guardar.';
+
+    if (
+      mensajeLower.includes('unique') ||
+      mensajeLower.includes('duplicate') ||
+      mensajeLower.includes('ya existe')
+    ) {
+      mensaje = '⚠️ Esa CÉDULA ya está registrada.';
+    }
+    else if (mensajeLower.includes('check_cedula_length')) {
+      mensaje = '⚠️ La identificación debe tener 10 o 13 dígitos.';
+    }
+    else if (mensajeLower.includes('check_telefono_length')) {
+      mensaje = '⚠️ El teléfono no debe tener más de 10 dígitos.';
+    }
+    else if (err.status === 500) {
+      mensaje = '⚠️ Verifica la cédula y el teléfono.';
+    }
+
+    this.formError.set(mensaje);
+  }
+
+  // =========================
+  // DIALOG
+  // =========================
   private openDialog() {
+    this.formError.set(null);
     this.dialogRef = this.dialog.open(this.formDialog, {
       width: '600px',
-      autoFocus: true,
-      panelClass: 'custom-dialog-container'
+      autoFocus: true
     });
-    this.dialogRef.afterClosed().subscribe(() => this.resetForm());
   }
 
   private closeDialog() {
@@ -163,7 +237,14 @@ export class ClientsComponent implements OnInit {
 
   private resetForm() {
     this.selectedClientId.set(null);
-    this.form.set({ nombre: '', cedula: '', telefono: '', email: '', direccion: '' });
+    this.formError.set(null);
+    this.form.set({
+      nombre: '',
+      cedula: '',
+      telefono: '',
+      email: '',
+      direccion: ''
+    });
   }
 
   setSearch(term: string) {

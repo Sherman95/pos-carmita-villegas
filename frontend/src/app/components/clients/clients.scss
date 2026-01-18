@@ -157,6 +157,46 @@
   margin: 0 -24px -24px -24px; // Rompe márgenes
 }
 
+
+.form-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  background: linear-gradient(135deg, #fdecea, #fff5f5);
+  color: #8b0000;
+
+  padding: 12px 14px;
+  border-radius: 10px;
+
+  font-size: 14px;
+  line-height: 1.4;
+
+  border-left: 4px solid #e53935;
+  box-shadow: 0 4px 10px rgba(229, 57, 53, 0.15);
+
+  animation: fadeIn 0.25s ease-out;
+}
+
+.form-error mat-icon {
+  color: #e53935;
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+/* Animación suave */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 // Utilidad para inputs
 .full-width { width: 100%; }
 

@@ -27,9 +27,9 @@ export class CartService {
   // Copiamos el ID que nos dio tu consulta SQL. 
   // Así el sistema arranca con el cliente LISTO, sin esperar a internet.
   private defaultClient: Client = {
-    id: '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d', // 👈 ¡EL ID REAL DE TU BD!
+    id: '1cb8e91a-3620-4bc5-bda9-6c670ac563b2', // ID DE PRODUCCIÓN
     nombre: 'Consumidor Final',
-    cedula: '9999999999999',
+    cedula: '9999999999', // 👈 ¡ACTUALIZADO A 10 DÍGITOS!
     direccion: 'S/D',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()

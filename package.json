@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@angular/animations": "^21.1.0"
+    "@angular/animations": "^21.1.0",
+    "sweetalert2": "^11.26.17"
   }
 }
