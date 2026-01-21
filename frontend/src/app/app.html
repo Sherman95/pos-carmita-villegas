@@ -1,8 +1,87 @@
-<div class="app-shell">
-	<main class="page">
-		<router-outlet></router-outlet>
-	</main>
+<mat-sidenav-container class="sidenav-container">
 
-	<app-cart-footer></app-cart-footer>
-	<app-navigation></app-navigation>
-</div>
+  <mat-sidenav #sidenav mode="over" class="app-sidenav">
+    
+    <div class="sidenav-header">
+      
+      <div class="avatar-circle elevation-z4">
+        {{ user.initial }}
+      </div>
+      
+      <div class="user-info">
+        <h3>{{ user.name }}</h3>
+        <span class="role-badge">{{ user.role }}</span>
+        <p class="email">{{ user.email }}</p>
+      </div>
+
+    </div>
+
+    <mat-nav-list>
+      
+      <h3 matSubheader>Operaciones Diarias</h3>
+
+      <a mat-list-item routerLink="/home" (click)="sidenav.close()">
+        <mat-icon matListItemIcon class="icon-wine">point_of_sale</mat-icon>
+        <span matListItemTitle>Punto de Venta</span>
+      </a>
+
+      <a mat-list-item routerLink="/fiados" (click)="sidenav.close()">
+        <mat-icon matListItemIcon class="icon-wine">account_balance_wallet</mat-icon>
+        <span matListItemTitle>Cartera de Crédito</span>
+        <span class="badge-alert" *ngIf="true">PENDIENTE</span> </a>
+
+      <a mat-list-item routerLink="/clients" (click)="sidenav.close()">
+        <mat-icon matListItemIcon>people_alt</mat-icon>
+        <span matListItemTitle>Agenda de Clientes</span>
+      </a>
+
+      <mat-divider></mat-divider>
+
+      <h3 matSubheader>Reportes</h3>
+
+      <a mat-list-item routerLink="/history" (click)="sidenav.close()">
+        <mat-icon matListItemIcon>receipt_long</mat-icon>
+        <span matListItemTitle>Historial de Ventas</span>
+      </a>
+
+      <a mat-list-item routerLink="/reports" (click)="sidenav.close()">
+        <mat-icon matListItemIcon>bar_chart</mat-icon>
+        <span matListItemTitle>Resumen Financiero</span>
+      </a>
+
+      <mat-divider></mat-divider>
+
+      <h3 matSubheader>Configuración</h3>
+
+      <a mat-list-item routerLink="/profile" (click)="sidenav.close()">
+        <mat-icon matListItemIcon>settings</mat-icon>
+        <span matListItemTitle>Ajustes del Negocio</span>
+      </a>
+
+      <a mat-list-item (click)="logout()" class="logout-item">
+        <mat-icon matListItemIcon color="warn">logout</mat-icon>
+        <span matListItemTitle class="text-warn">Cerrar Sesión</span>
+      </a>
+
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <small>POS Carmita v1.0.0</small>
+    </div>
+
+  </mat-sidenav>
+
+
+  <mat-sidenav-content>
+    
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+
+    <app-cart-footer></app-cart-footer>
+    
+    <app-navigation (toggleMenu)="sidenav.toggle()"></app-navigation>
+
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

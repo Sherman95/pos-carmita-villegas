@@ -5,12 +5,19 @@ import { Client } from './clients.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
+// 1. DEFINIMOS LOS TIPOS DE PAGO PERMITIDOS
+export type TipoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'CREDITO';
+
 export interface CartItem {
   item: Item;
   precioVenta: number;
   cantidad: number;
   subtotal: number;
 }
+
+// 2. CONSTANTE DEL ID "CONSUMIDOR FINAL" (Para no equivocarnos nunca)
+// Este ID debe coincidir con el que tienes en tu Base de Datos Supabase
+const ID_CONSUMIDOR_FINAL = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
 
 @Injectable({
   providedIn: 'root'
@@ -23,27 +30,24 @@ export class CartService {
 
   items = signal<CartItem[]>([]);
 
-  // ⚡ TRUCO MAESTRO:
-  // Copiamos el ID que nos dio tu consulta SQL. 
-  // Así el sistema arranca con el cliente LISTO, sin esperar a internet.
+  // Configuración inicial del Cliente por Defecto
   private defaultClient: Client = {
-    id: '1cb8e91a-3620-4bc5-bda9-6c670ac563b2', // ID DE PRODUCCIÓN
+    id: ID_CONSUMIDOR_FINAL, // 👈 Usamos la constante unificada
     nombre: 'Consumidor Final',
-    cedula: '9999999999', // 👈 ¡ACTUALIZADO A 10 DÍGITOS!
+    cedula: '9999999999',
     direccion: 'S/D',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
-  // Inicializamos la señal DIRECTAMENTE con el cliente real
+  // Inicializamos la señal
   cliente = signal<Client | null>(this.defaultClient);
 
   constructor() {
-    // Ya no necesitamos llamar a cargarConsumidorFinal() aquí obligatoriamente
-    // porque ya lo tenemos "quemado" y listo para usar.
-    console.log('🚀 Carrito listo con Consumidor Final (ID Fijo)');
+    console.log('🚀 Carrito listo con Consumidor Final:', ID_CONSUMIDOR_FINAL);
   }
 
+  // --- CÁLCULOS (COMPUTED) ---
   taxRate = computed(() => {
     const user = this.auth.currentUser();
     return Number(user?.tax_rate) || 0; 
@@ -68,26 +72,43 @@ export class CartService {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
- confirmSale(metodoPago: string = 'EFECTIVO') {
-    let clienteIdFinal = this.cliente()?.id;
+  // --- LÓGICA DE VENTA ACTUALIZADA ---
+  
+  // Ahora aceptamos el tipo de pago y el abono inicial
+  confirmSale(tipoPago: TipoPago = 'EFECTIVO', abonoInicial: number = 0) {
+    let clienteActual = this.cliente();
 
+    // Asegurarnos de tener un ID válido
+    let clienteIdFinal = clienteActual?.id;
     if (!clienteIdFinal || clienteIdFinal === 'temp-id') {
-      clienteIdFinal = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
+      clienteIdFinal = ID_CONSUMIDOR_FINAL;
     }
 
+    // ⛔ REGLA DE ORO: BLOQUEO DE CRÉDITO ANÓNIMO
+    // Si intentan dar CREDITO a Consumidor Final, detenemos todo aquí.
+    if (tipoPago === 'CREDITO' && clienteIdFinal === ID_CONSUMIDOR_FINAL) {
+      // Lanzamos un error que capturará el componente (y mostrará SweetAlert)
+      throw new Error('NO_CREDIT_CF'); 
+    }
+
+    // Construimos el paquete de datos para el Backend
     const payload = {
       items: this.items(),
       total: this.total(),
-      metodo_pago: metodoPago,
       client_id: clienteIdFinal,
-      tax_rate: this.taxRate() 
+      tax_rate: this.taxRate(),
+      
+      // 👇 CAMPOS NUEVOS PARA LA BD
+      tipo_pago: tipoPago,      // 'EFECTIVO', 'TRANSFERENCIA' o 'CREDITO'
+      abono_inicial: abonoInicial // Cuánto dinero entra a caja realmente
     };
 
-    // 🕵️‍♂️ ¡EL CHIVATO! Míralo en la consola del navegador (F12)
-    console.log('📦 PAYLOAD QUE SALE:', payload); 
+    console.log('📦 ENVIANDO VENTA:', payload); 
 
     return this.http.post(this.apiUrl, payload);
   }
+
+  // --- MÉTODOS AUXILIARES ---
 
   setCliente(c: Client | null) {
     this.cliente.set(c);
@@ -118,7 +139,7 @@ export class CartService {
 
   limpiarCarrito() {
     this.items.set([]);
-    // Al limpiar, volvemos INMEDIATAMENTE al ID real fijo
+    // Al limpiar, volvemos al Consumidor Final por defecto
     this.cliente.set(this.defaultClient);
   }
 }

@@ -1,192 +1,179 @@
-// --- CONFIGURACIÓN DE PANTALLA COMPLETA ---
-.login-shell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #2e0e22 0%, #4b1e3a 100%); // Fondo oscuro base
+// ============================================
+// 1. CONTENEDOR PRINCIPAL
+// ============================================
+.sidenav-container {
+  height: 100vh;
+  background-color: #f8f9fa; // Fondo de la app
 }
 
-// --- DECORACIÓN DE FONDO (CÍRCULOS FLOTANTES) ---
-.decorative-bg {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 0;
-  pointer-events: none; // Para que no interfieran con clics
-
-  .circle {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px); // Efecto difuminado
-    opacity: 0.4;
-    animation: float 10s infinite ease-in-out;
-  }
-
-  .circle-1 {
-    width: 300px; height: 300px;
-    background: #ad1457; // Rosado intenso
-    top: -50px; left: -50px;
-  }
-
-  .circle-2 {
-    width: 400px; height: 400px;
-    background: #6a1b9a; // Morado
-    bottom: -100px; right: -100px;
-    animation-delay: -5s;
-  }
-}
-
-// --- TARJETA DE LOGIN ---
-.card {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.95); // Casi sólido
-  backdrop-filter: blur(10px); // Efecto cristal suave
-  padding: 40px;
-  border-radius: 24px;
-  width: 90%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  text-align: center;
-  
-  // Animación de entrada
-  animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-// --- LOGO Y TÍTULOS ---
-.brand {
-  margin-bottom: 30px;
-
-  .logo-container {
-    width: 80px; height: 80px;
-    margin: 0 auto 20px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-    padding: 10px;
-
-    img.logo {
-      width: 100%; height: 100%; object-fit: contain;
-    }
-    
-    // Icono por si falla la imagen
-    .fallback-icon {
-      font-size: 40px; width: 40px; height: 40px; color: #4b1e3a;
-    }
-  }
-
-  .brand-text {
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #4b1e3a;
-      letter-spacing: -0.5px;
-    }
-    p {
-      margin: 5px 0 0;
-      color: #666;
-      font-size: 0.95rem;
-    }
-  }
-}
-
-// --- FORMULARIO ---
-.login-form {
-  display: flex; flex-direction: column; gap: 15px;
-
-  .full-width { width: 100%; }
-  
-  // Iconos dentro de los inputs
-  mat-icon { color: #888; }
-}
-
-// --- ERROR BOX ---
-.error-box {
-  background: #ffebee;
-  color: #c62828;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  display: flex; align-items: center; gap: 8px; justify-content: center;
-  border: 1px solid #ef9a9a;
-  animation: shake 0.4s ease-in-out;
-
-  mat-icon { font-size: 20px; width: 20px; height: 20px; color: #c62828; }
-}
-
-// --- BOTÓN GRANDE ---
-.btn-login {
-  height: 55px;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  margin-top: 10px;
-  background: linear-gradient(90deg, #4b1e3a 0%, #7b1fa2 100%);
+// ============================================
+// 2. LA BARRA LATERAL (SIDENAV) - LA JOYA 💎
+// ============================================
+.app-sidenav {
+  width: 280px;
+  // Fondo oscuro elegante (el mismo del login para consistencia)
+  background: linear-gradient(180deg, #2e0e22 0%, #4b1e3a 100%);
   color: white;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-right: none;
+  box-shadow: 5px 0 25px rgba(0,0,0,0.2); // Sombra profunda
 
-  &:not([disabled]):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(75, 30, 58, 0.3);
+  // --- CABECERA DEL USUARIO ---
+  .sidenav-header {
+    padding: 40px 20px 30px;
+    text-align: center;
+    background: rgba(255,255,255,0.03); // Sutil diferencia
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+
+    .avatar-circle {
+      width: 80px; height: 80px;
+      margin: 0 auto 15px;
+      background: white;
+      color: #4b1e3a;
+      font-size: 2rem;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 4px solid rgba(255,255,255,0.2); // Anillo translúcido
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .user-info {
+      h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #fff;
+      }
+      .role-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        background: rgba(255,235,59,0.2); // Amarillo translúcido
+        color: #ffeb3b;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin: 5px 0;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .email {
+        margin: 0;
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+      }
+    }
   }
 
-  &:disabled {
-    opacity: 0.7;
+  // --- LISTA DE NAVEGACIÓN ---
+  mat-nav-list {
+    padding-top: 20px;
+
+    // Títulos de sección (Subheader)
+    h3[matSubheader] {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      background: transparent;
+      padding-left: 25px;
+      margin-top: 10px;
+    }
+
+    // Ítems (Botones)
+    a[mat-list-item] {
+      color: rgba(255,255,255,0.8);
+      height: 55px;
+      transition: all 0.2s ease;
+      position: relative;
+      margin: 0 10px; // Margen lateral para efecto flotante
+      border-radius: 12px;
+      width: auto; // Ajustar al margen
+
+      // Ícono
+      mat-icon {
+        color: rgba(255,255,255,0.6);
+        margin-right: 15px;
+        transition: color 0.2s;
+      }
+
+      // Hover
+      &:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        mat-icon { color: white; }
+      }
+
+      // Activo (Ruta actual)
+      &.active-link { // Necesitas agregar routerLinkActive="active-link" en el HTML
+        background: rgba(255,255,255,0.15);
+        color: #ffeb3b; // Amarillo dorado
+        font-weight: 600;
+
+        mat-icon { color: #ffeb3b; }
+        
+        // Línea indicadora a la izquierda
+        &::before {
+          content: '';
+          position: absolute;
+          left: -10px; top: 12px; bottom: 12px;
+          width: 4px;
+          background: #ffeb3b;
+          border-radius: 0 4px 4px 0;
+        }
+      }
+    }
+
+    // Separador
+    mat-divider {
+      border-top-color: rgba(255,255,255,0.1);
+      margin: 15px 0;
+    }
+
+    // Botón Salir (Especial)
+    .logout-item {
+      margin-top: 20px;
+      &:hover {
+        background: rgba(244, 67, 54, 0.15); // Fondo rojo suave
+        mat-icon { color: #ff5252; }
+        .text-warn { color: #ff5252; }
+      }
+    }
+  }
+
+  // --- FOOTER DEL MENÚ ---
+  .sidenav-footer {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    
+    small {
+      color: rgba(255,255,255,0.2);
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+    }
   }
 }
 
-// --- FOOTER ---
-.footer-copy {
-  margin-top: 30px;
-  font-size: 0.75rem;
-  color: #999;
+// ============================================
+// 3. CONTENIDO PRINCIPAL
+// ============================================
+.page-content {
+  padding-bottom: 70px; // Espacio para la navbar inferior
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
-// --- SPINNER SIMPLE (CSS Puro) ---
-.loader {
-  width: 20px; height: 20px;
-  border: 2px solid #ffffff;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  animation: rotation 1s linear infinite;
-}
-
-// --- ANIMACIONES ---
-@keyframes float {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(20px, 20px); }
-  100% { transform: translate(0, 0); }
-}
-
-@keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes rotation {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-// AJUSTES MATERIAL
-::ng-deep .custom-field {
-  .mat-mdc-form-field-flex {
-    background-color: #f8f9fa !important; // Fondo gris muy claro en inputs
-    border-radius: 12px;
-  }
-  .mat-mdc-form-field-subscript-wrapper { display: none; } // Ocultar espacio extra abajo
+// Badge de alerta (El "NUEVO" o "PENDIENTE")
+.badge-alert {
+  background: #ff5252;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 10px;
+  margin-left: auto; // Empuja a la derecha
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }

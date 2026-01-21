@@ -1,10 +1,12 @@
 <nav class="bottom-nav elevation-z6">
-  @for (item of navItems; track item.path) {
+  @for (item of navItems; track item.label) {
+    
     <button mat-button 
             class="nav-item" 
             [routerLink]="item.path" 
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: item.path === '/' }">
+            [routerLinkActive]="item.path ? 'active' : ''"
+            [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+            (click)="handleItemClick(item)">
       
       <div class="icon-container">
         <mat-icon>{{ item.icon }}</mat-icon>
@@ -12,5 +14,6 @@
       <span class="label">{{ item.label }}</span>
       
     </button>
+
   }
 </nav>

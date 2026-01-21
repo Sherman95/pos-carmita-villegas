@@ -9,16 +9,24 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDividerModule } from '@angular/material/divider';
+
+// SERVICIOS
 import { ClientsService, Client } from '../../services/clients.service';
-import { CartService } from '../../services/cart.service';
+import { CartService, TipoPago } from '../../services/cart.service'; // 👈 Importamos TipoPago
 import { SalesService } from '../../services/sales.service';
 import { SettingsService } from '../../services/settings.service';
+
+// COMPONENTES Y LIBRERÍAS
 import { TicketDialogComponent, TicketData } from '../ticket-dialog/ticket-dialog';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import Swal from 'sweetalert2'; // 👈 Importamos SweetAlert
+
+// ID FIJO DE CONSUMIDOR FINAL (Mismo de la BD)
+const ID_CONSUMIDOR_FINAL = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
 
 @Component({
-  selector: 'app-cart-detail',  // <--- CORRECTO
+  selector: 'app-cart-detail',
   standalone: true,
   imports: [
     CommonModule,
@@ -32,62 +40,61 @@ import html2canvas from 'html2canvas';
     MatFormFieldModule,
     MatDividerModule
   ],
-  templateUrl: './cart-detail.html', // <--- CORRECTO (Busca el html de carrito)
-  styleUrl: './cart-detail.scss'     // <--- CORRECTO
+  templateUrl: './cart-detail.html',
+  styleUrl: './cart-detail.scss'
 })
-export class CartDetailComponent implements OnInit { // <--- NOMBRE CORRECTO DE LA CLASE
+export class CartDetailComponent implements OnInit {
   public cartService = inject(CartService);
   private clientsService = inject(ClientsService);
   private salesService = inject(SalesService);
   private settingsService = inject(SettingsService);
   private dialog = inject(MatDialog);
 
-  // SEÑALES DE ESTADO
+  // SEÑALES
   clients = signal<Client[]>([]);
-  searchText = signal(''); 
+  searchText = signal('');
   selectedClientId = signal<string>('anon');
 
-  // ==========================================
-  // CÁLCULOS FINANCIEROS (REACTIVOS)
-  // ==========================================
+  // 💰 VARIABLES DE PAGO (NUEVO)
+  selectedPayment: TipoPago = 'EFECTIVO'; // Por defecto
+  abonoAmount: number = 0; // Para los fiados
 
+  // COMPUTADAS
   subtotal = computed(() => this.cartService.total());
   taxRate = computed(() => this.settingsService.settings().taxRate ?? 0);
   taxAmount = computed(() => this.subtotal() * this.taxRate());
   grandTotal = computed(() => this.subtotal() + this.taxAmount());
 
-
-  // ==========================================
-  // LÓGICA DE CLIENTES Y BUSCADOR
-  // ==========================================
-
+  // FILTRO CLIENTES
   filteredClients = computed(() => {
     const term = this.searchText().toLowerCase().trim();
     if (!term) return this.clients();
-    
     return this.clients().filter((c) =>
-      (c.nombre || '').toLowerCase().includes(term) || 
+      (c.nombre || '').toLowerCase().includes(term) ||
       (c.cedula || '').toLowerCase().includes(term)
     );
   });
 
   clienteLabel = computed(() => {
     const id = this.selectedClientId();
-    if (!id || id === 'anon') return 'Consumidor final';
+    if (!id || id === 'anon' || id === ID_CONSUMIDOR_FINAL) return 'Consumidor Final';
     const client = this.clients().find((c) => c.id === id);
-    if (!client) return 'Cliente seleccionado';
-    return `${client.nombre}${client.cedula ? ' · ' + client.cedula : ''}`;
+    return client ? client.nombre : 'Cliente seleccionado';
   });
 
   constructor(public dialogRef: MatDialogRef<CartDetailComponent>) {}
 
   ngOnInit(): void {
-    // 1. Obtenemos el objeto cliente completo (o null)
     const clienteActual = this.cartService.cliente();
-
-    // 2. Si existe cliente, sacamos su ID. Si no, mandamos null (Consumidor Final)
     const cid = clienteActual ? clienteActual.id : null;
-    this.selectedClientId.set(cid ?? 'anon');
+    
+    // Si es null o temp-id, asumimos Consumidor Final
+    if (!cid || cid === 'temp-id') {
+        this.selectedClientId.set(ID_CONSUMIDOR_FINAL);
+    } else {
+        this.selectedClientId.set(cid);
+    }
+    
     this.cargarClientes();
   }
 
@@ -103,119 +110,143 @@ export class CartDetailComponent implements OnInit { // <--- NOMBRE CORRECTO DE 
 
   inicializarTextoBuscador() {
     const currentId = this.selectedClientId();
-    if (currentId && currentId !== 'anon') {
-      const client = this.clients().find(c => c.id === currentId);
-      if (client) {
-        this.searchText.set(client.nombre);
-      }
+    // Si es el ID de Consumidor Final, mostramos texto fijo
+    if (currentId === ID_CONSUMIDOR_FINAL || currentId === 'anon') {
+      this.searchText.set('Consumidor Final');
     } else {
-        this.searchText.set('Consumidor Final');
+      const client = this.clients().find(c => c.id === currentId);
+      if (client) this.searchText.set(client.nombre);
     }
   }
 
   onOptionSelected(event: any) {
-    const selectedValue = event.option.value;
-
-    if (selectedValue === 'anon') {
-      this.selectedClientId.set('anon');
-      this.cartService.setCliente(null);
+    const selectedValue = event.option.value; // Puede ser un objeto Client o string 'anon'
+    
+    if (selectedValue === 'anon' || selectedValue.id === ID_CONSUMIDOR_FINAL) {
+      this.selectedClientId.set(ID_CONSUMIDOR_FINAL);
+      this.cartService.setCliente(null); // O setear el objeto default
       this.searchText.set('Consumidor Final');
+      
+      // ⚠️ Si cambiamos a Consumidor Final y estaba en CRÉDITO, lo pasamos a EFECTIVO
+      if (this.selectedPayment === 'CREDITO') {
+        this.selectedPayment = 'EFECTIVO';
+      }
+
     } else {
       this.selectedClientId.set(selectedValue.id);
-      this.cartService.setCliente(selectedValue.id);
+      this.cartService.setCliente(selectedValue);
       this.searchText.set(selectedValue.nombre);
     }
   }
 
   limpiarBusqueda(event: Event) {
-      // Opcional
+     this.searchText.set('');
   }
 
   // ==========================================
-  // ACCIONES DEL CARRITO
+  // ⚡ LÓGICA DE COBRO ACTUALIZADA
   // ==========================================
 
-  cerrar() {
-    this.dialogRef.close();
-  }
-
-  eliminar(index: number) {
-    const items = this.cartService.items();
-    items.splice(index, 1);
-    this.cartService.items.set([...items]);
-    
-    if (items.length === 0) {
-      this.cerrar();
+  setMetodo(metodo: TipoPago) {
+    this.selectedPayment = metodo;
+    // Resetear abono si cambia de método
+    if (metodo !== 'CREDITO') {
+        this.abonoAmount = 0;
     }
   }
 
   cobrar() {
     if (this.cartService.items().length === 0) return;
 
-    const client = this.clients().find((c) => c.id === this.selectedClientId());
-    const itemsSnapshot = [...this.cartService.items()];
-    
-    const finalTotal = this.grandTotal(); 
-    const currentTaxRate = this.taxRate();
-    const business = this.settingsService.settings();
+    // 1. VALIDACIÓN VISUAL EXTRA (Por seguridad)
+    if (this.selectedPayment === 'CREDITO' && this.selectedClientId() === ID_CONSUMIDOR_FINAL) {
+        Swal.fire('Acción Bloqueada', 'No puedes fiar a Consumidor Final. Selecciona un cliente real.', 'warning');
+        return;
+    }
 
-    const venta = {
-      total: finalTotal,
-      metodo_pago: 'EFECTIVO',
-      client_id: this.selectedClientId() === 'anon' ? null : this.selectedClientId(),
-      items: this.cartService.items()
-    };
-
-    this.salesService.saveSale(venta).subscribe({
+    // 2. USAMOS LA NUEVA FUNCIÓN DEL SERVICIO (La que creamos en el paso anterior)
+    this.cartService.confirmSale(this.selectedPayment, this.abonoAmount).subscribe({
       next: (res: any) => {
-        alert('✅ ¡Venta registrada correctamente!');
-
-        const ticketData: TicketData = {
-          fecha: new Date(),
-          cliente: client?.nombre || 'Consumidor Final',
-          identificacion: client?.cedula || '9999999999999',
-          items: itemsSnapshot.map((i) => ({
-            nombre: i.item.nombre,
-            cantidad: i.cantidad,
-            precio: i.precioVenta,
-            subtotal: i.subtotal
-          })),
-          total: Number(finalTotal) || 0,
-          businessName: business.name,
-          businessRuc: business.ruc,
-          businessAddress: business.address,
-          businessPhone: business.phone,
-          taxRate: currentTaxRate
-        };
-
-        const dialogRef = this.dialog.open(TicketDialogComponent, {
-          data: ticketData,
-          maxWidth: '380px',
-          panelClass: 'ticket-dialog-capture'
+        
+        // ÉXITO
+        Swal.fire({
+            title: '¡Venta Exitosa!',
+            text: this.selectedPayment === 'CREDITO' ? 'Crédito registrado correctamente.' : 'Venta cobrada.',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
         });
 
-        this.capturarYEnviarTicket(dialogRef, res?.saleId);
-
-        this.cartService.limpiarCarrito();
-        this.cerrar();
+        // 3. GENERAR TICKET (Lógica original intacta)
+        this.generarTicket(res?.id || res?.saleId); // Ajuste por si Supabase devuelve diferente
       },
       error: (err: any) => {
-        console.error('Error al guardar:', err);
-        alert('❌ Ocurrió un error al guardar la venta.');
+        console.error('Error al cobrar:', err);
+        // Si el error viene de nuestra validación en el servicio
+        if (err.message === 'NO_CREDIT_CF') {
+            Swal.fire('Error', 'No se permite Crédito a Consumidor Final.', 'error');
+        } else {
+            Swal.fire('Error', 'No se pudo registrar la venta.', 'error');
+        }
       }
     });
   }
 
+  // Lógica extraída para mantener limpio el código
+  generarTicket(saleId: string) {
+    const client = this.clients().find((c) => c.id === this.selectedClientId());
+    const itemsSnapshot = [...this.cartService.items()];
+    const finalTotal = this.grandTotal();
+    const business = this.settingsService.settings();
+
+    const ticketData: TicketData = {
+      fecha: new Date(),
+      cliente: client?.nombre || 'Consumidor Final',
+      identificacion: client?.cedula || '9999999999',
+      items: itemsSnapshot.map((i) => ({
+        nombre: i.item.nombre,
+        cantidad: i.cantidad,
+        precio: i.precioVenta,
+        subtotal: i.subtotal
+      })),
+      total: Number(finalTotal) || 0,
+      businessName: business.name,
+      businessRuc: business.ruc,
+      businessAddress: business.address,
+      businessPhone: business.phone,
+      taxRate: this.taxRate()
+    };
+
+    const dialogRef = this.dialog.open(TicketDialogComponent, {
+      data: ticketData,
+      maxWidth: '380px',
+      panelClass: 'ticket-dialog-capture'
+    });
+
+    // Captura PDF y limpieza
+    this.capturarYEnviarTicket(dialogRef, saleId);
+    this.cartService.limpiarCarrito();
+    this.cerrar();
+  }
+
+  // ... (Tu función capturarYEnviarTicket y cerrar se mantienen igual) ...
+  cerrar() { this.dialogRef.close(); }
+  
+  eliminar(index: number) {
+    const items = this.cartService.items();
+    items.splice(index, 1);
+    this.cartService.items.set([...items]);
+    if (items.length === 0) this.cerrar();
+  }
+  
   private async capturarYEnviarTicket(dialogRef: any, saleId: string, docType: string = 'receipt') {
-    try {
+     // ... (Mismo código que tenías para html2canvas) ...
+     try {
       await dialogRef?.afterOpened().toPromise();
       await new Promise((resolve) => setTimeout(resolve, 60));
 
       const el = document.querySelector('.ticket-dialog-capture .ticket-paper') as HTMLElement | null;
-      if (!el) {
-        console.warn('No se encontró el elemento del ticket para capturar.');
-        return;
-      }
+      if (!el) return;
 
       const canvas = await html2canvas(el, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
@@ -227,18 +258,11 @@ export class CartDetailComponent implements OnInit { // <--- NOMBRE CORRECTO DE 
       const dataUri = pdf.output('datauristring');
       const base64 = dataUri.split(',')[1];
 
-      console.log('[capturarYEnviarTicket] saleId:', saleId, 'docType:', docType, 'base64 length:', base64?.length);
-
       if (saleId && base64) {
-        this.salesService.uploadReceipt(saleId, base64, docType).subscribe({
-          next: (resp) => console.log('[uploadReceipt] éxito', resp),
-          error: (err) => console.error('[uploadReceipt] error', err)
-        });
-      } else {
-        console.warn('[capturarYEnviarTicket] saleId o base64 faltante', { saleId, base64 });
+        this.salesService.uploadReceipt(saleId, base64, docType).subscribe();
       }
     } catch (err) {
-      console.error('Error generando/enviando PDF', err);
+      console.error('Error PDF', err);
     }
   }
 }

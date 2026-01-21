@@ -1,17 +1,19 @@
-// CONTENEDOR PRINCIPAL
+// ==========================================
+// 1. ESTRUCTURA PRINCIPAL (LAYOUT)
+// ==========================================
 .cart-container {
   display: flex; flex-direction: column; height: 100%;
   background-color: #f8f9fa;
-  min-width: 350px; // Ancho mínimo si es un dialog
+  min-width: 350px; 
 }
 
-// 1. HEADER VINO TINTO
+// HEADER VINO TINTO
 .cart-header {
   background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
   color: white;
   padding: 20px 20px 25px;
   display: flex; justify-content: space-between; align-items: flex-start;
-  flex-shrink: 0; // No se encoge
+  flex-shrink: 0;
 
   .header-info {
     h2 { margin: 0; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
@@ -20,7 +22,9 @@
   .close-btn { color: white; background: rgba(255,255,255,0.1); }
 }
 
-// 2. CONTENIDO SCROLLABLE
+// ==========================================
+// 2. CONTENIDO SCROLLABLE (CLIENTE Y ITEMS)
+// ==========================================
 .cart-scroll-content {
   flex: 1; overflow-y: auto; padding: 20px;
   margin-top: -15px; // Efecto solapado
@@ -43,7 +47,6 @@
         .value { font-weight: 700; color: #333; font-size: 1rem; }
       }
     }
-
     .search-field { width: 100%; }
   }
 
@@ -80,91 +83,181 @@
   }
 }
 
-// 3. FOOTER FIJO
+// ==========================================
+// 3. FOOTER NUEVO (ESTILO MINI / COMPACTO)
+// ==========================================
 .cart-footer-panel {
-  background: white; padding: 20px;
-  border-top: 1px solid #eee;
-  box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-  flex-shrink: 0;
-
-  .totals-block {
-    margin-bottom: 20px;
-    .row { 
-      display: flex; justify-content: space-between; margin-bottom: 6px; 
-      font-size: 0.9rem; color: #666; 
-      .num { font-weight: 500; color: #333; }
-    }
-    .divider { height: 1px; background: #eee; margin: 10px 0; }
-    .grand-total { 
-      font-size: 1.4rem; font-weight: 800; color: #4b1e3a; 
-      align-items: center; margin-top: 5px;
-    }
-  }
-
-  .actions-row {
-    display: flex; gap: 10px;
-    button { height: 50px; border-radius: 25px; font-weight: 600; flex: 1; }
-    .btn-pay {
-      background: #4b1e3a; color: white; flex: 1.5; font-size: 1.1rem;
-    }
-  }
-}
-
-// --- ESTILOS DEL AUTOCOMPLETE (Avatares) ---
-::ng-deep .custom-autocomplete {
-  border-radius: 0 0 12px 12px !important;
+  padding: 12px 15px 15px; /* Menos padding arriba */
   background: white;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  flex-shrink: 0;
+}
 
-  .mat-mdc-option {
-    height: 60px !important; padding: 0 15px !important;
-    border-bottom: 1px solid #f8f8f8;
+// --- HUD MINI DE PAGO ---
+.payment-mini-hud {
+  margin-bottom: 12px;
 
-    .row-flex {
-      display: flex; align-items: center; gap: 12px; width: 100%;
-      
-      .avatar-mini {
-        width: 36px; height: 36px; border-radius: 50%;
-        background: #eee; color: #666;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        font-weight: 700;
+  .hud-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
 
-        &.text { background: #f3e5f5; color: #4b1e3a; }
-        mat-icon { font-size: 20px; width: 20px; height: 20px; }
-      }
+  .payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 Columnas iguales */
+    gap: 8px; 
+  }
 
-      .text-col {
-        display: flex; flex-direction: column; line-height: 1.2;
-        .name { font-weight: 600; font-size: 0.95rem; color: #333; }
-        small { font-size: 0.75rem; color: #999; }
-      }
+  /* ESTILO DE LOS BOTONES MINI */
+  .mini-btn {
+    height: 34px !important; /* Altura fija pequeña */
+    font-size: 10px !important; /* Letra pequeña para que quepa todo */
+    line-height: 34px;
+    padding: 0 4px !important;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    color: #666;
+    box-shadow: none;
+    letter-spacing: -0.2px; // Un poco más pegadas las letras
+    
+    // Iconos dentro del botón mini
+    ::ng-deep .mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+      vertical-align: sub; // Alinear verticalmente con texto pequeño
+    }
+
+    /* ESTADOS ACTIVOS (Colores suaves) */
+    &.active-efectivo {
+      background-color: #e8f5e9; /* Verde muy suave */
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+      font-weight: 700;
+    }
+    
+    &.active-transfer {
+      background-color: #e3f2fd; /* Azul muy suave */
+      color: #1565c0;
+      border: 1px solid #bbdefb;
+      font-weight: 700;
+    }
+
+    &.active-credit {
+      background-color: #ffebee; /* Rojo muy suave */
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+      font-weight: 700;
     }
   }
 }
 
-// Ajustes Material
-::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
-// --- ESTILOS DEL AUTOCOMPLETE (Avatares) ---
+// --- FILA DE CRÉDITO (INPUT COMPACTO) ---
+.mini-credit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff8f8;
+  border: 1px dashed #ef9a9a;
+  border-radius: 8px;
+  padding: 0 10px;
+  margin-top: 8px;
+  height: 40px; /* Altura fija */
+
+  .text-abono { font-size: 11px; font-weight: 600; color: #555; }
+  
+  /* Input Custom (Sin Material Design pesado) */
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0 6px;
+    height: 28px;
+    width: 90px;
+
+    .currency { font-size: 11px; color: #888; margin-right: 2px; }
+    
+    .native-input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+      background: transparent;
+    }
+  }
+
+  .debt-info {
+    font-size: 10px;
+    span { color: #666; margin-right: 3px; }
+    .text-warn { color: #d32f2f; font-size: 13px; font-weight: 700; }
+  }
+}
+
+// --- TOTALES Y BOTÓN FINAL COMPACTOS ---
+.totals-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+
+  .grand-total {
+    display: flex;
+    flex-direction: column;
+    span:first-child { font-size: 10px; color: #888; font-weight: 700; letter-spacing: 0.5px; }
+    .amount { font-size: 22px; font-weight: 800; color: #4b1e3a; line-height: 1; }
+  }
+
+  .btn-cobrar-compact {
+    height: 44px; 
+    border-radius: 22px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1; /* Ocupa el resto del espacio */
+    box-shadow: 0 4px 10px rgba(75, 30, 58, 0.2);
+  }
+}
+
+// Animación suave
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ==========================================
+// 4. FIX AUTOCOMPLETE (FONDO BLANCO)
+// ==========================================
 ::ng-deep {
-  // 1. Forzar fondo blanco en CUALQUIER panel de autocompletado dentro de este componente
   .mat-mdc-autocomplete-panel, 
   .custom-autocomplete {
-    background-color: #ffffff !important; /* EL FIX PRINCIPAL */
+    background-color: #ffffff !important;
     background: #ffffff !important;
     border-radius: 0 0 12px 12px !important;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important; /* Sombra más fuerte para que destaque */
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
     
-    // Asegurar que las opciones también tengan fondo
     .mat-mdc-option {
       background: white;
       height: 60px !important; 
       padding: 0 15px !important;
       border-bottom: 1px solid #f8f8f8;
 
-      // Efecto Hover
       &:hover, &.mat-mdc-option-active {
-        background-color: #f3e5f5 !important; // Un moradito suave al pasar el mouse
+        background-color: #f3e5f5 !important;
       }
 
       .row-flex {
@@ -189,55 +282,7 @@
       }
     }
   }
+  
+  // Ocultar etiquetas flotantes viejas
+  .mat-mdc-form-field-subscript-wrapper { display: none; }
 }
-
-// --- ESTILOS DEL AUTOCOMPLETE (Avatares) ---
-::ng-deep {
-  // 1. Forzar fondo blanco en CUALQUIER panel de autocompletado dentro de este componente
-  .mat-mdc-autocomplete-panel, 
-  .custom-autocomplete {
-    background-color: #ffffff !important; /* EL FIX PRINCIPAL */
-    background: #ffffff !important;
-    border-radius: 0 0 12px 12px !important;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important; /* Sombra más fuerte para que destaque */
-    
-    // Asegurar que las opciones también tengan fondo
-    .mat-mdc-option {
-      background: white;
-      height: 60px !important; 
-      padding: 0 15px !important;
-      border-bottom: 1px solid #f8f8f8;
-
-      // Efecto Hover
-      &:hover, &.mat-mdc-option-active {
-        background-color: #f3e5f5 !important; // Un moradito suave al pasar el mouse
-      }
-
-      .row-flex {
-        display: flex; align-items: center; gap: 12px; width: 100%;
-        
-        .avatar-mini {
-          width: 36px; height: 36px; border-radius: 50%;
-          background: #eee; color: #666;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-          font-weight: 700;
-
-          &.text { background: #f3e5f5; color: #4b1e3a; }
-          mat-icon { font-size: 20px; width: 20px; height: 20px; }
-        }
-
-        .text-col {
-          display: flex; flex-direction: column; line-height: 1.2;
-          .name { font-weight: 600; font-size: 0.95rem; color: #333; }
-          small { font-size: 0.75rem; color: #999; }
-        }
-      }
-    }
-  }
-}
-
-
-
-// Ajustes Material (Ocultar wrappers innecesarios)
-::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }

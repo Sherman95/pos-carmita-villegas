@@ -1,0 +1,101 @@
+<div class="fiados-container fade-in">
+  
+  <div class="header-summary elevation-z2">
+    <div class="title">
+      <h2>Cartera de Crédito 📒</h2>
+      <p>Gestión de cobros y abonos</p>
+    </div>
+    <div class="total-box">
+      <small>Total por cobrar</small>
+      <span class="amount">{{ totalCartera() | currency }}</span>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Buscar cliente..." 
+             [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+      @if (searchTerm()) {
+        <button mat-icon-button matSuffix (click)="searchTerm.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="list-content">
+    
+    @if (loading()) {
+      <div class="loading-state">
+        <mat-icon class="spin">sync</mat-icon>
+        <p>Calculando deudas...</p>
+      </div>
+    } @else if (filteredDeudores().length === 0) {
+      <div class="empty-state">
+        <mat-icon>check_circle_outline</mat-icon>
+        <h3>Sin deudas pendientes</h3>
+        <p>No se encontraron cuentas por cobrar.</p>
+      </div>
+    } @else {
+      
+      <mat-accordion displayMode="flat" multi>
+        
+        @for (cliente of filteredDeudores(); track cliente.cliente_id) {
+          <mat-expansion-panel class="debtor-card mb-2">
+            
+            <mat-expansion-panel-header>
+              <div class="panel-header-content">
+                
+                <div class="avatar-circle">
+                  {{ cliente.nombre.charAt(0) }}
+                </div>
+                
+                <div class="info-col">
+                  <span class="name">{{ cliente.nombre }}</span>
+                  <div class="sub-info">
+                    <span class="badge">{{ cliente.ventas_pendientes }} Notas</span>
+                  </div>
+                </div>
+
+                <div class="debt-col">
+                  <span class="debt-amount">{{ cliente.total_deuda | currency }}</span>
+                  <small>Pendiente</small>
+                </div>
+
+              </div>
+            </mat-expansion-panel-header>
+
+            <div class="tickets-list">
+              
+              <p class="section-title">Notas de Venta Pendientes:</p>
+
+              @for (venta of cliente.ventas; track venta.id) {
+                <div class="ticket-row">
+                  
+                  <div class="ticket-info">
+                    <span class="date">{{ venta.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                    <span class="original">Total Nota: {{ venta.total | currency }}</span>
+                  </div>
+                  
+                  <div class="ticket-action">
+                    <span class="saldo-label">Debe:</span>
+                    <span class="saldo-val text-warn">{{ venta.saldo_pendiente | currency }}</span>
+                    
+                    <button mat-flat-button color="primary" class="btn-abonar"
+                            (click)="abonar(venta, cliente.nombre)">
+                      ABONAR
+                    </button>
+                  </div>
+
+                </div>
+              }
+            </div>
+
+          </mat-expansion-panel>
+        }
+
+      </mat-accordion>
+    }
+  </div>
+</div>

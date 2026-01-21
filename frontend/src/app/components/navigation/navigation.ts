@@ -1,9 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core'; // 👈 1. Importamos Output
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -14,18 +13,28 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './navigation.scss'
 })
 export class NavigationComponent {
+  
+  // 📢 2. Creamos el "Timbre" para avisar al App.component
+  @Output() toggleMenu = new EventEmitter<void>();
+
   navItems = [
-    { path: '/', label: 'Inicio', icon: 'home' },
+    { path: '/home', label: 'Inicio', icon: 'home' },
     { path: '/catalog', label: 'Catálogo', icon: 'storefront' },
-    { path: '/reports', label: 'Reportes', icon: 'insights' },
+    { path: '/reports', label: 'Reportes', icon: 'insights' }, // Opcional, si tienes poco espacio
     { path: '/clients', label: 'Clientes', icon: 'people' },
-    { path: '/profile', label: 'Perfil', icon: 'account_circle' },
+    
+    // 👇 3. AQUÍ ESTÁ EL CAMBIO: Quitamos Perfil y ponemos Menú (sin path)
+    { path: null, label: 'Menú', icon: 'menu', isAction: true }, 
   ];
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService) {}
 
-  logout() {
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
+  // Función que decide qué hacer cuando tocan un botón
+  handleItemClick(item: any) {
+    if (item.isAction) {
+      // Si es el botón de menú, tocamos el timbre
+      this.toggleMenu.emit();
+    }
+    // Si tiene path, el routerLink del HTML se encarga solo
   }
 }

@@ -11,63 +11,47 @@
   </div>
 
   <div class="cart-scroll-content">
-
+    
     <div class="client-card elevation-z1">
-      
       <div class="current-client">
         <div class="icon-box">
-          @if (clienteLabel() === 'Consumidor Final' || clienteLabel() === '.Consumidor Final') {
-            <mat-icon>person_outline</mat-icon>
-          } @else {
-            <mat-icon>person</mat-icon>
-          }
+          <mat-icon>person</mat-icon>
         </div>
         <div class="meta">
           <span class="label">Cliente Asignado</span>
           <span class="value">{{ clienteLabel() }}</span>
         </div>
       </div>
+      
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix>search</mat-icon>
-        <input matInput 
-               placeholder="Buscar o cambiar cliente..." 
-               [ngModel]="searchText()"
+        <input matInput placeholder="Buscar cliente..." 
+               [ngModel]="searchText()" 
                (ngModelChange)="searchText.set($event)" 
-               [matAutocomplete]="auto" 
+               [matAutocomplete]="auto"
                (focus)="limpiarBusqueda($event)">
-
+        
         @if (searchText() && searchText() !== 'Consumidor Final') {
-          <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
-            <mat-icon>close</mat-icon>
-          </button>
+           <button mat-icon-button matSuffix (click)="searchText.set(''); $event.stopPropagation()">
+             <mat-icon>close</mat-icon>
+           </button>
         }
 
-        <mat-autocomplete #auto="matAutocomplete" 
-                          (optionSelected)="onOptionSelected($event)"
-                          panelClass="custom-autocomplete">
-
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)" panelClass="custom-autocomplete">
+          <mat-option value="anon" class="option-cf">
+            <mat-icon>person_outline</mat-icon> Consumidor Final
+          </mat-option>
+          
           @for (c of filteredClients(); track c.id) {
             <mat-option [value]="c" class="option-row">
               <div class="row-flex">
-
-                @if (c.cedula === '9999999999999') {
-                  <div class="avatar-mini"><mat-icon>person_outline</mat-icon></div>
-                } @else {
-                  <div class="avatar-mini text">{{ c.nombre.charAt(0).toUpperCase() }}</div>
-                }
-
-                <div class="text-col">
-                  <span class="name">{{ c.nombre }}</span>
-                  @if (c.cedula !== '9999999999999') {
+                 <div class="avatar-mini">{{ c.nombre.charAt(0) }}</div>
+                 <div class="text-col">
+                    <span class="name">{{ c.nombre }}</span>
                     <small>{{ c.cedula }}</small>
-                  }
-                </div>
+                 </div>
               </div>
             </mat-option>
-          }
-
-          @if (filteredClients().length === 0 && searchText()) {
-            <mat-option disabled>No se encontraron clientes</mat-option>
           }
         </mat-autocomplete>
       </mat-form-field>
@@ -77,7 +61,7 @@
       @if (cartService.items().length === 0) {
         <div class="empty-state">
           <mat-icon>shopping_cart_off</mat-icon>
-          <p>El carrito está vacío</p>
+          <p>Carrito vacío</p>
         </div>
       } @else {
         @for (linea of cartService.items(); track $index) {
@@ -85,48 +69,77 @@
             <button mat-icon-button color="warn" class="btn-delete" (click)="eliminar($index)">
               <mat-icon>delete_outline</mat-icon>
             </button>
-
             <div class="qty-badge">x{{ linea.cantidad }}</div>
-
             <div class="item-desc">
               <div class="name">{{ linea.item.nombre }}</div>
-              <div class="unit">Unit: ${{ linea.precioVenta }}</div>
+              <div class="unit">${{ linea.precioVenta }}</div>
             </div>
-
-            <div class="item-total">
-              ${{ linea.subtotal | number:'1.2-2' }}
-            </div>
+            <div class="item-total">${{ linea.subtotal | number:'1.2-2' }}</div>
           </div>
         }
       }
     </div>
 
-  </div>
-
+  </div> 
   <div class="cart-footer-panel">
-    <div class="totals-block">
-      <div class="row">
-        <span>Subtotal</span>
-        <span class="num">${{ subtotal() | number:'1.2-2' }}</span>
+    
+    <div class="payment-mini-hud">
+      
+      <label class="hud-label">Método de Pago:</label>
+  
+      <div class="payment-grid">
+        <button mat-flat-button 
+                class="mini-btn"
+                [class.active-efectivo]="selectedPayment === 'EFECTIVO'"
+                (click)="setMetodo('EFECTIVO')">
+          <mat-icon>payments</mat-icon> Efectivo
+        </button>
+        
+        <button mat-flat-button 
+                class="mini-btn"
+                [class.active-transfer]="selectedPayment === 'TRANSFERENCIA'"
+                (click)="setMetodo('TRANSFERENCIA')">
+          <mat-icon>account_balance</mat-icon> Transferencia
+        </button>
+        
+        <button mat-flat-button 
+                class="mini-btn"
+                [class.active-credit]="selectedPayment === 'CREDITO'"
+                [disabled]="selectedClientId() === '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d'"
+                (click)="setMetodo('CREDITO')">
+          <mat-icon>history_edu</mat-icon> Crédito
+        </button>
       </div>
-      <div class="row">
-        <span>IVA ({{ taxRate() * 100 | number:'1.0-0' }}%)</span>
-        <span class="num">${{ taxAmount() | number:'1.2-2' }}</span>
-      </div>
-      <div class="divider"></div>
-      <div class="row grand-total">
-        <span>TOTAL A PAGAR</span>
-        <span>${{ grandTotal() | number:'1.2-2' }}</span>
-      </div>
+  
+      @if (selectedPayment === 'CREDITO') {
+        <div class="mini-credit-row fade-in">
+           <span class="text-abono">Entrada:</span>
+           
+           <div class="input-wrapper">
+             <span class="currency">$</span>
+             <input type="number" [(ngModel)]="abonoAmount" placeholder="0.00" class="native-input">
+           </div>
+  
+           <div class="debt-info">
+             <span>Resta:</span>
+             <strong class="text-warn">{{ (grandTotal() - abonoAmount) | currency }}</strong>
+           </div>
+        </div>
+      }
     </div>
-
-    <div class="actions-row">
-      <button mat-stroked-button color="primary" (click)="cerrar()">SEGUIR AGREGANDO</button>
-      <button mat-flat-button class="btn-pay" (click)="cobrar()" [disabled]="cartService.items().length === 0">
-        COBRAR
-        <mat-icon iconPositionEnd>payments</mat-icon>
+  
+    <div class="totals-compact">
+      <div class="grand-total">
+        <span>TOTAL:</span>
+        <span class="amount">${{ grandTotal() | number:'1.2-2' }}</span>
+      </div>
+      
+      <button mat-flat-button color="primary" class="btn-cobrar-compact" 
+              (click)="cobrar()" [disabled]="cartService.items().length === 0">
+        COBRAR <mat-icon iconPositionEnd>check</mat-icon>
       </button>
     </div>
+  
   </div>
 
 </div>

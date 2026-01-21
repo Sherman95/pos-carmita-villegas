@@ -1,0 +1,323 @@
+// ==========================================
+// 1. CONTENEDOR PRINCIPAL
+// ==========================================
+.fiados-container {
+  padding-bottom: 90px; // Espacio para que la barra de navegación no tape el final
+  background-color: #f8f9fa; // Fondo gris muy suave
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// ==========================================
+// 2. CABECERA (ESTILO VINO TINTO)
+// ==========================================
+.header-summary {
+  // El mismo gradiente que tu App y Nav
+  background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
+  color: white;
+  padding: 25px 20px 35px; // Un poco más largo abajo para solapar el buscador
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(46, 14, 34, 0.3);
+
+  .title {
+    h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    p {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+  }
+
+  .total-box {
+    text-align: right;
+    background: rgba(255, 255, 255, 0.1); // Caja translúcida
+    padding: 8px 12px;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+
+    small {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      opacity: 0.9;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .amount {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffeb3b; // Amarillo brillante para resaltar sobre el vino
+      line-height: 1;
+    }
+  }
+}
+
+// ==========================================
+// 3. BUSCADOR FLOTANTE
+// ==========================================
+.search-bar {
+  padding: 0 20px;
+  margin-top: -25px; // Efecto de solapamiento sobre el header
+  margin-bottom: 10px;
+
+  mat-form-field {
+    width: 100%;
+    
+    // Hacks para que el input se vea blanco y limpio
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: white !important;
+      border-radius: 30px !important; // Píldora redondeada
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      padding-left: 10px;
+    }
+    
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none; // Ocultar espacio de errores para hacerlo compacto
+    }
+    
+    ::ng-deep .mat-mdc-form-field-infix {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+  }
+}
+
+// ==========================================
+// 4. LISTA DE TARJETAS (Expansion Panels)
+// ==========================================
+.list-content {
+  padding: 0 15px;
+  flex: 1;
+}
+
+// Estilo de cada tarjeta (Cliente)
+.debtor-card {
+  margin-bottom: 12px;
+  border-radius: 16px !important; // Bordes muy redondos
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+  border: 1px solid white;
+  background: white;
+  overflow: hidden;
+
+  // Header del Acordeón (Lo que se ve siempre)
+  ::ng-deep .mat-expansion-panel-header {
+    height: auto !important;
+    padding: 15px !important;
+    background: white;
+    
+    &.mat-expanded {
+      background: #fcfcfc; // Cambio sutil al abrir
+    }
+  }
+
+  .panel-header-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+
+    // Círculo con la inicial
+    .avatar-circle {
+      width: 48px;
+      height: 48px;
+      background: #f3e5f5; // Fondo lila muy suave
+      color: #4b1e3a;      // Letra vino tinto
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      border: 2px solid white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    // Info del Cliente
+    .info-col {
+      flex: 1;
+      overflow: hidden; // Evitar desbordes de texto
+
+      .name {
+        font-weight: 700;
+        color: #333;
+        font-size: 1rem;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .sub-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+
+        .badge {
+          font-size: 0.7rem;
+          font-weight: 600;
+          background: #eceff1;
+          color: #546e7a;
+          padding: 2px 8px;
+          border-radius: 6px;
+        }
+      }
+    }
+
+    // Columna de Deuda (Derecha)
+    .debt-col {
+      text-align: right;
+      
+      .debt-amount {
+        display: block;
+        font-weight: 800;
+        color: #d32f2f; // ROJO DE ALERTA
+        font-size: 1.1rem;
+      }
+      small {
+        font-size: 0.65rem;
+        color: #999;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// ==========================================
+// 5. DETALLE DE TICKETS (Al abrir la tarjeta)
+// ==========================================
+.tickets-list {
+  padding-top: 10px;
+  border-top: 1px dashed #eee;
+  
+  .section-title {
+    font-size: 0.75rem;
+    color: #888;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .ticket-row {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .ticket-info {
+      display: flex;
+      flex-direction: column;
+      
+      .date {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #444;
+      }
+      .original {
+        font-size: 0.75rem;
+        color: #999;
+      }
+    }
+
+    .ticket-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+
+      .saldo-label {
+        font-size: 0.65rem;
+        color: #aaa;
+        margin-right: 2px;
+      }
+
+      .saldo-val {
+        font-weight: 800;
+        color: #d32f2f; // Rojo
+        font-size: 0.95rem;
+      }
+
+      .btn-abonar {
+        height: 28px;
+        line-height: 28px;
+        font-size: 0.7rem;
+        padding: 0 12px;
+        border-radius: 14px;
+        background-color: #4b1e3a; // Botón Vino Tinto
+        color: white;
+        box-shadow: none;
+        
+        &:active { transform: scale(0.95); }
+      }
+    }
+  }
+}
+
+// ==========================================
+// 6. ESTADOS (CARGANDO Y VACÍO)
+// ==========================================
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #90a4ae;
+
+  mat-icon {
+    font-size: 50px;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #546e7a;
+  }
+  
+  p {
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+}
+
+// Animación de rotación para el loading
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { 
+  100% { transform: rotate(360deg); } 
+}
+
+// Animación de entrada suave
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

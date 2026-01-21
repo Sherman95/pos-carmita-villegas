@@ -7,6 +7,7 @@ import { HomeComponent } from './components/home/home';
 import { LoginComponent } from './components/login/login';
 import { ProfileComponent } from './components/profile/profile';
 import { authGuard } from './services/auth.guard';
+import { FiadosComponent } from './components/fiados/fiados';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -15,6 +16,8 @@ export const routes: Routes = [
   { path: 'history', component: SalesHistoryComponent, canActivate: [authGuard] },
   { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
   { path: 'clients', component: ClientsComponent, canActivate: [authGuard] },
+  { path: 'fiados', component: FiadosComponent },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
+
 ];

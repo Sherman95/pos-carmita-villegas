@@ -1,30 +1,30 @@
-import { Component, OnInit, computed, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router'; 
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { MatDividerModule } from '@angular/material/divider';
-import { Router } from '@angular/router';
-import { ClientsService, Client } from '../../services/clients.service';
+import { MatFormFieldModule } from '@angular/material/form-field';
+
+import { ClientsService } from '../../services/clients.service';
 import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    MatCardModule, 
-    MatButtonModule, 
-    MatIconModule, 
-    MatFormFieldModule, 
-    MatInputModule,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatIconModule,
+    MatButtonModule,
+    MatCardModule,
     MatAutocompleteModule,
-    MatDividerModule
+    MatInputModule,
+    MatFormFieldModule
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss'
@@ -32,38 +32,30 @@ import { CartService } from '../../services/cart.service';
 export class HomeComponent implements OnInit {
   private router = inject(Router);
   private clientsService = inject(ClientsService);
-  public cartService = inject(CartService);
+  private cartService = inject(CartService);
 
-  // Para poder abrir la lista manualmente
-  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
+  @ViewChild('searchInput') searchInput!: ElementRef;
 
-  clients = signal<Client[]>([]);
-  searchText = signal(''); 
+  // Señales para el buscador reactivo
+  searchText = signal('');
+  clients = signal<any[]>([]);
   
-  // LOGICA LISTA DESPLEGABLE:
+  // Filtro automático
   filteredClients = computed(() => {
-    const term = this.searchText().toLowerCase().trim();
-    
-    // CAMBIO IMPORTANTE: Si está vacío, devolvemos TODA la lista (para hacer scroll)
-    if (!term) return this.clients();
-    
-    return this.clients().filter((c) =>
-      (c.nombre || '').toLowerCase().includes(term) || 
-      (c.cedula || '').toLowerCase().includes(term) ||
-      (c.telefono || '').includes(term)
+    const term = this.searchText().toLowerCase();
+    return this.clients().filter(c => 
+      c.nombre.toLowerCase().includes(term) || 
+      (c.cedula && c.cedula.includes(term))
     );
   });
 
-  ngOnInit(): void {
-    this.cargarClientes();
-    this.cartService.setCliente(null);
-    this.searchText.set('');
+  ngOnInit() {
+    this.loadClients();
   }
 
-  cargarClientes() {
-    this.clientsService.getClients().subscribe({
-      next: (data) => this.clients.set(data || []),
-      error: (err) => console.error('Error cargando clientes', err)
+  loadClients() {
+    this.clientsService.getClients().subscribe(data => {
+      this.clients.set(data);
     });
   }
 
@@ -71,46 +63,52 @@ export class HomeComponent implements OnInit {
     this.searchText.set(val);
   }
 
-  // Al tocar la barra, nos aseguramos que se abra la lista
-  onFocus() {
-    if (!this.searchText()) {
-       // Pequeño hack para forzar apertura si ya estaba en foco
-       this.autocompleteTrigger?.openPanel();
-    }
-  }
-
-  onOptionSelected(event: any) {
-    const val = event.option.value;
-
-    if (val === 'anon') {
-      this.cartService.setCliente(null);
-      this.searchText.set('Consumidor Final');
-    } 
-    else if (val === 'NEW_CLIENT') {
-      const nombrePosible = this.searchText();
-      if(confirm(`¿Deseas ir a registrar a "${nombrePosible}" ahora?`)) {
-        this.router.navigate(['/clients']);
-      } else {
-        this.limpiarBusqueda();
-      }
-    } 
-    else {
-      this.cartService.setCliente(val);
-      this.searchText.set(val.nombre);
-    }
-  }
-
   limpiarBusqueda() {
     this.searchText.set('');
-    this.cartService.setCliente(null);
-    // Al limpiar, volvemos a abrir la lista completa
-    setTimeout(() => this.autocompleteTrigger?.openPanel(), 100);
   }
 
-  irAVenta() {
-    this.router.navigate(['/catalog']);
+  onFocus() {
+    // Opcional: Lógica al enfocar
   }
-  irAClientes() { this.router.navigate(['/clients']); }
-  irAReportes() { this.router.navigate(['/reports']); }
-  irAHistorial() { this.router.navigate(['/history']); }
+
+  /// Al seleccionar un cliente del buscador
+  onOptionSelected(event: any) {
+    const val = event.option.value;
+    
+    if (val === 'NEW_CLIENT') {
+      this.router.navigate(['/clients']); 
+    } else {
+      // 👇 AQUÍ ESTABA EL ERROR: Es 'setCliente' (con e al final)
+      this.cartService.setCliente(val);
+      
+      this.router.navigate(['/catalog']);
+    }
+    
+    this.searchText.set(''); 
+  }
+
+  // ==========================================
+  // 👇 NAVEGACIÓN DEL DASHBOARD (LOS BOTONES)
+  // ==========================================
+
+  irAVenta() {
+    this.router.navigate(['/catalog']); 
+  }
+
+  irAHistorial() {
+    this.router.navigate(['/history']);
+  }
+
+  irAReportes() {
+    this.router.navigate(['/reports']);
+  }
+
+  irAClientes() {
+    this.router.navigate(['/clients']);
+  }
+
+  // ✅ ESTA ES LA QUE FALTABA
+  irAFiados() {
+    this.router.navigate(['/fiados']);
+  }
 }

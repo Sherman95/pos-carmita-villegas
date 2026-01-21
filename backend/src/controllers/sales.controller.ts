@@ -13,51 +13,76 @@ const getWeekRange = (date: Date) => {
     return { start: toIso(monday), end: toIso(nextMonday) }; // end exclusive
 };
 
+
+
 export const createSale = async (req: Request, res: Response) => {
-    // Obtenemos un cliente del pool para iniciar una transacción
     const client = await pool.connect();
 
     try {
-        // 1. Recibimos 'tax_rate' del frontend (además de lo demás)
-        const { total, items, metodo_pago, client_id, tax_rate } = req.body;
+        // 1. CORRECCIÓN: Leemos 'tipo_pago' (así lo manda Angular)
+        const { total, items, tipo_pago, client_id, tax_rate, abono_inicial } = req.body;
     
         let clientNombre: string | null = null;
         let clientCedula: string | null = null;
         
-        // Búsqueda de datos del cliente (si existe)
+        // Búsqueda de datos del cliente
         if (client_id) {
             const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
-            if (rows.length === 0) {
-                return res.status(400).json({ error: 'Cliente no encontrado' });
+            if (rows.length > 0) {
+                clientNombre = rows[0].nombre;
+                clientCedula = rows[0].cedula || null;
             }
-            clientNombre = rows[0].nombre;
-            clientCedula = rows[0].cedula || null;
         }
 
-        // 2. INICIAR TRANSACCIÓN
+        // ============================================================
+        // 🧠 LÓGICA DE CRÉDITO CORREGIDA
+        // ============================================================
+        let estadoPago = 'PAGADO';     // Por defecto todo está pagado
+        let saldoPendiente = 0;        // Por defecto no deben nada
+        
+        // AQUI ESTABA EL ERROR: Usamos la variable correcta 'tipo_pago'
+        const metodo = tipo_pago || 'EFECTIVO';
+
+        // Si dice CREDITO, cambiamos la lógica
+        if (metodo === 'CREDITO') {
+            estadoPago = 'PENDIENTE';
+            saldoPendiente = Number(total); // Al principio deben TODO
+        }
+        // ============================================================
+
         await client.query('BEGIN');
 
-        // 3. INSERTAR CABECERA CON TAX_RATE
-        // Hemos agregado la columna tax_rate al SQL y el parámetro $6
+        // 2. INSERTAR CABECERA
         const saleQuery = `
-            INSERT INTO sales (total, metodo_pago, client_id, client_nombre, client_cedula, tax_rate) 
-            VALUES ($1, $2, $3, $4, $5, $6) 
+            INSERT INTO sales (
+                total, 
+                metodo_pago, 
+                client_id, 
+                client_nombre, 
+                client_cedula, 
+                tax_rate,
+                estado_pago,      
+                saldo_pendiente   
+            ) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id
         `;
 
         const saleValues = [
-        total, 
-        metodo_pago || 'EFECTIVO', 
-        client_id || null, 
-        clientNombre, 
-         clientCedula,
-        tax_rate 
+            total, 
+            metodo, 
+            client_id || null, 
+            clientNombre, 
+            clientCedula,
+            tax_rate || 0,
+            estadoPago,      // $7
+            saldoPendiente   // $8
         ];
 
         const saleResult = await client.query(saleQuery, saleValues);
         const saleId = saleResult.rows[0].id;
 
-        // 4. INSERTAR DETALLES (Esto se mantiene igual)
+        // 3. INSERTAR DETALLES
         const itemQuery = `
             INSERT INTO sale_details (sale_id, item_id, nombre_producto, cantidad, precio_unitario, subtotal)
             VALUES ($1, $2, $3, $4, $5, $6)
@@ -66,32 +91,48 @@ export const createSale = async (req: Request, res: Response) => {
         for (const item of items) {
             await client.query(itemQuery, [
                 saleId, 
-                item.item.id,       // ID del producto (FK)
-                item.item.nombre,   // Snapshot nombre
+                item.item.id, 
+                item.item.nombre, 
                 item.cantidad, 
-                item.precioVenta,   // Precio final
+                item.precioVenta, 
                 item.subtotal
             ]);
         }
 
-        // 5. CONFIRMAR TRANSACCIÓN
+        // 4. REGISTRAR ABONO INICIAL
+        const entrada = Number(abono_inicial) || 0;
+        
+        if (metodo === 'CREDITO' && entrada > 0) {
+            await client.query(`
+                INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
+                VALUES ($1, $2, 'EFECTIVO', 'Entrada Inicial')
+            `, [saleId, entrada]);
+        }
+
+        // Si fue pago normal
+        if (metodo !== 'CREDITO') {
+             await client.query(`
+                INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
+                VALUES ($1, $2, $3, 'Pago al contado')
+            `, [saleId, total, metodo]);
+        }
+
         await client.query('COMMIT');
 
-        console.log(`✅ Venta creada ID: ${saleId} con Tasa: ${tax_rate || 0.15}`);
+        console.log(`✅ Venta ${metodo} registrada. ID: ${saleId}. Pendiente: ${saldoPendiente}`);
+        
         res.status(201).json({ 
             message: 'Venta registrada', 
             saleId, 
-            client_nombre: clientNombre, 
-            client_cedula: clientCedula 
+            client_nombre: clientNombre 
         });
 
     } catch (error) {
-        // Si falla, deshacemos todo
         await client.query('ROLLBACK');
         console.error('Error creando venta:', error);
         res.status(500).json({ error: 'Error al procesar la venta' });
     } finally {
-        client.release(); // Liberamos la conexión
+        client.release();
     }
 };
 
@@ -490,4 +531,97 @@ export const getReceiptsByClient = async (req: Request, res: Response) => {
         console.error('Error obteniendo recibos por cliente:', error);
         res.status(500).json({ error: 'Error al obtener recibos por cliente' });
     }
+
 };
+
+export const getDebtors = async (_req: Request, res: Response) => {
+    try {
+        // 1. Buscamos todas las ventas que deben dinero
+        // OJO: Usamos INNER JOIN con clients para asegurar que traemos el nombre
+        const { rows } = await pool.query(`
+            SELECT 
+                s.id, 
+                s.created_at, 
+                s.total, 
+                s.saldo_pendiente, 
+                s.estado_pago,
+                c.id as client_id, 
+                c.nombre, 
+                c.cedula, 
+                c.telefono
+            FROM sales s
+            JOIN clients c ON s.client_id = c.id
+            WHERE s.estado_pago = 'PENDIENTE'
+            AND s.saldo_pendiente > 0.01 -- Ignoramos centavos residuales
+            ORDER BY s.created_at DESC
+        `);
+
+        // 2. Agrupamos por Cliente (Lógica JS)
+        // Transformamos la lista plana de SQL en una estructura jerárquica
+        const agrupado: Record<string, any> = {};
+
+        rows.forEach((row) => {
+            const cid = row.client_id;
+
+            // Si es la primera vez que vemos a este cliente, creamos su cascarón
+            if (!agrupado[cid]) {
+                agrupado[cid] = {
+                    cliente_id: cid,
+                    nombre: row.nombre,
+                    telefono: row.telefono, // Para futura integración
+                    total_deuda: 0,
+                    ventas_pendientes: 0,
+                    ventas: []
+                };
+            }
+
+            // Convertimos a número (Postgres devuelve 'numeric' como string)
+            const saldo = Number(row.saldo_pendiente);
+
+            // Acumulamos
+            agrupado[cid].total_deuda += saldo;
+            agrupado[cid].ventas_pendientes++;
+            
+            // Guardamos el detalle de la nota
+            agrupado[cid].ventas.push({
+                id: row.id,
+                created_at: row.created_at,
+                total: Number(row.total),
+                saldo_pendiente: saldo
+            });
+        });
+
+        // 3. Devolvemos un array limpio
+        res.status(200).json(Object.values(agrupado));
+
+    } catch (error) {
+        console.error('Error obteniendo deudores:', error);
+        res.status(500).json({ error: 'Error al obtener cartera vencida' });
+    }
+};
+
+export const registerPayment = async (req: Request, res: Response) => {
+    // Recibimos saleId y monto del frontend
+    const { saleId, monto } = req.body;
+
+    if (!saleId || !monto) {
+        return res.status(400).json({ error: 'Faltan datos (saleId o monto)' });
+    }
+
+    try {
+        // Insertamos en el historial.
+        // GRACIAS A TU TRIGGER SQL 'actualizar_deuda_venta', 
+        // esto actualizará automáticamente el saldo en la tabla 'sales'.
+        await pool.query(`
+            INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
+            VALUES ($1, $2, 'EFECTIVO', 'Abono Web')
+        `, [saleId, monto]);
+
+        res.status(200).json({ message: 'Abono registrado correctamente' });
+
+    } catch (error) {
+        console.error('Error registrando abono:', error);
+        res.status(500).json({ error: 'Error al registrar el pago' });
+    }
+};
+
