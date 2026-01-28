@@ -1,179 +1,189 @@
 // ============================================
-// 1. CONTENEDOR PRINCIPAL
+// ESTILOS DEL LOGIN (RECUPERADOS) 🔐
 // ============================================
-.sidenav-container {
+
+// 1. EL FONDO (CONTENEDOR PRINCIPAL)
+.login-shell {
   height: 100vh;
-  background-color: #f8f9fa; // Fondo de la app
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); // Fondo gris muy suave y limpio
+  position: relative;
+  overflow: hidden;
 }
 
-// ============================================
-// 2. LA BARRA LATERAL (SIDENAV) - LA JOYA 💎
-// ============================================
-.app-sidenav {
-  width: 280px;
-  // Fondo oscuro elegante (el mismo del login para consistencia)
-  background: linear-gradient(180deg, #2e0e22 0%, #4b1e3a 100%);
-  color: white;
-  border-right: none;
-  box-shadow: 5px 0 25px rgba(0,0,0,0.2); // Sombra profunda
+// 2. ELEMENTOS DECORATIVOS DE FONDO (Burbujas)
+.decorative-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 0; // Detrás de todo
 
-  // --- CABECERA DEL USUARIO ---
-  .sidenav-header {
-    padding: 40px 20px 30px;
-    text-align: center;
-    background: rgba(255,255,255,0.03); // Sutil diferencia
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-
-    .avatar-circle {
-      width: 80px; height: 80px;
-      margin: 0 auto 15px;
-      background: white;
-      color: #4b1e3a;
-      font-size: 2rem;
-      font-weight: 700;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      border: 4px solid rgba(255,255,255,0.2); // Anillo translúcido
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-
-    .user-info {
-      h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        color: #fff;
-      }
-      .role-badge {
-        display: inline-block;
-        font-size: 0.7rem;
-        background: rgba(255,235,59,0.2); // Amarillo translúcido
-        color: #ffeb3b;
-        padding: 2px 8px;
-        border-radius: 4px;
-        margin: 5px 0;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      .email {
-        margin: 0;
-        font-size: 0.8rem;
-        color: rgba(255,255,255,0.5);
-      }
-    }
-  }
-
-  // --- LISTA DE NAVEGACIÓN ---
-  mat-nav-list {
-    padding-top: 20px;
-
-    // Títulos de sección (Subheader)
-    h3[matSubheader] {
-      color: rgba(255,255,255,0.4);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      font-weight: 600;
-      background: transparent;
-      padding-left: 25px;
-      margin-top: 10px;
-    }
-
-    // Ítems (Botones)
-    a[mat-list-item] {
-      color: rgba(255,255,255,0.8);
-      height: 55px;
-      transition: all 0.2s ease;
-      position: relative;
-      margin: 0 10px; // Margen lateral para efecto flotante
-      border-radius: 12px;
-      width: auto; // Ajustar al margen
-
-      // Ícono
-      mat-icon {
-        color: rgba(255,255,255,0.6);
-        margin-right: 15px;
-        transition: color 0.2s;
-      }
-
-      // Hover
-      &:hover {
-        background: rgba(255,255,255,0.1);
-        color: white;
-        mat-icon { color: white; }
-      }
-
-      // Activo (Ruta actual)
-      &.active-link { // Necesitas agregar routerLinkActive="active-link" en el HTML
-        background: rgba(255,255,255,0.15);
-        color: #ffeb3b; // Amarillo dorado
-        font-weight: 600;
-
-        mat-icon { color: #ffeb3b; }
-        
-        // Línea indicadora a la izquierda
-        &::before {
-          content: '';
-          position: absolute;
-          left: -10px; top: 12px; bottom: 12px;
-          width: 4px;
-          background: #ffeb3b;
-          border-radius: 0 4px 4px 0;
-        }
-      }
-    }
-
-    // Separador
-    mat-divider {
-      border-top-color: rgba(255,255,255,0.1);
-      margin: 15px 0;
-    }
-
-    // Botón Salir (Especial)
-    .logout-item {
-      margin-top: 20px;
-      &:hover {
-        background: rgba(244, 67, 54, 0.15); // Fondo rojo suave
-        mat-icon { color: #ff5252; }
-        .text-warn { color: #ff5252; }
-      }
-    }
-  }
-
-  // --- FOOTER DEL MENÚ ---
-  .sidenav-footer {
+  .circle {
     position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+  }
+
+  .circle-1 {
+    width: 400px; height: 400px;
+    background: #4b1e3a; // Tu color morado oscuro
+    top: -100px; right: -100px;
+  }
+
+  .circle-2 {
+    width: 300px; height: 300px;
+    background: #ffeb3b; // Tu color amarillo
+    bottom: -50px; left: -50px;
+    opacity: 0.4;
+  }
+}
+
+// 3. LA TARJETA DEL LOGIN (CARD)
+.card {
+  position: relative;
+  z-index: 10; // Encima del fondo
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95); // Blanco casi sólido
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15); // Sombra elegante
+  backdrop-filter: blur(10px); // Efecto vidrio
+  border: 1px solid rgba(255,255,255,0.8);
+  
+  // Animación de entrada suave
+  animation: slideUp 0.6s ease-out;
+}
+
+// 4. CABECERA (LOGO Y TEXTO)
+.brand {
+  text-align: center;
+  margin-bottom: 30px;
+
+  .logo-container {
+    width: 80px; height: 80px;
+    margin: 0 auto 15px;
+    background: white;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     
-    small {
-      color: rgba(255,255,255,0.2);
-      font-size: 0.7rem;
-      letter-spacing: 1px;
+    .logo {
+      width: 60px; height: 60px;
+      object-fit: contain;
+    }
+
+    .fallback-icon {
+      font-size: 40px; width: 40px; height: 40px;
+      color: #4b1e3a;
+    }
+  }
+
+  .brand-text {
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #2e0e22; // Morado muy oscuro
+      letter-spacing: -0.5px;
+    }
+    p {
+      margin: 5px 0 0;
+      color: #666;
+      font-size: 0.95rem;
     }
   }
 }
 
-// ============================================
-// 3. CONTENIDO PRINCIPAL
-// ============================================
-.page-content {
-  padding-bottom: 70px; // Espacio para la navbar inferior
-  min-height: 100vh;
-  box-sizing: border-box;
+// 5. EL FORMULARIO
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  // Personalización de los inputs de Angular Material
+  .custom-field {
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: #f5f7fa !important; // Fondo gris de los inputs
+      border-radius: 12px !important;
+    }
+    
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none; // Oculta espacio extra abajo si no hay error
+    }
+
+    mat-icon {
+      color: #888;
+    }
+  }
 }
 
-// Badge de alerta (El "NUEVO" o "PENDIENTE")
-.badge-alert {
-  background: #ff5252;
-  color: white;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 10px;
-  margin-left: auto; // Empuja a la derecha
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+// 6. CAJA DE ERROR
+.error-box {
+  background: #ffebee;
+  color: #d32f2f;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ffcdd2;
+  
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+// 7. BOTÓN DE INGRESAR
+.btn-login {
+  height: 50px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #2e0e22 0%, #4b1e3a 100%); // Gradiente Morado
+  color: white !important;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border-radius: 12px !important;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px); // Efecto de elevación
+    box-shadow: 0 5px 15px rgba(75, 30, 58, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    transform: none;
+  }
+
+  // Loader giratorio pequeño
+  .loader {
+    width: 20px; height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto;
+  }
+}
+
+// 8. PIE DE PÁGINA (COPYRIGHT)
+.footer-copy {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+// ANIMACIONES
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
