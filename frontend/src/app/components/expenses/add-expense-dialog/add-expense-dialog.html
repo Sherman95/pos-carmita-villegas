@@ -1,47 +1,64 @@
-<h2 mat-dialog-title>Registrar Nuevo Gasto</h2>
-
-<mat-dialog-content>
-  <div class="form-column">
-    
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Descripción</mat-label>
-      <input matInput [(ngModel)]="data.descripcion" placeholder="Ej: Pago de luz">
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Monto</mat-label>
-      <span matPrefix>$ &nbsp;</span>
-      <input matInput type="number" [(ngModel)]="data.monto">
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Categoría</mat-label>
-      <mat-select [(ngModel)]="data.categoria">
-        <mat-option value="SERVICIOS_BASICOS">Servicios Básicos</mat-option>
-        <mat-option value="INSUMOS_LOCAL">Insumos Local</mat-option>
-        <mat-option value="MANTENIMIENTO">Mantenimiento</mat-option>
-        <mat-option value="ALIMENTACION">Alimentación</mat-option>
-        <mat-option value="OTROS">Otros</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width" style="margin-top: 10px;">
-      <mat-label>¿De dónde sale el dinero?</mat-label>
-      <mat-select [(ngModel)]="data.metodo_pago">
-        <mat-option value="EFECTIVO">💵 Caja (Efectivo)</mat-option>
-        <mat-option value="TRANSFERENCIA">🏦 Banco / Transferencia</mat-option>
-      </mat-select>
-      <mat-hint *ngIf="data.metodo_pago === 'TRANSFERENCIA'" style="color: blue;">
-        * No afectará el cierre de caja.
-      </mat-hint>
-    </mat-form-field>
-
+<div class="pro-dialog">
+  
+  <div class="dialog-header">
+    <h3>Nueva Salida de Dinero</h3>
+    <button mat-icon-button (click)="cancelar()" tabindex="-1">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
-</mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()">Cancelar</button>
-  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!data.monto || !data.descripcion">
-    Guardar Gasto
-  </button>
-</mat-dialog-actions>
+  <mat-dialog-content class="content-wrapper">
+    
+    <div class="amount-hero-wrapper">
+      <span class="currency-symbol">$</span>
+      <input 
+        type="number" 
+        [(ngModel)]="data.monto" 
+        class="ghost-input" 
+        placeholder="0.00" 
+        autoFocus>
+    </div>
+    <p class="helper-text">Ingrese el monto a retirar</p>
+
+    <div class="section-label">Método de Pago</div>
+    <mat-button-toggle-group [(ngModel)]="data.metodo_pago" class="pro-toggles">
+      <mat-button-toggle value="EFECTIVO" class="toggle-btn">
+        <mat-icon>payments</mat-icon> Caja Física
+      </mat-button-toggle>
+      <mat-button-toggle value="TRANSFERENCIA" class="toggle-btn">
+        <mat-icon>account_balance</mat-icon> Banco
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <div class="inputs-grid">
+      
+      <mat-form-field appearance="outline" class="pro-field">
+        <mat-label>Categoría</mat-label>
+        <mat-select [(ngModel)]="data.categoria">
+          <mat-option value="INSUMOS_LOCAL">💅 Insumos</mat-option>
+          <mat-option value="SERVICIOS_BASICOS">💡 Servicios</mat-option>
+          <mat-option value="MANTENIMIENTO">🔧 Mantenimiento</mat-option>
+          <mat-option value="ALIMENTACION">🍔 Alimentación</mat-option>
+          <mat-option value="GASTOS_PERSONALES">🛍️ Personales</mat-option>
+          <mat-option value="OTROS">❓ Otros</mat-option>
+        </mat-select>
+        <mat-icon matPrefix>category</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pro-field">
+        <mat-label>Nota / Descripción</mat-label>
+        <input matInput [(ngModel)]="data.descripcion" placeholder="Ej: Pago de luz...">
+      </mat-form-field>
+
+    </div>
+
+  </mat-dialog-content>
+
+  <div class="dialog-footer">
+    <button mat-flat-button class="submit-btn" (click)="guardar()" 
+            [disabled]="!data.monto || !data.descripcion || data.monto <= 0">
+      REGISTRAR GASTO
+    </button>
+  </div>
+
+</div>

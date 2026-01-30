@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ExpensesService } from '../../../services/expenses'; 
 import { Expense, ExpenseCategory } from '../../../models/expense.model';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-add-expense-dialog',
@@ -21,7 +22,8 @@ import { Expense, ExpenseCategory } from '../../../models/expense.model';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatButtonToggleModule
   ],
   templateUrl: './add-expense-dialog.html', 
   styleUrls: ['./add-expense-dialog.scss']

@@ -1,5 +1,184 @@
-.title-icon { color: #f44336; margin-right: 10px; vertical-align: middle; }
-.form-container { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; min-width: 300px; }
-.full-width { width: 100%; }
-.amount-field { font-size: 1.5rem; font-weight: bold; color: #f44336; input { text-align: center; } }
-.select-row { display: flex; align-items: center; gap: 10px; }
+// VARIABLES (Tu marca)
+$vino-tinto: #4b1e3a;
+$vino-light: #f3e5f5;
+$gray-text: #64748b;
+$border-color: #e2e8f0;
+
+// CONTENEDOR PRINCIPAL (Reseteamos estilos de Material)
+.pro-dialog {
+  padding: 0;
+  max-width: 450px;
+  background: white;
+  font-family: 'Roboto', sans-serif; // O tu fuente preferida
+}
+
+// 1. CABECERA
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0;
+  
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $gray-text;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  mat-icon { color: $gray-text; opacity: 0.7; }
+}
+
+.content-wrapper {
+  padding: 10px 30px 20px !important; // Padding lateral generoso
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// 2. MONTO HERO (Estilo Stripe / N26)
+.amount-hero-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  position: relative;
+
+  .currency-symbol {
+    font-size: 2.5rem;
+    color: $vino-tinto;
+    font-weight: 300;
+    margin-right: 5px;
+    margin-top: -5px; // Ajuste visual
+  }
+
+  .ghost-input {
+    border: none;
+    background: transparent;
+    font-size: 3.5rem; // NÚMERO GIGANTE
+    font-weight: 700;
+    color: $vino-tinto;
+    width: 200px;
+    text-align: center;
+    outline: none;
+    padding: 0;
+    margin: 0;
+
+    &::placeholder { color: #cbd5e1; font-weight: 300; }
+    
+    /* Quitar flechas del input number */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    -moz-appearance: textfield;
+  }
+}
+
+.helper-text {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  margin-bottom: 30px;
+}
+
+// 3. TOGGLES (Botones de selección modernos)
+.section-label {
+  align-self: flex-start;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.pro-toggles {
+  width: 100%;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 25px;
+  display: flex;
+
+  mat-button-toggle {
+    flex: 1; // Ocupan 50% cada uno
+    border-right: 1px solid $border-color;
+    font-size: 0.95rem;
+    color: #64748b;
+    
+    ::ng-deep .mat-button-toggle-label-content {
+      line-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    mat-icon { font-size: 20px; }
+
+    &.mat-button-toggle-checked {
+      background-color: $vino-light; // Fondo suave vino
+      color: $vino-tinto !important;
+      font-weight: 600;
+      
+      mat-icon { color: $vino-tinto; }
+    }
+  }
+}
+
+// 4. INPUTS ESTILIZADOS
+.inputs-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  .pro-field {
+    width: 100%;
+
+    // Hacks para limpiar el estilo Material por defecto y hacerlo "Flat"
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: #f8fafc !important; // Fondo gris muy tenue
+      border-radius: 12px !important;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    // Efecto Focus (Borde Vino)
+    &.mat-focused ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: white !important;
+      border-color: $vino-tinto !important;
+      box-shadow: 0 0 0 4px rgba($vino-tinto, 0.1);
+    }
+
+    // Quitar la linea de abajo fea
+    ::ng-deep .mdc-line-ripple { display: none; }
+    
+    // Iconos
+    mat-icon { color: #94a3b8; margin-right: 8px; }
+  }
+}
+
+// 5. FOOTER & BOTÓN FINAL
+.dialog-footer {
+  padding: 20px 24px 24px;
+  border-top: 1px solid $border-color;
+  
+  .submit-btn {
+    width: 100%;
+    height: 50px;
+    background-color: $vino-tinto;
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 12px; // Botón moderno
+    letter-spacing: 1px;
+    transition: transform 0.1s;
+
+    &:disabled {
+      background-color: #e2e8f0;
+      color: #94a3b8;
+    }
+
+    &:active { transform: scale(0.98); } // Efecto click
+  }
+}
