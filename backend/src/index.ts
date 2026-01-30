@@ -5,6 +5,8 @@ import itemsRoutes from './routes/items.routes';
 import salesRoutes from './routes/sales.routes'; 
 import clientsRoutes from './routes/clients.routes';
 import authRoutes from './routes/auth.routes';
+import expensesRoutes from './routes/expenses.routes';
+import cashRoutes from './routes/cash.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +41,8 @@ app.use('/api/items', itemsRoutes);
 app.use('/api/sales', salesRoutes); 
 app.use('/api/clients', clientsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/expenses', expensesRoutes);
+app.use('/api/cash', cashRoutes);
 
 // Ruta Ping (Para UptimeRobot)
 app.get('/ping', async (req: Request, res: Response) => {

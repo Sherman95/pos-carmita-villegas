@@ -1,0 +1,132 @@
+<div class="cash-container">
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Verificando estado de caja...</p>
+  </div>
+
+  <div *ngIf="!loading && !isOpen" class="fade-in">
+    <mat-card class="box-card closed-state">
+      <div class="icon-header">
+        <mat-icon>lock</mat-icon>
+      </div>
+      <h2>La Caja está CERRADA</h2>
+      <p>Inicia el turno ingresando el dinero base (sencillo).</p>
+
+      <div class="form-area">
+        <mat-form-field appearance="outline" class="full-width big-input">
+          <mat-label>Monto Inicial</mat-label>
+          <span matPrefix>$ &nbsp;</span>
+          <input matInput type="number" [(ngModel)]="initialAmount" placeholder="0.00">
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" class="action-btn" (click)="openBox()">
+          ABRIR CAJA
+        </button>
+      </div>
+    </mat-card>
+  </div>
+
+  <div *ngIf="!loading && isOpen && closingData" class="fade-in">
+    <mat-card class="box-card open-state">
+      
+      <div class="header-open">
+        <div class="title-group">
+          <mat-icon>lock_open</mat-icon>
+          <div>
+            <h2>Cierre de Caja</h2>
+            <small>Apertura: {{ closingData.fecha_apertura | date:'shortTime' }}</small>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="summary-grid">
+        
+        <div class="section-label">💵 Arqueo de Efectivo</div>
+
+        <div class="row">
+          <span>💰 Base Inicial:</span>
+          <strong>{{ closingData.monto_inicial | currency }}</strong>
+        </div>
+        
+        <div class="row success">
+          <span>+ Ventas (Efectivo):</span>
+          <span>{{ closingData.resumen?.efectivo_ventas | currency }}</span>
+        </div>
+
+        <div class="row success">
+          <span>+ Cobro Deudas (Efectivo):</span>
+          <span>{{ closingData.resumen?.efectivo_abonos | currency }}</span>
+        </div>
+
+        <div class="row danger">
+          <span>- Gastos y Retiros:</span>
+          <span>{{ closingData.total_gastos | currency }}</span>
+        </div>
+        
+        <mat-divider style="margin: 10px 0; border-color: #000; opacity: 0.1;"></mat-divider>
+        
+        <div class="row total-expected">
+          <span>ESPERADO EN CAJÓN:</span>
+          <strong>{{ closingData.monto_esperado | currency }}</strong>
+        </div>
+
+        <div class="digital-section" style="margin-top: 15px; background: #e3f2fd; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbdefb;">
+            <div class="row text-primary" style="color: #1565c0; font-weight: 500;">
+                <span style="display: flex; align-items: center; gap: 5px;">
+                    <mat-icon style="font-size: 18px; height: 18px; width: 18px;">account_balance</mat-icon> 
+                    Bancos / Transferencias:
+                </span>
+                <strong>{{ closingData.resumen?.digital_total | currency }}</strong>
+            </div>
+            <small style="color: #1976d2; display: block; margin-top: 4px; font-size: 0.8rem;">
+              * Dinero en cuenta. No sumar al efectivo.
+            </small>
+        </div>
+
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; color: #757575; font-size: 0.85rem;">
+            <div class="row">
+                <span>🧾 Total Facturado Hoy:</span>
+                <span>{{ closingData.total_facturado | currency }}</span>
+            </div>
+            <div class="row">
+                <span>📒 Fiado / Crédito Otorgado:</span>
+                <span>{{ closingData.credito_otorgado | currency }}</span>
+            </div>
+        </div>
+
+      </div>
+
+      <div class="arqueo-section">
+        <p>¿Cuánto dinero contaste físicamente?</p>
+        
+        <mat-form-field appearance="fill" class="full-width super-input">
+          <mat-label>Dinero Real (Billetes y Monedas)</mat-label>
+          <span matPrefix>$ &nbsp;</span>
+          <input matInput type="number" [(ngModel)]="realAmount" placeholder="0.00">
+        </mat-form-field>
+
+        <div class="difference-badge" 
+             [class.match]="difference === 0"
+             [class.missing]="difference < 0"
+             [class.surplus]="difference > 0">
+          <span *ngIf="difference === 0">✅ ¡CUADRA PERFECTO!</span>
+          <span *ngIf="difference < 0">⚠️ FALTA: {{ difference | currency }}</span>
+          <span *ngIf="difference > 0">🤑 SOBRA: {{ difference | currency }}</span>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Observaciones (Opcional)</mat-label>
+          <textarea matInput [(ngModel)]="observaciones" placeholder="Ej: Faltan 5 centavos..."></textarea>
+        </mat-form-field>
+
+        <button mat-flat-button color="warn" class="action-btn" (click)="closeBox()">
+           CERRAR TURNO Y CAJA
+        </button>
+      </div>
+
+    </mat-card>
+  </div>
+
+</div>

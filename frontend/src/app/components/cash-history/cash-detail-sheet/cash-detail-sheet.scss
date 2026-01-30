@@ -1,0 +1,98 @@
+.sheet-container {
+    background-color: #ffffff; /* 👈 ESTO SOLUCIONA LA TRANSPARENCIA */
+    border-top-left-radius: 24px; /* Borde redondeado arriba izquierda */
+    border-top-right-radius: 24px; /* Borde redondeado arriba derecha */
+    padding: 25px 20px 30px 20px; /* Un poco más de espacio arriba */
+}
+
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    h3 { margin: 0; font-size: 1.2rem; color: #4b1e3a; font-weight: bold; }
+}
+
+.date-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+
+    .date-item {
+        display: flex; flex-direction: column;
+        .label { font-size: 0.75rem; color: #666; }
+        .value { font-size: 0.85rem; font-weight: 500; }
+    }
+    .arrow-icon { color: #aaa; }
+}
+
+.math-list {
+    margin: 15px 0;
+    
+    .math-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0;
+        font-size: 1rem;
+        
+        .concept { 
+            display: flex; align-items: center; gap: 10px; color: #555; 
+            mat-icon { font-size: 20px; width: 20px; height: 20px; }
+            .icon-start { color: #1976d2; }
+            .icon-in { color: #2e7d32; }
+            .icon-out { color: #c62828; }
+        }
+        
+        .amount { font-weight: 600; }
+        .positive { color: #2e7d32; }
+        .negative { color: #c62828; }
+    }
+
+    .result-row {
+        .concept { font-weight: bold; color: #333; }
+        .amount { font-size: 1.1rem; }
+        &.real {
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+    }
+}
+
+.final-card {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+
+    &.success { background: linear-gradient(135deg, #43a047, #2e7d32); }
+    &.error { background: linear-gradient(135deg, #e53935, #c62828); }
+
+    .final-amount {
+        font-size: 1.8rem; font-weight: bold; margin: 5px 0;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .final-desc { font-size: 0.9rem; opacity: 0.9; }
+}
+
+.notes-box {
+    margin-top: 15px;
+    padding: 10px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+.full-width-btn {
+    width: 100%;
+    margin-top: 25px;
+    height: 50px;
+    font-size: 1rem;
+}

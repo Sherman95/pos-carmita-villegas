@@ -1,0 +1,76 @@
+<div class="sheet-container">
+    <div class="sheet-header">
+        <h3>Detalle de Cierre</h3>
+        <button mat-icon-button (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <div class="date-info">
+        <div class="date-item">
+            <span class="label">Apertura</span>
+            <span class="value">{{ data.fecha_apertura | date:'medium' }}</span>
+        </div>
+        <div class="arrow-icon">
+            <mat-icon>arrow_downward</mat-icon>
+        </div>
+        <div class="date-item">
+            <span class="label">Cierre</span>
+            <span class="value">{{ data.fecha_cierre | date:'medium' }}</span>
+        </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="math-list">
+        
+        <div class="math-row">
+            <span class="concept"><mat-icon class="icon-start">savings</mat-icon> Base Inicial</span>
+            <span class="amount positive">+ {{ data.monto_inicial | currency }}</span>
+        </div>
+
+        <div class="math-row">
+            <span class="concept"><mat-icon class="icon-in">add_circle</mat-icon> Ventas + Abonos</span>
+            <span class="amount positive">+ {{ data.total_ventas_efectivo | currency }}</span>
+        </div>
+
+        <div class="math-row">
+            <span class="concept"><mat-icon class="icon-out">remove_circle</mat-icon> Gastos / Salidas</span>
+            <span class="amount negative">- {{ data.total_gastos | currency }}</span>
+        </div>
+
+        <mat-divider class="sub-total-divider"></mat-divider>
+
+        <div class="math-row result-row">
+            <span class="concept">Debería haber:</span>
+            <span class="amount">{{ data.esperado | currency }}</span>
+        </div>
+
+        <div class="math-row result-row real">
+            <span class="concept">Hubo en Caja:</span>
+            <span class="amount">{{ data.monto_real | currency }}</span>
+        </div>
+
+    </div>
+
+    <div class="final-card" [class.success]="data.diferencia >= 0" [class.error]="data.diferencia < 0">
+        <div class="final-label">Resultado del Arqueo</div>
+        <div class="final-amount">
+            <mat-icon>{{ data.diferencia >= 0 ? 'check_circle' : 'error' }}</mat-icon>
+            {{ data.diferencia | currency }}
+        </div>
+        <div class="final-desc">
+            {{ data.diferencia == 0 ? 'Cuadre Perfecto' : (data.diferencia > 0 ? 'Sobró Dinero' : 'Faltó Dinero') }}
+        </div>
+    </div>
+
+    @if (data.observaciones) {
+        <div class="notes-box">
+            <strong>Notas:</strong> {{ data.observaciones }}
+        </div>
+    }
+
+    <button mat-flat-button color="primary" class="full-width-btn" (click)="close()">
+        ENTENDIDO
+    </button>
+</div>

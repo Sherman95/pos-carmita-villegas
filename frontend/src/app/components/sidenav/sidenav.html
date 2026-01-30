@@ -1,0 +1,85 @@
+<div class="sidenav-container">
+  
+  <div class="sidenav-header">
+    <div class="header-content">
+      <div class="avatar-circle elevation-z8">
+        {{ user.initial }}
+      </div>
+      <div class="user-info">
+        <h3>{{ user.name }}</h3>
+        <span class="role-badge">{{ user.role }}</span>
+        <p class="email">{{ user.email }}</p>
+      </div>
+    </div>
+    <div class="header-wave"></div>
+  </div>
+
+  <mat-nav-list class="nav-list">
+    
+    <div class="section-title">Operaciones</div>
+
+    <a mat-list-item routerLink="/home" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>point_of_sale</mat-icon>
+      <span matListItemTitle>Punto de Venta</span>
+    </a>
+
+    <a mat-list-item routerLink="/expenses" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>payments</mat-icon>
+      <span matListItemTitle>Gastos y Retiros</span>
+    </a>
+
+    <a mat-list-item routerLink="/fiados" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+      <span matListItemTitle>Cartera de Crédito</span>
+      <span matListItemMeta class="badge-pill">DEUDA</span> 
+    </a>
+
+    <a mat-list-item routerLink="/clients" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>people_alt</mat-icon>
+      <span matListItemTitle>Agenda Clientes</span>
+    </a>
+
+    <mat-divider class="custom-divider"></mat-divider>
+
+    <div class="section-title">Gestión</div>
+
+    <a mat-list-item routerLink="/history" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>receipt_long</mat-icon>
+      <span matListItemTitle>Historial Ventas</span>
+    </a>
+
+    <a mat-list-item routerLink="/reports" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>bar_chart</mat-icon>
+      <span matListItemTitle>Finanzas</span>
+    </a>
+
+    <a mat-list-item routerLink="/cash-control" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>lock_clock</mat-icon>
+      <span matListItemTitle>Cierre de Caja</span>
+    </a>
+
+    <a mat-list-item routerLink="/cash-history" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>history</mat-icon>
+      <span matListItemTitle>Historial Cierres</span>
+    </a>
+
+    <mat-divider class="custom-divider"></mat-divider>
+
+    <div class="section-title">Sistema</div>
+
+    <a mat-list-item routerLink="/profile" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>settings</mat-icon>
+      <span matListItemTitle>Configuración</span>
+    </a>
+
+    <a mat-list-item (click)="logout()" class="logout-item">
+      <mat-icon matListItemIcon>logout</mat-icon>
+      <span matListItemTitle>Cerrar Sesión</span>
+    </a>
+
+  </mat-nav-list>
+
+  <div class="sidenav-footer">
+    <small>POS Carmita v1.0.0</small>
+  </div>
+</div>

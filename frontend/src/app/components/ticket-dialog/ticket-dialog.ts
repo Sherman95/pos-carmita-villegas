@@ -10,17 +10,23 @@ interface TicketItem {
   subtotal: number;
 }
 
+// 👇 AQUÍ ESTÁ LA SOLUCIÓN: Agregamos tipoPago y abono
 export interface TicketData {
   fecha: Date;
   cliente: string;
   identificacion?: string;
   items: TicketItem[];
   total: number;
+  
+  // ✅ ESTOS SON LOS CAMPOS QUE FALTABAN
+  tipoPago?: string;  
+  abono?: number;     
+
   businessName?: string;
   businessRuc?: string;
   businessAddress?: string;
   businessPhone?: string;
-  taxRate?: number; // Puede ser 0, 0.12, 0.15 o undefined
+  taxRate?: number; 
 }
 
 @Component({
@@ -44,12 +50,8 @@ export class TicketDialogComponent {
     this.dialogRef.close();
   }
 
-  // ✅ CORRECCIÓN EN EL CÁLCULO
   get subtotal(): number {
-    // Si taxRate viene (incluso si es 0), lo usamos.
-    // Solo si es null/undefined usamos 0.15 (para compatibilidad con ventas viejas)
     const rate = this.data.taxRate ?? 0.15; 
-    
     const divisor = 1 + rate;
     return this.redondear(this.data.total / divisor);
   }

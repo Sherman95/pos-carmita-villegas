@@ -6,9 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion'; 
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { Router } from '@angular/router'; 
+import { firstValueFrom } from 'rxjs';    
+import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // 👈 Importante
 import Swal from 'sweetalert2';
 
 import { SalesService, DeudaCliente } from '../../services/sales.service';
+import { CashService } from '../../services/cash'; 
+import { PaymentDialogComponent } from './payment-dialog/payment-dialog'; // 👈 Importamos el nuevo componente
 
 @Component({
   selector: 'app-fiados',
@@ -20,20 +25,24 @@ import { SalesService, DeudaCliente } from '../../services/sales.service';
     MatButtonModule, 
     MatExpansionModule,
     MatInputModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatDialogModule // 👈 No olvides esto
   ],
   templateUrl: './fiados.html',
   styleUrl: './fiados.scss'
 })
 export class FiadosComponent implements OnInit {
   private salesService = inject(SalesService);
+  private cashService = inject(CashService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog); // 👈 Inyectamos MatDialog
 
   // ESTADO
   deudores = signal<DeudaCliente[]>([]);
   loading = signal(true);
   searchTerm = signal('');
 
-  // 🔍 BUSCADOR
+  // BUSCADOR
   filteredDeudores = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.deudores().filter(d => 
@@ -41,7 +50,7 @@ export class FiadosComponent implements OnInit {
     );
   });
 
-  // 💰 TOTAL GENERAL (Suma de todas las deudas)
+  // TOTAL GENERAL
   totalCartera = computed(() => {
     return this.deudores().reduce((acc, curr) => acc + curr.total_deuda, 0);
   });
@@ -64,49 +73,67 @@ export class FiadosComponent implements OnInit {
       });
   }
 
-  // 💵 ACCIÓN: COBRAR / ABONAR
+  // 💵 ACCIÓN: COBRAR / ABONAR (NUEVA VERSIÓN LIMPIA)
   async abonar(venta: any, clienteNombre: string) {
     
-    // Popup para pedir el monto
-    const { value: monto } = await Swal.fire({
-      title: `Abonar Cuenta`,
-      html: `
-        <div style="text-align: left; font-size: 0.9rem;">
-          <p>Cliente: <strong>${clienteNombre}</strong></p>
-          <p>Fecha Venta: ${new Date(venta.created_at).toLocaleDateString()}</p>
-          <p>Saldo pendiente: <b style="color:#d32f2f; font-size:1.1rem">$${venta.saldo_pendiente.toFixed(2)}</b></p>
-        </div>
-      `,
-      input: 'number',
-      inputLabel: 'Ingrese el monto recibido:',
-      inputPlaceholder: '0.00',
-      showCancelButton: true,
-      confirmButtonText: 'CONFIRMAR PAGO',
-      confirmButtonColor: '#2e7d32', // Verde
-      inputValidator: (value) => {
-        if (!value || Number(value) <= 0) return 'Ingresa un monto válido';
-        if (Number(value) > venta.saldo_pendiente) return 'No puedes abonar más de lo que debe';
-        return null;
+    // 1. SEGURIDAD: VERIFICAR CAJA
+    try {
+      const status = await firstValueFrom(this.cashService.getStatus());
+      
+      if (!status.isOpen) {
+        Swal.fire({
+          title: '⛔ Caja Cerrada',
+          text: 'Debes abrir turno para recibir dinero de abonos.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Ir a Abrir Caja',
+          confirmButtonColor: '#d32f2f',
+          cancelButtonText: 'Cancelar'
+        }).then((res) => {
+          if (res.isConfirmed) {
+            this.router.navigate(['/cash-control']);
+          }
+        });
+        return; 
+      }
+    } catch (e) {
+      console.error('Error verificando caja', e);
+      return;
+    }
+    
+    // 2. ABRIR EL DIÁLOGO ELEGANTE
+    const dialogRef = this.dialog.open(PaymentDialogComponent, {
+      width: '400px',
+      disableClose: true, // No cierra si haces clic afuera
+      data: {
+        clienteNombre: clienteNombre,
+        saldoPendiente: venta.saldo_pendiente
       }
     });
 
-    // Si ingresó un monto y dio aceptar
-    if (monto) {
-      try {
-        await this.salesService.registrarAbono(venta.id, Number(monto));
-        
-        Swal.fire({
-          title: '¡Pago Registrado!',
-          text: `Se abonaron $${monto} correctamente.`,
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false
-        });
+    // 3. ESPERAR RESULTADO
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        // Si el usuario confirmó, result tendrá { monto: 10, metodo: 'EFECTIVO' }
+        const { monto, metodo } = result;
 
-        this.cargarDatos(); // Recargar la lista para ver el nuevo saldo
-      } catch (error) {
-        Swal.fire('Error', 'No se pudo registrar el pago', 'error');
+        try {
+          await this.salesService.registrarAbono(venta.id, Number(monto), metodo);
+          
+          // Feedback sutil
+          Swal.fire({
+            title: '¡Pago Registrado!',
+            text: `Se abonaron $${monto} vía ${metodo}.`,
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          });
+
+          this.cargarDatos(); // Recargamos la lista
+        } catch (error) {
+          Swal.fire('Error', 'No se pudo registrar el pago', 'error');
+        }
       }
-    }
+    });
   }
 }

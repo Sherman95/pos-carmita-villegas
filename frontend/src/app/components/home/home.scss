@@ -1,221 +1,207 @@
+// VARIABLES DE COLOR (Tu marca)
+$color-primary: #4b1e3a; // Vino Tinto
+$color-bg: #f4f6f8;      // Gris muy suave para el fondo
+
 // ==========================================
-// 1. CONFIGURACIÓN DE PÁGINA (SIN SCROLL)
+// 1. CONFIGURACIÓN GENERAL
 // ==========================================
 .home-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;           // Altura exacta de la pantalla
-  background-color: #f8f9fa;
-  overflow: hidden;        // Bloqueamos el scroll general
+  height: 100vh;
+  background-color: $color-bg;
+  overflow: hidden;
 }
 
 // ==========================================
-// 2. HEADER HERO (COMPACTO)
+// 2. HERO HEADER (CABECERA)
 // ==========================================
 .hero-section {
-  flex: 0 0 auto; // No estirarse
-  background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
+  flex: 0 0 auto;
+  // Degradado elegante del Vino Tinto
+  background: linear-gradient(135deg, $color-primary 0%, lighten($color-primary, 15%) 100%);
   color: white;
-  padding: 20px 20px 35px; // Padding reducido para ganar espacio
-  border-bottom-left-radius: 30px;
-  border-bottom-right-radius: 30px;
-  position: relative;
-  z-index: 1;
+  padding: 30px 20px 45px; // Espacio extra abajo para el buscador
+  border-bottom-left-radius: 35px;
+  border-bottom-right-radius: 35px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(75, 30, 58, 0.2);
+  box-shadow: 0 10px 20px rgba($color-primary, 0.2);
 
   .greeting {
-    margin-bottom: 15px;
-    h1 { font-size: 1.5rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; } // Texto más pequeño
-    p { margin: 2px 0 0; opacity: 0.85; font-size: 0.9rem; }
+    margin-bottom: 20px;
+    h1 { font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+    p { margin: 5px 0 0; opacity: 0.9; font-size: 0.95rem; font-weight: 300; }
   }
 
-  // EL BUSCADOR FLOTANTE (COMPACTO)
+  // BUSCADOR FLOTANTE
   .search-container {
     max-width: 600px;
-    width: 95%;      
-    margin: 0 auto -25px; // Menos margen negativo
+    width: 100%;
+    margin: 0 auto -50px; // Hace que flote entre el header y el body
     position: relative;
     z-index: 10;
 
     .search-card {
-      padding: 0 15px;
-      border-radius: 30px;
+      padding: 5px 15px;
+      border-radius: 50px; // Completamente redondo
       display: flex;
       align-items: center;
       background: white;
-      height: 50px; // Altura reducida (antes 65px)
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      height: 60px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08); // Sombra suave y difusa
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:focus-within {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba($color-primary, 0.15);
+      }
       
-      .search-icon { color: #4b1e3a; margin-right: 10px; opacity: 0.7; font-size: 20px; }
+      .search-icon { color: $color-primary; margin-left: 5px; margin-right: 10px; }
       
       .pro-input {
         border: none;
         outline: none;
         flex: 1;
-        font-size: 1rem;
+        font-size: 1.05rem;
         color: #333;
         background: transparent;
         height: 100%;
+        &::placeholder { color: #aaa; }
       }
 
-      .clear-btn {
-        color: #999;
-        width: 30px; height: 30px; line-height: 30px;
-        mat-icon { font-size: 18px; }
-      }
+      .clear-btn { color: #999; }
     }
   }
 }
 
 // ==========================================
-// 3. GRID DEL DASHBOARD (2 COLUMNAS)
+// 3. GRID DEL DASHBOARD (TARJETAS)
 // ==========================================
 .dashboard-grid {
-  flex: 1; // Ocupa el resto del espacio vertical
-  padding: 30px 15px 85px; // Padding bottom grande para la barra de navegación
-  max-width: 800px;
+  flex: 1;
+  padding: 60px 20px 20px; // Padding top compensa el buscador flotante
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
+  overflow-y: auto; // Permite scroll si la pantalla es muy pequeña
   
   display: grid;
-  grid-template-columns: 1fr 1fr; // Siempre 2 columnas
-  grid-template-rows: auto auto auto; // 3 Filas
-  gap: 12px; // Espacio reducido
-  align-content: start; // Pegar todo arriba
+  grid-template-columns: repeat(2, 1fr); // 2 Columnas
+  gap: 15px;
+  align-content: start;
 
-  // --- ESTILOS DE LAS TARJETAS ---
+  // --- ESTILO BASE DE TARJETAS ---
   .dashboard-card {
     background: white;
-    border-radius: 16px;
-    padding: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 20px; // Bordes más redondeados
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     cursor: pointer;
-    transition: transform 0.1s;
-    border: 1px solid rgba(0,0,0,0.03);
+    transition: all 0.2s ease-in-out;
+    border: 1px solid rgba(0,0,0,0.02);
     
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: 95px; // Altura fija compacta
+    height: 110px; // Un poco más altas para elegancia
+    position: relative;
+    overflow: hidden;
 
-    &:active { transform: scale(0.96); }
+    // Efecto Hover (Levantar)
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    }
+    &:active { transform: scale(0.98); }
 
+    h3 { 
+      margin: 10px 0 0; 
+      font-size: 0.95rem; 
+      font-weight: 600; 
+      color: #444; 
+    }
+
+    // El círculo del icono
     .icon-box {
-      width: 35px; height: 35px;
-      border-radius: 10px;
+      width: 45px; height: 45px;
+      border-radius: 50%; // Círculo perfecto
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 6px;
-      mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      transition: transform 0.2s;
+      mat-icon { font-size: 24px; width: 24px; height: 24px; }
     }
 
-    h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: #444; }
+    // === 🎨 TIPOS DE TARJETAS ===
 
-    // Colores específicos
-    &.info .icon-box { background: #e3f2fd; color: #1565c0; }
-    &.success .icon-box { background: #e8f5e9; color: #2e7d32; }
-    &.warn .icon-box { background: #fff3e0; color: #ef6c00; }
-    
-    // NUEVO: CREDITOS (VINO)
-    &.wine-card {
-      border: 1px solid #f3e5f5;
-      .icon-box { background: #f3e5f5; color: #4b1e3a; }
-    }
-
-    // TARJETA ESPECIAL: COBRAR (Full Width)
-    &.big-action {
-      grid-column: 1 / -1; // Ocupa las 2 columnas
-      background: linear-gradient(135deg, #4b1e3a 0%, #7b1fa2 100%);
+    // 1. PUNTO DE VENTA (La Joya de la Corona)
+    &.primary-action {
+      grid-column: 1 / -1; // Ocupa todo el ancho
+      background: linear-gradient(135deg, $color-primary 0%, #7b1fa2 100%);
       color: white;
-      height: auto; // Altura libre
-      padding: 15px;
-      min-height: 80px;
-      
-      .content-flex {
-        display: flex; align-items: center; width: 100%; gap: 15px;
+      height: auto;
+      min-height: 90px;
+      flex-direction: row; // Horizontal
+      justify-content: space-between;
+      padding: 0 25px;
+
+      .icon-box {
+        background: rgba(255,255,255,0.2); // Cristal
+        color: white;
+        width: 50px; height: 50px;
       }
 
-      .icon-box { background: rgba(255,255,255,0.2); color: white; margin: 0; }
-      
       .text-box {
-        text-align: left; flex: 1;
-        h3 { color: white; font-size: 1.2rem; margin-bottom: 2px; }
-        p { margin: 0; opacity: 0.8; font-size: 0.8rem; }
+        text-align: left; 
+        flex: 1; 
+        padding-left: 15px;
+        h3 { color: white; font-size: 1.3rem; margin: 0; }
+        p { margin: 2px 0 0; color: rgba(255,255,255,0.8); font-size: 0.85rem; }
+      }
+
+      .arrow { color: rgba(255,255,255,0.6); }
+    }
+
+    // 2. TARJETAS DE ACCIÓN (Caja y Gastos) - COLORES FUERTES
+    &.action-card {
+      color: white;
+      h3 { color: white; }
+      
+      .icon-box {
+        background: rgba(255,255,255,0.25); // Efecto cristal
+        color: white;
       }
       
-      .arrow { opacity: 0.6; }
+      // Naranja (Caja)
+      &.accent { background: linear-gradient(135deg, #FF9800, #F57C00); }
+      // Rojo (Gastos)
+      &.error { background: linear-gradient(135deg, #ef5350, #d32f2f); }
+    }
+
+    // 3. TARJETAS DE GESTIÓN (Blancas con acentos de color)
+    &.white-card {
+      .icon-box { margin-bottom: 5px; }
+      
+      // Vino (Créditos)
+      &.wine .icon-box { background: #f3e5f5; color: $color-primary; }
+      // Azul (Historial)
+      &.info .icon-box { background: #e3f2fd; color: #1565c0; }
+      // Verde (Reportes)
+      &.success .icon-box { background: #e8f5e9; color: #2e7d32; }
+      // Naranja suave (Clientes)
+      &.warn .icon-box { background: #fff3e0; color: #ef6c00; }
     }
   }
 }
 
-// =================================================================
-// SOLUCIÓN FINAL: HOME DROPDOWN (TUS ESTILOS PRESERVADOS)
-// =================================================================
-
-/* 1. FORZAR MODO CLARO EN EL CONTENEDOR FLOTANTE */
-::ng-deep .cdk-overlay-container {
-  color-scheme: light !important;
-  z-index: 9999 !important;
-}
-
-/* 2. EL PANEL GENERAL */
-::ng-deep .mat-mdc-autocomplete-panel {
-  background-color: #ffffff !important;
-  --mat-autocomplete-background-color: #ffffff !important;
-  --mdc-theme-surface: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #ccc !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
-  border-radius: 10px !important;
-}
-
-/* 3. TAMAÑO Y POSICIÓN */
+// AJUSTES DE MATERIAL OVERLAY (Para el buscador dropdown)
 ::ng-deep .custom-scroll-panel {
-  width: 600px !important;       /* Ajustado al nuevo ancho del buscador */
-  min-width: 300px !important;
-  max-width: 95vw !important;
-  padding: 5px !important;
+  margin-top: 8px;
+  border-radius: 16px !important;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15) !important;
 }
 
-/* 4. LAS FILAS (ITEMS) */
-::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  min-height: 60px !important; /* Un poco más compacto */
-  border-bottom: 1px solid #f0f0f0 !important;
-  display: flex !important;
-  align-items: center !important;
+@media (max-width: 600px) {
+    .dashboard-grid { gap: 10px; padding-top: 50px; }
+    .hero-section .greeting h1 { font-size: 1.5rem; }
 }
-
-/* Hover */
-::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover {
-  background-color: #fce4ec !important; 
-}
-
-/* 5. ARREGLAR EL TEXTO INTERNO */
-::ng-deep .mat-mdc-autocomplete-panel .mdc-list-item__primary-text {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-  white-space: normal !important;
-  line-height: normal !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-}
-
-/* 6. ESTILOS INTERNOS (HTML) */
-::ng-deep .row-content { display: flex; align-items: center; gap: 12px; width: 100%; }
-
-::ng-deep .avatar-circle {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: #f3e5f5 !important; color: #4b1e3a !important;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-::ng-deep .text-info { display: flex; flex-direction: column; }
-::ng-deep .main-text { font-weight: 700; color: #000; font-size: 0.95rem; }
-::ng-deep .sub-text { color: #666; font-size: 0.75rem; }

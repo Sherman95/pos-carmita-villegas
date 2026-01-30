@@ -8,96 +8,96 @@
       </div>
       
       <div class="search-container">
-        <mat-card class="search-card elevation-z4">
+        <div class="search-card">
           <mat-icon class="search-icon">search</mat-icon>
-          
           <input type="text"
                  class="pro-input"
                  placeholder="Buscar cliente..."
                  [ngModel]="searchText()"
                  (ngModelChange)="onSearchChange($event)"
                  [matAutocomplete]="auto"
-                 (click)="onFocus()"
                  (focus)="onFocus()"
                  #searchInput>
 
           @if (searchText()) {
-            <button mat-icon-button class="clear-btn" (click)="limpiarBusqueda(); $event.stopPropagation()">
+            <button mat-icon-button class="clear-btn" (click)="limpiarBusqueda()">
               <mat-icon>close</mat-icon>
             </button>
-          } @else {
-            <button mat-icon-button class="clear-btn" (click)="onFocus()">
-               <mat-icon>expand_more</mat-icon>
-            </button>
           }
-        </mat-card>
+        </div>
 
         <mat-autocomplete #auto="matAutocomplete" 
                   (optionSelected)="onOptionSelected($event)"
-                  class="custom-scroll-panel" 
-                  panelClass="custom-scroll-panel">
+                  class="custom-scroll-panel">
             
            @for (c of filteredClients(); track c.id) {
-             <mat-option [value]="c" class="option-client">
-               <div class="row-content">
+             <mat-option [value]="c" style="height: 60px; border-bottom: 1px solid #f0f0f0;">
+               <div style="display: flex; align-items: center; gap: 15px;">
                  @if (c.cedula === '9999999999') {
-                    <div class="avatar-circle"><mat-icon>person_outline</mat-icon></div>
+                    <mat-icon style="color: #666;">person_outline</mat-icon>
                  } @else {
-                    <div class="avatar-circle client">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                    <div style="width: 35px; height: 35px; background: #f3e5f5; color: #4b1e3a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                        {{ c.nombre.charAt(0).toUpperCase() }}
+                    </div>
                  }
-                 <div class="text-info">
-                   <span class="main-text">{{ c.nombre }}</span>
-                   <span class="sub-text">{{ c.cedula || 'S/N' }}</span>
+                 <div style="display: flex; flex-direction: column;">
+                   <span style="font-weight: 600; font-size: 0.95rem;">{{ c.nombre }}</span>
+                   <span style="font-size: 0.8rem; color: #888;">{{ c.cedula || 'Consumidor Final' }}</span>
                  </div>
                </div>
              </mat-option>
            }
 
            @if (searchText() && filteredClients().length === 0) {
-             <mat-option [value]="'NEW_CLIENT'" class="option-create">
-               <div class="row-content create">
-                 <div class="avatar-circle add"><mat-icon>add</mat-icon></div>
-                 <div class="text-info">
-                   <span class="main-text">Crear: "{{ searchText() }}"</span>
-                 </div>
+             <mat-option [value]="'NEW_CLIENT'">
+               <div style="display: flex; align-items: center; gap: 10px; color: #4b1e3a;">
+                 <mat-icon>add_circle</mat-icon>
+                 <b>Crear nuevo cliente: "{{ searchText() }}"</b>
                </div>
              </mat-option>
            }
-
         </mat-autocomplete>
       </div>
     </div>
   </header>
 
-  <section class="dashboard-grid">
+  <section class="dashboard-grid fade-in">
     
-    <div class="dashboard-card primary big-action full-width" (click)="irAVenta()">
-      <div class="content-flex">
+    <div class="dashboard-card primary-action" (click)="irAVenta()">
         <div class="icon-box"><mat-icon>point_of_sale</mat-icon></div>
         <div class="text-box">
           <h3>Punto de Venta</h3>
           <p>Ir al catálogo</p>
         </div>
-        <mat-icon class="arrow">arrow_forward</mat-icon>
-      </div>
+        <mat-icon class="arrow">arrow_forward_ios</mat-icon>
     </div>
 
-    <div class="dashboard-card wine-card" (click)="irAFiados()">
+    <div class="dashboard-card action-card accent" (click)="irACaja()">
+      <div class="icon-box"><mat-icon>lock_clock</mat-icon></div>
+      <h3>Cierre Caja</h3>
+    </div>
+
+    <div class="dashboard-card action-card error" (click)="irAGastos()">
+        <div class="icon-box"><mat-icon>payments</mat-icon></div>
+        <h3>Retiros / Gastos</h3>
+    </div>
+
+    <div class="dashboard-card white-card wine" (click)="irAFiados()">
       <div class="icon-box"><mat-icon>account_balance_wallet</mat-icon></div>
       <h3>Créditos</h3>
     </div>
 
-    <div class="dashboard-card warn" (click)="irAClientes()">
+    <div class="dashboard-card white-card warn" (click)="irAClientes()">
       <div class="icon-box"><mat-icon>group</mat-icon></div>
       <h3>Clientes</h3>
     </div>
 
-    <div class="dashboard-card info" (click)="irAHistorial()">
+    <div class="dashboard-card white-card info" (click)="irAHistorial()">
       <div class="icon-box"><mat-icon>history</mat-icon></div>
       <h3>Historial</h3>
     </div>
 
-    <div class="dashboard-card success" (click)="irAReportes()">
+    <div class="dashboard-card white-card success" (click)="irAReportes()">
       <div class="icon-box"><mat-icon>trending_up</mat-icon></div>
       <h3>Reportes</h3>
     </div>

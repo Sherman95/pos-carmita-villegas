@@ -1,0 +1,62 @@
+<div class="expenses-container">
+  
+  <div class="header-summary">
+    <div class="summary-card elevation-z4">
+      <div class="icon-bg"> <mat-icon>trending_down</mat-icon> </div>
+      <div class="info">
+        <h3>Total Gastado (Mes)</h3>
+        <h1>{{ totalAmount | currency }}</h1>
+      </div>
+      <button mat-fab color="warn" class="add-btn" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <mat-chip-listbox [(ngModel)]="selectedCategory" (change)="loadExpenses()">
+      <mat-chip-option value="TODAS" selected (click)="selectedCategory='TODAS'; loadExpenses()">Todas</mat-chip-option>
+      <mat-chip-option value="INSUMOS_LOCAL" (click)="selectedCategory='INSUMOS_LOCAL'; loadExpenses()">Local</mat-chip-option>
+      <mat-chip-option value="GASTOS_PERSONALES" (click)="selectedCategory='GASTOS_PERSONALES'; loadExpenses()">Personal</mat-chip-option>
+    </mat-chip-listbox>
+  </div>
+
+  <div class="list-container">
+    <div *ngIf="loading" class="loading-state">Cargando...</div>
+
+    <div *ngIf="!loading && expenses.length === 0" class="empty-state">
+      <mat-icon>savings</mat-icon>
+      <p>No hay gastos registrados</p>
+    </div>
+
+    <mat-list *ngIf="!loading && expenses.length > 0">
+      <div mat-subheader>Historial de Gastos</div>
+      
+      <mat-list-item *ngFor="let item of expenses" class="expense-item">
+        <mat-icon matListItemIcon [class]="'cat-icon ' + item.categoria">
+          {{ getIcon(item.categoria) }}
+        </mat-icon>
+        
+        <div matListItemTitle class="item-title">{{ item.categoria.replace('_', ' ') }}</div>
+        
+        <div matListItemLine class="details-line">
+            <span>{{ item.descripcion || 'Sin nota' }}</span>
+            <span class="dot">•</span>
+            <span>{{ item.fecha | date:'shortDate' }}</span>
+            
+            <span class="method-badge" [class.banco]="item.metodo_pago === 'TRANSFERENCIA'">
+                {{ item.metodo_pago === 'TRANSFERENCIA' ? '🏦 Banco' : '💵 Caja' }}
+            </span>
+        </div>
+
+        <div matListItemMeta class="item-amount">
+          - {{ item.monto | currency }}
+          <button mat-icon-button color="warn" (click)="deleteExpense(item.id)">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </mat-list-item>
+      <mat-divider></mat-divider>
+    </mat-list>
+  </div>
+</div>

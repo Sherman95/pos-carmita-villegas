@@ -1,9 +1,11 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { toObservable } from '@angular/core/rxjs-interop'; // Opcional si usas observables en HTML
 import { Item } from '../interfaces/interfaces';
 import { Client } from './clients.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
+import { of } from 'rxjs'; // Para compatibilidad con async pipe
 
 // 1. DEFINIMOS LOS TIPOS DE PAGO PERMITIDOS
 export type TipoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'CREDITO';
@@ -15,8 +17,6 @@ export interface CartItem {
   subtotal: number;
 }
 
-// 2. CONSTANTE DEL ID "CONSUMIDOR FINAL" (Para no equivocarnos nunca)
-// Este ID debe coincidir con el que tienes en tu Base de Datos Supabase
 const ID_CONSUMIDOR_FINAL = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
 
 @Injectable({
@@ -30,9 +30,8 @@ export class CartService {
 
   items = signal<CartItem[]>([]);
 
-  // Configuración inicial del Cliente por Defecto
   private defaultClient: Client = {
-    id: ID_CONSUMIDOR_FINAL, // 👈 Usamos la constante unificada
+    id: ID_CONSUMIDOR_FINAL,
     nombre: 'Consumidor Final',
     cedula: '9999999999',
     direccion: 'S/D',
@@ -40,7 +39,6 @@ export class CartService {
     updated_at: new Date().toISOString()
   };
 
-  // Inicializamos la señal
   cliente = signal<Client | null>(this.defaultClient);
 
   constructor() {
@@ -57,6 +55,16 @@ export class CartService {
     return this.items().reduce((acc, current) => acc + current.subtotal, 0);
   });
 
+  // 👇 GETTER DE COMPATIBILIDAD 1: Para validar en el .ts (if totalValue <= 0)
+  get totalValue() {
+    return this.total();
+  }
+
+  // 👇 GETTER DE COMPATIBILIDAD 2: Para el HTML (async pipe)
+  get total$() {
+    return of(this.total());
+  }
+
   baseImponible = computed(() => {
     const total = this.total();
     const tasa = this.taxRate();
@@ -72,35 +80,29 @@ export class CartService {
     return this.items().reduce((acc, current) => acc + current.cantidad, 0);
   });
 
-  // --- LÓGICA DE VENTA ACTUALIZADA ---
+  // --- LÓGICA DE VENTA (Renombrada a 'checkout' para coincidir con el componente) ---
   
-  // Ahora aceptamos el tipo de pago y el abono inicial
-  confirmSale(tipoPago: TipoPago = 'EFECTIVO', abonoInicial: number = 0) {
-    let clienteActual = this.cliente();
-
-    // Asegurarnos de tener un ID válido
-    let clienteIdFinal = clienteActual?.id;
-    if (!clienteIdFinal || clienteIdFinal === 'temp-id') {
-      clienteIdFinal = ID_CONSUMIDOR_FINAL;
-    }
-
+  checkout(
+    clientId: string, 
+    tipoPago: string, 
+    taxRate: number, 
+    abonoInicial: number = 0
+  ) {
+    
     // ⛔ REGLA DE ORO: BLOQUEO DE CRÉDITO ANÓNIMO
-    // Si intentan dar CREDITO a Consumidor Final, detenemos todo aquí.
-    if (tipoPago === 'CREDITO' && clienteIdFinal === ID_CONSUMIDOR_FINAL) {
-      // Lanzamos un error que capturará el componente (y mostrará SweetAlert)
+    if (tipoPago === 'CREDITO' && clientId === ID_CONSUMIDOR_FINAL) {
       throw new Error('NO_CREDIT_CF'); 
     }
 
-    // Construimos el paquete de datos para el Backend
     const payload = {
       items: this.items(),
       total: this.total(),
-      client_id: clienteIdFinal,
-      tax_rate: this.taxRate(),
+      client_id: clientId,
+      tax_rate: taxRate,
       
-      // 👇 CAMPOS NUEVOS PARA LA BD
-      tipo_pago: tipoPago,      // 'EFECTIVO', 'TRANSFERENCIA' o 'CREDITO'
-      abono_inicial: abonoInicial // Cuánto dinero entra a caja realmente
+      // 👇 CAMPOS IMPORTANTES QUE AHORA EL BACKEND ESPERA
+      tipo_pago: tipoPago,      
+      abono_inicial: abonoInicial 
     };
 
     console.log('📦 ENVIANDO VENTA:', payload); 
@@ -139,7 +141,11 @@ export class CartService {
 
   limpiarCarrito() {
     this.items.set([]);
-    // Al limpiar, volvemos al Consumidor Final por defecto
     this.cliente.set(this.defaultClient);
+  }
+  
+  // Alias para mantener compatibilidad si algún otro archivo llama a clearCart
+  clearCart() {
+    this.limpiarCarrito();
   }
 }

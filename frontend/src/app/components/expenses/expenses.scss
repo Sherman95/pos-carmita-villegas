@@ -1,0 +1,50 @@
+.expenses-container { padding: 20px; max-width: 800px; margin: 0 auto; }
+
+.header-summary {
+  margin-bottom: 25px; position: relative;
+  .summary-card {
+    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
+    color: white; border-radius: 20px; padding: 25px;
+    display: flex; align-items: center; justify-content: space-between;
+    overflow: hidden; position: relative;
+    .info { z-index: 2; h3 { margin: 0; opacity: 0.9; font-size: 0.9rem; } h1 { margin: 5px 0 0; font-size: 2.5rem; font-weight: 800; } }
+    .icon-bg { position: absolute; left: -20px; bottom: -20px; opacity: 0.2; mat-icon { font-size: 120px; width: 120px; height: 120px; } }
+    .add-btn { background: white; color: #d32f2f; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  }
+}
+
+.filters-bar { margin-bottom: 20px; overflow-x: auto; }
+.list-container { background: white; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+
+.expense-item {
+  margin-bottom: 5px;
+  .cat-icon { background: #ffebee; color: #d32f2f; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+  .item-title { font-weight: 600; font-size: 0.95rem; }
+  .item-amount { color: #d32f2f; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; }
+}
+
+.empty-state { text-align: center; padding: 40px; color: #999; mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.5; } p { margin: 0; } }
+
+.details-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .dot { color: #ccc; }
+}
+
+.method-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: #e8f5e9; // Verde suave (Caja)
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+    font-weight: 500;
+
+    &.banco {
+        background-color: #e3f2fd; // Azul suave (Banco)
+        color: #1565c0;
+        border-color: #bbdefb;
+    }
+}

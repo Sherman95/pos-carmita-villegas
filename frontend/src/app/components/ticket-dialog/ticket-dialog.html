@@ -58,16 +58,37 @@
         <span>{{ iva | number:'1.2-2' }}</span>
       </div>
       <div class="row total">
-        <span>Total a pagar</span>
+        <span>TOTAL FACTURADO</span>
         <span>{{ data.total | number:'1.2-2' }}</span>
       </div>
-    </div>
+
+      <div class="separator" style="margin: 5px 0; border-bottom-style: dashed;"></div>
+
+      <div class="row" style="font-weight: bold; margin-top: 5px;">
+        <span>Método de Pago:</span>
+        <span>{{ data.tipoPago || 'EFECTIVO' }}</span>
+      </div>
+
+      <ng-container *ngIf="data.tipoPago === 'CREDITO'">
+        <div class="row">
+          <span>Abono Inicial (Pagado):</span>
+          <span>{{ (data.abono || 0) | number:'1.2-2' }}</span>
+        </div>
+        <div class="row" style="font-weight: bold; font-size: 1.1em;">
+          <span>SALDO PENDIENTE (Deuda):</span>
+          <span>{{ (data.total - (data.abono || 0)) | number:'1.2-2' }}</span>
+        </div>
+      </ng-container>
+      </div>
 
     <div class="separator"></div>
 
     <div class="footer">
       <div>¡Gracias por su visita!</div>
-      <div>Documento sin valor tributario</div>
+      <div *ngIf="data.tipoPago === 'CREDITO'" style="font-weight: bold; margin-top: 5px;">
+        * Por favor conserve este recibo para controlar su saldo *
+      </div>
+      <div style="margin-top: 5px;">Documento sin valor tributario</div>
     </div>
   </div>
 </div>

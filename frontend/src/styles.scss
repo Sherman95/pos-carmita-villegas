@@ -213,3 +213,24 @@ div.cdk-overlay-pane:has(.custom-scroll-panel) {
 .custom-scroll-panel .sub-text { 
   font-size: 0.85rem; color: #777; display: block; 
 }
+
+/* =========================================================
+   ESTILOS PARA EL PANEL INFERIOR (BOTTOM SHEET)
+   ========================================================= */
+
+/* 1. Apuntamos a la clase que definimos en el TS ('custom-bottom-sheet') */
+.custom-bottom-sheet .mat-bottom-sheet-container {
+    
+    /* Importante: Hacemos el contenedor de Material transparente */
+    background: transparent !important; 
+    
+    /* Quitamos sombras y bordes cuadrados por defecto */
+    box-shadow: none !important;
+    border: none !important;
+    
+    /* Quitamos el padding para que tu diseño toque los bordes */
+    padding: 0 !important;
+    
+    /* Aseguramos que el ancho sea correcto en móviles */
+    min-width: 100vw !important; 
+}

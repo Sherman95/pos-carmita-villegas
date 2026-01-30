@@ -12,7 +12,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
 // SERVICIOS
 import { ClientsService, Client } from '../../services/clients.service';
-import { CartService, TipoPago } from '../../services/cart.service'; // 👈 Importamos TipoPago
+import { CartService, TipoPago } from '../../services/cart.service'; 
 import { SalesService } from '../../services/sales.service';
 import { SettingsService } from '../../services/settings.service';
 
@@ -20,7 +20,7 @@ import { SettingsService } from '../../services/settings.service';
 import { TicketDialogComponent, TicketData } from '../ticket-dialog/ticket-dialog';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import Swal from 'sweetalert2'; // 👈 Importamos SweetAlert
+import Swal from 'sweetalert2'; 
 
 // ID FIJO DE CONSUMIDOR FINAL (Mismo de la BD)
 const ID_CONSUMIDOR_FINAL = '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d';
@@ -55,9 +55,9 @@ export class CartDetailComponent implements OnInit {
   searchText = signal('');
   selectedClientId = signal<string>('anon');
 
-  // 💰 VARIABLES DE PAGO (NUEVO)
-  selectedPayment: TipoPago = 'EFECTIVO'; // Por defecto
-  abonoAmount: number = 0; // Para los fiados
+  // 💰 VARIABLES DE PAGO
+  selectedPayment: TipoPago = 'EFECTIVO'; 
+  abonoAmount: number = 0; 
 
   // COMPUTADAS
   subtotal = computed(() => this.cartService.total());
@@ -110,7 +110,6 @@ export class CartDetailComponent implements OnInit {
 
   inicializarTextoBuscador() {
     const currentId = this.selectedClientId();
-    // Si es el ID de Consumidor Final, mostramos texto fijo
     if (currentId === ID_CONSUMIDOR_FINAL || currentId === 'anon') {
       this.searchText.set('Consumidor Final');
     } else {
@@ -120,11 +119,11 @@ export class CartDetailComponent implements OnInit {
   }
 
   onOptionSelected(event: any) {
-    const selectedValue = event.option.value; // Puede ser un objeto Client o string 'anon'
+    const selectedValue = event.option.value; 
     
     if (selectedValue === 'anon' || selectedValue.id === ID_CONSUMIDOR_FINAL) {
       this.selectedClientId.set(ID_CONSUMIDOR_FINAL);
-      this.cartService.setCliente(null); // O setear el objeto default
+      this.cartService.setCliente(null);
       this.searchText.set('Consumidor Final');
       
       // ⚠️ Si cambiamos a Consumidor Final y estaba en CRÉDITO, lo pasamos a EFECTIVO
@@ -144,28 +143,49 @@ export class CartDetailComponent implements OnInit {
   }
 
   // ==========================================
-  // ⚡ LÓGICA DE COBRO ACTUALIZADA
+  // ⚡ LÓGICA DE COBRO ACTUALIZADA (CORREGIDA)
   // ==========================================
 
   setMetodo(metodo: TipoPago) {
     this.selectedPayment = metodo;
-    // Resetear abono si cambia de método
     if (metodo !== 'CREDITO') {
         this.abonoAmount = 0;
     }
   }
 
   cobrar() {
-    if (this.cartService.items().length === 0) return;
+    // 0. Validar carrito vacío
+    if (this.cartService.totalValue <= 0) { // Usamos el getter de compatibilidad
+        Swal.fire('Error', 'El carrito está vacío', 'warning');
+        return;
+    }
 
-    // 1. VALIDACIÓN VISUAL EXTRA (Por seguridad)
+    // 1. VALIDACIÓN VISUAL EXTRA
     if (this.selectedPayment === 'CREDITO' && this.selectedClientId() === ID_CONSUMIDOR_FINAL) {
         Swal.fire('Acción Bloqueada', 'No puedes fiar a Consumidor Final. Selecciona un cliente real.', 'warning');
         return;
     }
 
-    // 2. USAMOS LA NUEVA FUNCIÓN DEL SERVICIO (La que creamos en el paso anterior)
-    this.cartService.confirmSale(this.selectedPayment, this.abonoAmount).subscribe({
+    // 2. VALIDACIÓN DEL ABONO (Nueva)
+    if (this.selectedPayment === 'CREDITO') {
+        if (this.abonoAmount < 0) {
+            Swal.fire('Error', 'El abono no puede ser negativo', 'warning');
+            return;
+        }
+        if (this.abonoAmount > this.grandTotal()) {
+            Swal.fire('Error', 'El abono no puede ser mayor al total', 'warning');
+            return;
+        }
+    }
+
+    // 3. USAMOS LA NUEVA FUNCIÓN 'checkout' DEL SERVICIO
+    // Pasamos los 4 argumentos: ID, Tipo, Tasa, Abono
+    this.cartService.checkout(
+        this.selectedClientId(), 
+        this.selectedPayment, 
+        this.taxRate(),
+        this.abonoAmount
+    ).subscribe({
       next: (res: any) => {
         
         // ÉXITO
@@ -177,12 +197,11 @@ export class CartDetailComponent implements OnInit {
             showConfirmButton: false
         });
 
-        // 3. GENERAR TICKET (Lógica original intacta)
-        this.generarTicket(res?.id || res?.saleId); // Ajuste por si Supabase devuelve diferente
+        // 4. GENERAR TICKET
+        this.generarTicket(res?.id || res?.saleId);
       },
       error: (err: any) => {
         console.error('Error al cobrar:', err);
-        // Si el error viene de nuestra validación en el servicio
         if (err.message === 'NO_CREDIT_CF') {
             Swal.fire('Error', 'No se permite Crédito a Consumidor Final.', 'error');
         } else {
@@ -192,7 +211,6 @@ export class CartDetailComponent implements OnInit {
     });
   }
 
-  // Lógica extraída para mantener limpio el código
   generarTicket(saleId: string) {
     const client = this.clients().find((c) => c.id === this.selectedClientId());
     const itemsSnapshot = [...this.cartService.items()];
@@ -210,6 +228,11 @@ export class CartDetailComponent implements OnInit {
         subtotal: i.subtotal
       })),
       total: Number(finalTotal) || 0,
+      
+      // 👇 CAMPOS NUEVOS (Cruciales para el recibo de crédito)
+      tipoPago: this.selectedPayment,
+      abono: this.abonoAmount,
+
       businessName: business.name,
       businessRuc: business.ruc,
       businessAddress: business.address,
@@ -229,7 +252,6 @@ export class CartDetailComponent implements OnInit {
     this.cerrar();
   }
 
-  // ... (Tu función capturarYEnviarTicket y cerrar se mantienen igual) ...
   cerrar() { this.dialogRef.close(); }
   
   eliminar(index: number) {
@@ -240,7 +262,6 @@ export class CartDetailComponent implements OnInit {
   }
   
   private async capturarYEnviarTicket(dialogRef: any, saleId: string, docType: string = 'receipt') {
-     // ... (Mismo código que tenías para html2canvas) ...
      try {
       await dialogRef?.afterOpened().toPromise();
       await new Promise((resolve) => setTimeout(resolve, 60));

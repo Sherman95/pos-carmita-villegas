@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Registrar Abono</h2>
+
+<mat-dialog-content>
+  <div class="info-debt">
+    <p>Cliente: <strong>{{ data.clienteNombre }}</strong></p>
+    <p>Deuda Total: <span class="debt-amount">{{ data.saldoPendiente | currency }}</span></p>
+  </div>
+
+  <form [formGroup]="paymentForm" class="payment-form">
+    
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Monto a Pagar</mat-label>
+      <input matInput type="number" formControlName="monto" min="0">
+      <span matPrefix>$&nbsp;</span>
+      
+      @if (paymentForm.get('monto')?.hasError('required')) {
+        <mat-error>El monto es obligatorio</mat-error>
+      }
+      @if (paymentForm.get('monto')?.hasError('max')) {
+        <mat-error>No puede exceder la deuda</mat-error>
+      }
+      @if (paymentForm.get('monto')?.hasError('min')) {
+        <mat-error>Debe ser mayor a 0</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Método de Pago</mat-label>
+      <mat-select formControlName="metodo">
+        <mat-option value="EFECTIVO">💵 Efectivo (Caja)</mat-option>
+        <mat-option value="TRANSFERENCIA">🏦 Transferencia (Banco)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button mat-flat-button color="primary" 
+          [disabled]="paymentForm.invalid" 
+          (click)="onConfirm()">
+    CONFIRMAR PAGO
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,196 @@
+// 🎨 PALETA DE COLORES PERSONALIZADA (Tus colores)
+$brand-primary: #4b1e3a; // El color vino principal
+$brand-dark: #2e0e22;    // El color oscuro del final
+
+// El degradado exacto que pediste
+$primary-gradient: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
+
+// Colores para el estado "Activo" (Derivados de tu marca)
+$active-bg: rgba(75, 30, 58, 0.08); // Un vino muy clarito y transparente
+$active-color: #4b1e3a;             // Texto color vino
+$hover-bg: #f9f9f9;
+$text-muted: #757575;
+
+.sidenav-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+  overflow-x: hidden;
+}
+
+// 1. CABECERA CON DEGRADADO PREMIUM
+.sidenav-header {
+  position: relative;
+  background: $primary-gradient; // 👈 Aquí se aplican tus colores
+  padding: 30px 20px 40px 20px;
+  color: white;
+  text-align: center;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 15px rgba(46, 14, 34, 0.3); // Sombra con tono vino oscuro
+
+  .header-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .avatar-circle {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.15); // Cristal esmerilado
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    margin: 0 auto 15px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+
+  .user-info {
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .role-badge {
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.25); // Fondo oscuro sutil para el rol
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      margin: 8px 0;
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .email {
+      margin: 0;
+      font-size: 0.85rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+  }
+}
+
+// 2. LISTA DE NAVEGACIÓN
+.nav-list {
+  padding: 0 12px !important;
+  flex: 1;
+
+  .section-title {
+    padding: 20px 16px 8px 16px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #9e9e9e; // Gris suave para los títulos
+    letter-spacing: 1.2px;
+  }
+
+  // Estilo base de los items (Botones)
+  a[mat-list-item] {
+    height: 48px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    color: #555; // Texto gris oscuro neutro
+    transition: all 0.2s ease-in-out;
+
+    // Ajuste de texto interno de Angular Material
+    ::ng-deep .mdc-list-item__primary-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    mat-icon {
+      margin-right: 12px;
+      color: #757575;
+      transition: color 0.3s;
+    }
+
+    // Hover (Al pasar el mouse)
+    &:hover {
+      background-color: $hover-bg;
+      transform: translateX(4px);
+      color: $brand-primary; // Se pone color vino al pasar el mouse
+      
+      mat-icon {
+        color: $brand-primary;
+      }
+    }
+
+    // 3. ESTADO ACTIVO (Página actual)
+    &.active-link {
+      background-color: $active-bg; // Fondo vino muy suave
+      color: $active-color;         // Texto vino fuerte
+      font-weight: 700;
+
+      mat-icon {
+        color: $active-color;
+      }
+
+      // Barrita indicadora a la izquierda
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 12%;
+        bottom: 12%;
+        width: 4px;
+        background-color: $active-color;
+        border-radius: 0 4px 4px 0;
+        box-shadow: 2px 0 8px rgba(75, 30, 58, 0.2);
+      }
+    }
+  }
+
+  // Badge rojo para deudas
+  .badge-pill {
+    background-color: #ffebee;
+    color: #c62828;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    border: 1px solid #ffcdd2;
+  }
+}
+
+// 4. EXTRAS
+.custom-divider {
+  margin: 15px 16px !important;
+  border-top-color: rgba(0,0,0,0.06);
+}
+
+.logout-item {
+  margin-top: 20px;
+  color: #d32f2f !important; // Rojo Material para salir
+
+  mat-icon {
+    color: #d32f2f !important;
+  }
+
+  &:hover {
+    background-color: #ffebee !important;
+    transform: none !important; // El logout no se mueve
+  }
+}
+
+.sidenav-footer {
+  padding: 15px;
+  text-align: center;
+  color: #bdbdbd;
+  font-size: 0.7rem;
+  background-color: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}

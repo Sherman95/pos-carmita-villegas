@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Registrar Nuevo Gasto</h2>
+
+<mat-dialog-content>
+  <div class="form-column">
+    
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Descripción</mat-label>
+      <input matInput [(ngModel)]="data.descripcion" placeholder="Ej: Pago de luz">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Monto</mat-label>
+      <span matPrefix>$ &nbsp;</span>
+      <input matInput type="number" [(ngModel)]="data.monto">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Categoría</mat-label>
+      <mat-select [(ngModel)]="data.categoria">
+        <mat-option value="SERVICIOS_BASICOS">Servicios Básicos</mat-option>
+        <mat-option value="INSUMOS_LOCAL">Insumos Local</mat-option>
+        <mat-option value="MANTENIMIENTO">Mantenimiento</mat-option>
+        <mat-option value="ALIMENTACION">Alimentación</mat-option>
+        <mat-option value="OTROS">Otros</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width" style="margin-top: 10px;">
+      <mat-label>¿De dónde sale el dinero?</mat-label>
+      <mat-select [(ngModel)]="data.metodo_pago">
+        <mat-option value="EFECTIVO">💵 Caja (Efectivo)</mat-option>
+        <mat-option value="TRANSFERENCIA">🏦 Banco / Transferencia</mat-option>
+      </mat-select>
+      <mat-hint *ngIf="data.metodo_pago === 'TRANSFERENCIA'" style="color: blue;">
+        * No afectará el cierre de caja.
+      </mat-hint>
+    </mat-form-field>
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!data.monto || !data.descripcion">
+    Guardar Gasto
+  </button>
+</mat-dialog-actions>

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, lastValueFrom } from 'rxjs';
+import { Observable, lastValueFrom, firstValueFrom } from 'rxjs'; // 👈 1. IMPORTANTE: Agregamos firstValueFrom
 import { environment } from '../../environments/environment';
 import { SettingsService } from './settings.service';
 
@@ -73,9 +73,15 @@ export class SalesService {
     return await lastValueFrom(observable);
   }
 
-  async registrarAbono(saleId: string, monto: number): Promise<any> {
-    const payload = { saleId, monto };
-    const observable = this.http.post(`${this.apiUrl}/payment`, payload);
-    return await lastValueFrom(observable);
+
+  registrarAbono(saleId: string, monto: number, metodo: string = 'EFECTIVO') {
+    // Usamos firstValueFrom directamenete (sin 'this.')
+    return firstValueFrom(
+      this.http.post(`${this.apiUrl}/payment`, { 
+        saleId, 
+        monto,
+        metodo_pago: metodo 
+      })
+    );
   }
 }

@@ -14,12 +14,29 @@ const getWeekRange = (date: Date) => {
 };
 
 
-
+// =================================================================================
+// 🟢 FUNCIÓN CREATE SALE (VERSIÓN SEGURA CORREGIDA)
+// =================================================================================
 export const createSale = async (req: Request, res: Response) => {
     const client = await pool.connect();
 
     try {
-        // 1. CORRECCIÓN: Leemos 'tipo_pago' (así lo manda Angular)
+        // 👇👇👇 1. BLOQUE DE SEGURIDAD (NUEVO) 👇👇👇
+        // Verificamos si existe una caja abierta antes de hacer nada.
+        const cajaCheck = await client.query(
+            "SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1"
+        );
+
+        if (cajaCheck.rows.length === 0) {
+            // Si no hay caja, detenemos todo aquí mismo.
+            // El 'finally' al final se encargará de liberar el cliente.
+            return res.status(403).json({ 
+                error: '⛔ LA CAJA ESTÁ CERRADA. Debes abrir turno para poder vender.' 
+            });
+        }
+        // 👆👆👆 FIN DEL BLOQUE DE SEGURIDAD 👆👆👆
+
+
         const { total, items, tipo_pago, client_id, tax_rate, abono_inicial } = req.body;
     
         let clientNombre: string | null = null;
@@ -27,26 +44,36 @@ export const createSale = async (req: Request, res: Response) => {
         
         // Búsqueda de datos del cliente
         if (client_id) {
-            const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
-            if (rows.length > 0) {
-                clientNombre = rows[0].nombre;
-                clientCedula = rows[0].cedula || null;
+            // Validamos que el ID tenga formato UUID para evitar errores de sintaxis SQL
+            const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(client_id);
+            
+            if (isUUID) {
+                const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
+                if (rows.length > 0) {
+                    clientNombre = rows[0].nombre;
+                    clientCedula = rows[0].cedula || null;
+                }
+            } else {
+                 console.warn('ID de cliente no válido, se registrará sin cliente:', client_id);
             }
         }
 
         // ============================================================
-        // 🧠 LÓGICA DE CRÉDITO CORREGIDA
+        // 🧠 LÓGICA DE DINERO REAL
         // ============================================================
-        let estadoPago = 'PAGADO';     // Por defecto todo está pagado
-        let saldoPendiente = 0;        // Por defecto no deben nada
+        let estadoPago = 'PAGADO';
+        let saldoPendiente = 0;
         
-        // AQUI ESTABA EL ERROR: Usamos la variable correcta 'tipo_pago'
         const metodo = tipo_pago || 'EFECTIVO';
+        const abono = Number(abono_inicial) || 0; 
+        let dineroRealEntrante = 0; 
 
-        // Si dice CREDITO, cambiamos la lógica
         if (metodo === 'CREDITO') {
             estadoPago = 'PENDIENTE';
-            saldoPendiente = Number(total); // Al principio deben TODO
+            saldoPendiente = Number(total) - abono;
+            dineroRealEntrante = abono; 
+        } else {
+            dineroRealEntrante = Number(total);
         }
         // ============================================================
 
@@ -56,27 +83,33 @@ export const createSale = async (req: Request, res: Response) => {
         const saleQuery = `
             INSERT INTO sales (
                 total, 
-                metodo_pago, 
+                tipo_pago,    
+                metodo_pago,  
                 client_id, 
                 client_nombre, 
                 client_cedula, 
                 tax_rate,
                 estado_pago,      
-                saldo_pendiente   
+                saldo_pendiente,
+                monto_pagado 
             ) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
             RETURNING id
         `;
 
+        const validClientId = (client_id && client_id.length > 10) ? client_id : null;
+
         const saleValues = [
-            total, 
-            metodo, 
-            client_id || null, 
-            clientNombre, 
-            clientCedula,
-            tax_rate || 0,
-            estadoPago,      // $7
-            saldoPendiente   // $8
+            total,              // $1
+            metodo,             // $2 (tipo_pago)
+            metodo,             // $3 (metodo_pago)
+            validClientId,      // $4
+            clientNombre,       // $5
+            clientCedula,       // $6
+            tax_rate || 0,      // $7
+            estadoPago,         // $8
+            saldoPendiente,     // $9
+            dineroRealEntrante  // $10
         ];
 
         const saleResult = await client.query(saleQuery, saleValues);
@@ -89,27 +122,27 @@ export const createSale = async (req: Request, res: Response) => {
         `;
 
         for (const item of items) {
+            const prodId = item.item ? item.item.id : (item.item_id || item.id);
+            const prodNombre = item.item ? item.item.nombre : (item.nombre_producto || item.nombre);
+
             await client.query(itemQuery, [
                 saleId, 
-                item.item.id, 
-                item.item.nombre, 
+                prodId, 
+                prodNombre, 
                 item.cantidad, 
                 item.precioVenta, 
                 item.subtotal
             ]);
         }
 
-        // 4. REGISTRAR ABONO INICIAL
-        const entrada = Number(abono_inicial) || 0;
-        
-        if (metodo === 'CREDITO' && entrada > 0) {
+        // 4. REGISTRAR ABONO EN HISTORIAL
+        if (metodo === 'CREDITO' && abono > 0) {
             await client.query(`
                 INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-                VALUES ($1, $2, 'EFECTIVO', 'Entrada Inicial')
-            `, [saleId, entrada]);
+                VALUES ($1, $2, 'EFECTIVO', 'Abono Inicial')
+            `, [saleId, abono]);
         }
-
-        // Si fue pago normal
+        
         if (metodo !== 'CREDITO') {
              await client.query(`
                 INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
@@ -118,8 +151,6 @@ export const createSale = async (req: Request, res: Response) => {
         }
 
         await client.query('COMMIT');
-
-        console.log(`✅ Venta ${metodo} registrada. ID: ${saleId}. Pendiente: ${saldoPendiente}`);
         
         res.status(201).json({ 
             message: 'Venta registrada', 
@@ -129,8 +160,8 @@ export const createSale = async (req: Request, res: Response) => {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error creando venta:', error);
-        res.status(500).json({ error: 'Error al procesar la venta' });
+        console.error('❌ ERROR REAL DEL BACKEND:', error);
+        res.status(500).json({ error: 'Error al procesar la venta. Revisa la consola del servidor.' });
     } finally {
         client.release();
     }
@@ -144,10 +175,7 @@ export const getSales = async (_req: Request, res: Response) => {
                 COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                 COALESCE(s.client_cedula, c.cedula) AS client_cedula,
                 s.created_at,
-                
-                -- ¡¡¡ ESTO ES LO QUE FALTABA !!!
                 s.tax_rate 
-
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
              ORDER BY s.created_at DESC`
@@ -176,7 +204,6 @@ export const getSalesByRange = async (req: Request, res: Response) => {
                 s.tax_rate
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
-             -- 🔥 CORRECCIÓN CLAVE: Usamos timestamptz (NO date)
              WHERE s.created_at >= $1::timestamptz AND s.created_at <= $2::timestamptz
              ORDER BY s.created_at DESC`,
             [from, to]
@@ -211,12 +238,10 @@ export const getSalesSummary = async (req: Request, res: Response) => {
             start = `${y}-01-01`;
             end = `${y + 1}-01-01`;
         } else if (from && to) {
-            // CORRECCIÓN: Si ya viene con hora (formato ISO completo), la respetamos.
             if (from.includes('T')) {
                 start = from;
                 end = to;
             } else {
-                // Si es fecha corta (YYYY-MM-DD), mantenemos la lógica vieja
                 start = from;
                 const toDate = new Date(to);
                 toDate.setDate(toDate.getDate() + 1);
@@ -229,7 +254,6 @@ export const getSalesSummary = async (req: Request, res: Response) => {
         const { rows } = await pool.query(
             `SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total
              FROM sales
-             -- CORRECCIÓN: Usamos timestamptz y <= para incluir el último milisegundo
              WHERE created_at >= $1::timestamptz AND created_at <= $2::timestamptz`,
             [start, end]
         );
@@ -268,11 +292,7 @@ export const getSalesByClient = async (req: Request, res: Response) => {
                 s.created_at,
                 c.nombre as client_nombre, 
                 c.cedula as client_cedula,
-                
-                -- SOLUCIÓN FINAL: LEER EL IVA REAL GUARDADO
-                -- Usamos COALESCE por si las ventas muy viejas tienen NULL, les pone 0.15
-               s.tax_rate as tax_rate
-
+                s.tax_rate as tax_rate
             FROM sales s
             LEFT JOIN clients c ON s.client_id = c.id
             WHERE s.client_id = $1 ${dateFilter}
@@ -324,10 +344,7 @@ export const getSalesByItem = async (req: Request, res: Response) => {
                 sd.cantidad,
                 sd.precio_unitario,
                 sd.subtotal as total,
-                
-                -- SOLUCIÓN FINAL: LEER EL IVA REAL DE LA VENTA PADRE
                 s.tax_rate as tax_rate
-
             FROM sale_details sd
             JOIN sales s ON sd.sale_id = s.id
             LEFT JOIN clients c ON s.client_id = c.id
@@ -347,12 +364,10 @@ export const getSalesByItem = async (req: Request, res: Response) => {
         `;
         const { rows: summary } = await pool.query(summaryQuery, params);
 
-        // Mapeo
         const mappedSales = sales.map(row => ({
             ...row,
             id: row.sale_id, 
             total: Number(row.total),
-            // Aseguramos que tax_rate sea número para el frontend
             tax_rate: Number(row.tax_rate) 
         }));
 
@@ -418,13 +433,11 @@ export const saveSaleReceipt = async (req: Request, res: Response) => {
     const kind = docType && typeof docType === 'string' ? docType : 'receipt';
 
     try {
-        // Verificar que exista la venta
         const saleExists = await pool.query('SELECT 1 FROM sales WHERE id = $1', [id]);
         if (saleExists.rowCount === 0) {
             return res.status(404).json({ error: 'Venta no encontrada' });
         }
 
-        // Insertar recibo (se guarda la cadena base64 del PDF)
         const insertSql = `
             INSERT INTO sale_receipts (sale_id, pdf_base64, doc_type)
             VALUES ($1, $2, $3)
@@ -439,9 +452,6 @@ export const saveSaleReceipt = async (req: Request, res: Response) => {
     }
 };
 
-// =================================================================================
-// FUNCIÓN CORREGIDA: Devuelve un Buffer (Archivo) en lugar de JSON
-// =================================================================================
 export const getSaleReceipt = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { docType } = req.query as { docType?: string };
@@ -466,25 +476,17 @@ export const getSaleReceipt = async (req: Request, res: Response) => {
             params
         );
 
-        // Si no hay recibo, devolvemos 404
         if (rows.length === 0) {
              console.warn(`[getSaleReceipt] No hay recibo para venta ID: ${id}`);
-             return res.status(404).json({ error: 'Recibo no encontrado. Puede que no se haya generado aún.' });
+             return res.status(404).json({ error: 'Recibo no encontrado.' });
         }
 
         const record = rows[0];
-
-        // --- CORRECCIÓN CLAVE ---
-        // Convertimos el string base64 almacenado en la DB a un Buffer binario
         const pdfBuffer = Buffer.from(record.pdf_base64, 'base64');
 
-        // Configuramos los headers para que el navegador sepa que es un PDF
         res.setHeader('Content-Type', 'application/pdf');
-        // 'inline' abre el PDF en el navegador. 
         res.setHeader('Content-Disposition', `inline; filename="recibo-${id}.pdf"`);
         res.setHeader('Content-Length', pdfBuffer.length);
-
-        // Enviamos el archivo
         res.send(pdfBuffer);
 
     } catch (error) {
@@ -531,58 +533,38 @@ export const getReceiptsByClient = async (req: Request, res: Response) => {
         console.error('Error obteniendo recibos por cliente:', error);
         res.status(500).json({ error: 'Error al obtener recibos por cliente' });
     }
-
 };
 
 export const getDebtors = async (_req: Request, res: Response) => {
     try {
-        // 1. Buscamos todas las ventas que deben dinero
-        // OJO: Usamos INNER JOIN con clients para asegurar que traemos el nombre
         const { rows } = await pool.query(`
             SELECT 
-                s.id, 
-                s.created_at, 
-                s.total, 
-                s.saldo_pendiente, 
-                s.estado_pago,
-                c.id as client_id, 
-                c.nombre, 
-                c.cedula, 
-                c.telefono
+                s.id, s.created_at, s.total, s.saldo_pendiente, s.estado_pago,
+                c.id as client_id, c.nombre, c.cedula, c.telefono
             FROM sales s
             JOIN clients c ON s.client_id = c.id
             WHERE s.estado_pago = 'PENDIENTE'
-            AND s.saldo_pendiente > 0.01 -- Ignoramos centavos residuales
+            AND s.saldo_pendiente > 0.01 
             ORDER BY s.created_at DESC
         `);
 
-        // 2. Agrupamos por Cliente (Lógica JS)
-        // Transformamos la lista plana de SQL en una estructura jerárquica
         const agrupado: Record<string, any> = {};
 
         rows.forEach((row) => {
             const cid = row.client_id;
-
-            // Si es la primera vez que vemos a este cliente, creamos su cascarón
             if (!agrupado[cid]) {
                 agrupado[cid] = {
                     cliente_id: cid,
                     nombre: row.nombre,
-                    telefono: row.telefono, // Para futura integración
+                    telefono: row.telefono, 
                     total_deuda: 0,
                     ventas_pendientes: 0,
                     ventas: []
                 };
             }
-
-            // Convertimos a número (Postgres devuelve 'numeric' como string)
             const saldo = Number(row.saldo_pendiente);
-
-            // Acumulamos
             agrupado[cid].total_deuda += saldo;
             agrupado[cid].ventas_pendientes++;
-            
-            // Guardamos el detalle de la nota
             agrupado[cid].ventas.push({
                 id: row.id,
                 created_at: row.created_at,
@@ -591,31 +573,45 @@ export const getDebtors = async (_req: Request, res: Response) => {
             });
         });
 
-        // 3. Devolvemos un array limpio
         res.status(200).json(Object.values(agrupado));
-
     } catch (error) {
         console.error('Error obteniendo deudores:', error);
         res.status(500).json({ error: 'Error al obtener cartera vencida' });
     }
 };
 
-export const registerPayment = async (req: Request, res: Response) => {
-    // Recibimos saleId y monto del frontend
-    const { saleId, monto } = req.body;
 
-    if (!saleId || !monto) {
-        return res.status(400).json({ error: 'Faltan datos (saleId o monto)' });
-    }
+export const registerPayment = async (req: Request, res: Response) => {
+    const { saleId, monto, metodo_pago } = req.body; 
 
     try {
-        // Insertamos en el historial.
-        // GRACIAS A TU TRIGGER SQL 'actualizar_deuda_venta', 
-        // esto actualizará automáticamente el saldo en la tabla 'sales'.
+        // 👇 1. SEGURIDAD: VERIFICAR CAJA ABIERTA (Esto faltaba)
+        const cajaCheck = await pool.query(
+            "SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1"
+        );
+
+        if (cajaCheck.rows.length === 0) {
+            return res.status(403).json({ 
+                error: '⛔ LA CAJA ESTÁ CERRADA. Abre turno para recibir abonos.' 
+            });
+        }
+        // 👆 FIN SEGURIDAD
+
+        if (!saleId || !monto) {
+            return res.status(400).json({ error: 'Faltan datos' });
+        }
+
+        const metodo = metodo_pago || 'EFECTIVO'; 
+
+        // Registrar Abono
         await pool.query(`
             INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-            VALUES ($1, $2, 'EFECTIVO', 'Abono Web')
-        `, [saleId, monto]);
+            VALUES ($1, $2, $3, 'Abono de Deuda')
+        `, [saleId, monto, metodo]);
+
+        // OJO: Aquí deberías tener también la lógica para restar el saldo de la venta (sales.saldo_pendiente),
+        // pero asumo que eso lo manejas con un Trigger en la base de datos o en otra consulta. 
+        // Si no tienes trigger, avísame para agregarlo aquí mismo.
 
         res.status(200).json({ message: 'Abono registrado correctamente' });
 
@@ -624,4 +620,3 @@ export const registerPayment = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al registrar el pago' });
     }
 };
-
