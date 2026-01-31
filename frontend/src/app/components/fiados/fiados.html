@@ -1,101 +1,222 @@
-<div class="fiados-container fade-in">
-  
-  <div class="header-summary elevation-z2">
-    <div class="title">
-      <h2>Cartera de Crédito 📒</h2>
-      <p>Gestión de cobros y abonos</p>
-    </div>
-    <div class="total-box">
-      <small>Total por cobrar</small>
-      <span class="amount">{{ totalCartera() | currency }}</span>
-    </div>
-  </div>
+<div class="page-container fade-in">
 
-  <div class="search-bar">
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Buscar cliente..." 
-             [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
-      @if (searchTerm()) {
-        <button mat-icon-button matSuffix (click)="searchTerm.set('')">
-          <mat-icon>close</mat-icon>
-        </button>
-      }
-    </mat-form-field>
-  </div>
+  <header class="header-section">
+    <div class="header-content">
+      <h1>Cuentas por Cobrar 📒</h1>
+      <p>Control de créditos y auditoría de pagos</p>
 
-  <div class="list-content">
+      <div class="search-wrapper">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" placeholder="Buscar cliente por nombre..." 
+               [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)">
+        @if (searchTerm()) {
+          <button mat-icon-button (click)="setSearch('')" class="clear-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <div class="fiados-wrapper">
     
+    <div class="summary-bar" *ngIf="totalDeuda() > 0">
+      <div class="stat">
+        <span class="label">Total por Cobrar</span>
+        <span class="value debt">{{ totalDeuda() | currency }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Clientes Deudores</span>
+        <span class="value">{{ filteredDebtors().length }}</span>
+      </div>
+    </div>
+
     @if (loading()) {
-      <div class="loading-state">
-        <mat-icon class="spin">sync</mat-icon>
-        <p>Calculando deudas...</p>
-      </div>
-    } @else if (filteredDeudores().length === 0) {
       <div class="empty-state">
-        <mat-icon>check_circle_outline</mat-icon>
-        <h3>Sin deudas pendientes</h3>
-        <p>No se encontraron cuentas por cobrar.</p>
+        <p>Cargando cartera...</p>
       </div>
-    } @else {
-      
-      <mat-accordion displayMode="flat" multi>
-        
-        @for (cliente of filteredDeudores(); track cliente.cliente_id) {
-          <mat-expansion-panel class="debtor-card mb-2">
+    } 
+    @else if (filteredDebtors().length === 0) {
+      <div class="empty-state">
+        <div class="icon-circle"><mat-icon>check_circle</mat-icon></div>
+        <h3>¡Todo al día!</h3>
+        <p>No tienes cuentas pendientes por cobrar.</p>
+      </div>
+    } 
+    @else {
+      <div class="debtors-grid">
+        @for (d of filteredDebtors(); track d.clientId) {
+          <div class="debtor-card elevation-z1" (click)="verHistorial(d)">
             
-            <mat-expansion-panel-header>
-              <div class="panel-header-content">
-                
-                <div class="avatar-circle">
-                  {{ cliente.nombre.charAt(0) }}
-                </div>
-                
-                <div class="info-col">
-                  <span class="name">{{ cliente.nombre }}</span>
-                  <div class="sub-info">
-                    <span class="badge">{{ cliente.ventas_pendientes }} Notas</span>
-                  </div>
-                </div>
-
-                <div class="debt-col">
-                  <span class="debt-amount">{{ cliente.total_deuda | currency }}</span>
-                  <small>Pendiente</small>
-                </div>
-
+            <div class="card-header">
+              <div class="avatar-circle" [style.background-color]="getColor(d.clientName)">
+                {{ d.clientName.charAt(0).toUpperCase() }}
               </div>
-            </mat-expansion-panel-header>
-
-            <div class="tickets-list">
-              
-              <p class="section-title">Notas de Venta Pendientes:</p>
-
-              @for (venta of cliente.ventas; track venta.id) {
-                <div class="ticket-row">
-                  
-                  <div class="ticket-info">
-                    <span class="date">{{ venta.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
-                    <span class="original">Total Nota: {{ venta.total | currency }}</span>
-                  </div>
-                  
-                  <div class="ticket-action">
-                    <span class="saldo-label">Debe:</span>
-                    <span class="saldo-val text-warn">{{ venta.saldo_pendiente | currency }}</span>
-                    
-                    <button mat-flat-button color="primary" class="btn-abonar"
-                            (click)="abonar(venta, cliente.nombre)">
-                      ABONAR
-                    </button>
-                  </div>
-
-                </div>
-              }
+              <div class="info">
+                <h3>{{ d.clientName }}</h3>
+                <span class="last-date">
+                  <mat-icon class="tiny-icon">receipt_long</mat-icon> Ver detalle
+                </span>
+              </div>
             </div>
 
-          </mat-expansion-panel>
-        }
+            <div class="card-body">
+              <div class="balance-row">
+                <span>Saldo Pendiente</span>
+                <strong class="amount">{{ d.balance | currency }}</strong>
+              </div>
+              <div class="progress-bar">
+                <div class="fill" style="width: 100%"></div>
+              </div>
+            </div>
 
-      </mat-accordion>
+            <div class="card-actions">
+              <button mat-stroked-button (click)="verHistorial(d); $event.stopPropagation()">
+                <mat-icon>history</mat-icon> HISTORIAL
+              </button>
+              <button mat-flat-button class="btn-pay" (click)="abrirAbonar(d); $event.stopPropagation()">
+                <mat-icon>payments</mat-icon> ABONAR
+              </button>
+            </div>
+          </div>
+        }
+      </div>
     }
   </div>
+
+  <ng-template #abonoDialog>
+    <div class="modern-dialog">
+      <div class="dialog-header pay-header">
+        <h2>Registrar Abono 💰</h2>
+        <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="dialog-body">
+        <p class="dialog-subtitle">Cliente: <strong>{{ selectedDebtor()?.clientName }}</strong></p>
+        <div class="debt-box">
+          <span>Deuda Actual:</span>
+          <span class="red">{{ selectedDebtor()?.balance | currency }}</span>
+        </div>
+
+        <div class="form-section">
+          <mat-form-field appearance="outline" class="full-width custom-field">
+            <mat-label>Monto a abonar</mat-label>
+            <mat-icon matPrefix>attach_money</mat-icon>
+            <input matInput type="number" [(ngModel)]="montoAbono" autoFocus placeholder="0.00" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width custom-field">
+            <mat-label>Nota (Opcional)</mat-label>
+            <mat-icon matPrefix>edit_note</mat-icon>
+            <input matInput [(ngModel)]="notaAbono" placeholder="Ej. Pago en efectivo" />
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button mat-button mat-dialog-close>Cancelar</button>
+        <button mat-flat-button color="primary" class="action-btn" (click)="guardarAbono()" [disabled]="!montoAbono || montoAbono <= 0">
+          CONFIRMAR PAGO
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #historyDialog>
+    <div class="modern-dialog wide-dialog">
+      <div class="dialog-header">
+        <h2>Historial de Cuenta 📜</h2>
+        <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+      </div>
+      
+      <div class="dialog-body scrollable">
+        
+        <div class="client-summary-card">
+          <div class="avatar-small" [style.background-color]="getColor(selectedDebtor()?.clientName || '')">
+            {{ selectedDebtor()?.clientName?.charAt(0) }}
+          </div>
+          <div class="sum-info">
+            <h3>{{ selectedDebtor()?.clientName }}</h3>
+            <div class="big-balance">{{ selectedDebtor()?.balance | currency }} <small>Pendiente</small></div>
+          </div>
+        </div>
+
+        <div class="timeline">
+          @for (mov of movimientos(); track mov.id) {
+            <div class="timeline-item" [class.payment]="mov.type === 'PAGO'" [class.debt]="mov.type === 'DEUDA'">
+              
+              <div class="time-icon">
+                <mat-icon>{{ mov.type === 'PAGO' ? 'savings' : 'shopping_bag' }}</mat-icon>
+              </div>
+              
+              <div class="time-content">
+                <div class="time-header">
+                  <span class="type">{{ mov.type === 'PAGO' ? 'Abono Realizado' : 'Compra a Crédito' }}</span>
+                  <span class="date">{{ mov.date | date:'medium' }}</span>
+                </div>
+                
+                <div class="time-body">
+                  <span class="amount">
+                    {{ mov.type === 'PAGO' ? '-' : '+' }}{{ mov.amount | currency }}
+                  </span>
+                  @if (mov.note) {
+                    <p class="note">"{{ mov.note }}"</p>
+                  }
+                </div>
+
+                @if (mov.type === 'PAGO') {
+                  <div class="time-actions">
+                    <button mat-button class="edit-action" (click)="editarMovimiento(mov)">
+                      <mat-icon>edit</mat-icon> Corregir
+                    </button>
+                    <button mat-button class="delete-action" (click)="eliminarMovimiento(mov)">
+                      <mat-icon>delete</mat-icon> Borrar
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @if (movimientos().length === 0) {
+            <div class="no-history">
+              <mat-icon>history_toggle_off</mat-icon>
+              <p>No hay movimientos registrados.</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #editDialog>
+    <div class="modern-dialog">
+      <div class="dialog-header warn-header">
+        <h2>Corregir Movimiento ✏️</h2>
+        <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="dialog-body">
+        <div class="warning-box">
+          <mat-icon>warning</mat-icon>
+          <p>Estás editando un registro histórico. Esta acción quedará auditada.</p>
+        </div>
+        
+        <mat-form-field appearance="outline" class="full-width custom-field">
+          <mat-label>Monto Correcto</mat-label>
+          <mat-icon matPrefix>attach_money</mat-icon>
+          <input matInput type="number" [(ngModel)]="editMonto" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width custom-field">
+          <mat-label>Motivo de la corrección</mat-label>
+          <mat-icon matPrefix>rate_review</mat-icon>
+          <input matInput [(ngModel)]="editNota" placeholder="Ej. Error de digitación" required />
+        </mat-form-field>
+      </div>
+      <div class="dialog-actions">
+        <button mat-button mat-dialog-close>Cancelar</button>
+        <button mat-flat-button color="warn" (click)="guardarEdicion()">
+          GUARDAR CORRECCIÓN
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
 </div>

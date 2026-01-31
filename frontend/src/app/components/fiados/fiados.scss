@@ -1,323 +1,277 @@
-// ==========================================
-// 1. CONTENEDOR PRINCIPAL
-// ==========================================
-.fiados-container {
-  padding-bottom: 90px; // Espacio para que la barra de navegación no tape el final
-  background-color: #f8f9fa; // Fondo gris muy suave
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+// VARIABLES
+$vino-main: #4b1e3a;
+$vino-dark: #2e0e22;
+$gris-fondo: #eef2f6; 
+$blanco: #ffffff;
+$verde: #10b981;
+$rojo: #ef4444;
+$naranja: #f97316;
+
+// 🟢 FIX: Faltaba esta variable
+$azul: #0284c7; 
+
+$borde-tarjeta: 1px solid #cbd5e1;
+$sombra-card: 0 4px 12px rgba(0,0,0,0.08);
+
+.page-container {
+    min-height: 100vh;
+    background-color: $gris-fondo;
+    display: flex; flex-direction: column;
 }
 
-// ==========================================
-// 2. CABECERA (ESTILO VINO TINTO)
-// ==========================================
-.header-summary {
-  // El mismo gradiente que tu App y Nav
-  background: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
-  color: white;
-  padding: 25px 20px 35px; // Un poco más largo abajo para solapar el buscador
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
-  
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 10px rgba(46, 14, 34, 0.3);
+// 1. CABECERA CURVA
+.header-section {
+    height: 240px; 
+    background: linear-gradient(135deg, $vino-main 0%, $vino-dark 100%);
+    padding: 30px 20px 0;
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+    text-align: center;
+    position: relative; z-index: 1;
+    color: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 
-  .title {
-    h2 {
-      margin: 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    p {
-      margin: 2px 0 0;
-      font-size: 0.85rem;
-      opacity: 0.8;
-      font-weight: 400;
-    }
-  }
-
-  .total-box {
-    text-align: right;
-    background: rgba(255, 255, 255, 0.1); // Caja translúcida
-    padding: 8px 12px;
-    border-radius: 12px;
-    backdrop-filter: blur(5px);
-
-    small {
-      display: block;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      opacity: 0.9;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-    }
-    .amount {
-      display: block;
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #ffeb3b; // Amarillo brillante para resaltar sobre el vino
-      line-height: 1;
-    }
-  }
-}
-
-// ==========================================
-// 3. BUSCADOR FLOTANTE
-// ==========================================
-.search-bar {
-  padding: 0 20px;
-  margin-top: -25px; // Efecto de solapamiento sobre el header
-  margin-bottom: 10px;
-
-  mat-form-field {
-    width: 100%;
+    h1 { font-size: 2rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    p { opacity: 0.95; margin-top: 5px; font-size: 1rem; font-weight: 500; }
     
-    // Hacks para que el input se vea blanco y limpio
-    ::ng-deep .mat-mdc-text-field-wrapper {
-      background-color: white !important;
-      border-radius: 30px !important; // Píldora redondeada
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      padding-left: 10px;
-    }
-    
-    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-      display: none; // Ocultar espacio de errores para hacerlo compacto
-    }
-    
-    ::ng-deep .mat-mdc-form-field-infix {
-      padding-top: 12px;
-      padding-bottom: 12px;
-    }
-  }
-}
-
-// ==========================================
-// 4. LISTA DE TARJETAS (Expansion Panels)
-// ==========================================
-.list-content {
-  padding: 0 15px;
-  flex: 1;
-}
-
-// Estilo de cada tarjeta (Cliente)
-.debtor-card {
-  margin-bottom: 12px;
-  border-radius: 16px !important; // Bordes muy redondos
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
-  border: 1px solid white;
-  background: white;
-  overflow: hidden;
-
-  // Header del Acordeón (Lo que se ve siempre)
-  ::ng-deep .mat-expansion-panel-header {
-    height: auto !important;
-    padding: 15px !important;
-    background: white;
-    
-    &.mat-expanded {
-      background: #fcfcfc; // Cambio sutil al abrir
-    }
-  }
-
-  .panel-header-content {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-
-    // Círculo con la inicial
-    .avatar-circle {
-      width: 48px;
-      height: 48px;
-      background: #f3e5f5; // Fondo lila muy suave
-      color: #4b1e3a;      // Letra vino tinto
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.3rem;
-      flex-shrink: 0;
-      border: 2px solid white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    // Info del Cliente
-    .info-col {
-      flex: 1;
-      overflow: hidden; // Evitar desbordes de texto
-
-      .name {
-        font-weight: 700;
-        color: #333;
-        font-size: 1rem;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      .sub-info {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 4px;
-
-        .badge {
-          font-size: 0.7rem;
-          font-weight: 600;
-          background: #eceff1;
-          color: #546e7a;
-          padding: 2px 8px;
-          border-radius: 6px;
-        }
-      }
-    }
-
-    // Columna de Deuda (Derecha)
-    .debt-col {
-      text-align: right;
-      
-      .debt-amount {
-        display: block;
-        font-weight: 800;
-        color: #d32f2f; // ROJO DE ALERTA
-        font-size: 1.1rem;
-      }
-      small {
-        font-size: 0.65rem;
-        color: #999;
-        font-weight: 500;
-      }
-    }
-  }
-}
-
-// ==========================================
-// 5. DETALLE DE TICKETS (Al abrir la tarjeta)
-// ==========================================
-.tickets-list {
-  padding-top: 10px;
-  border-top: 1px dashed #eee;
-  
-  .section-title {
-    font-size: 0.75rem;
-    color: #888;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
-  }
-
-  .ticket-row {
-    background: #fff;
-    border: 1px solid #f0f0f0;
-    border-radius: 12px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .ticket-info {
-      display: flex;
-      flex-direction: column;
-      
-      .date {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: #444;
-      }
-      .original {
-        font-size: 0.75rem;
-        color: #999;
-      }
-    }
-
-    .ticket-action {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 5px;
-
-      .saldo-label {
-        font-size: 0.65rem;
-        color: #aaa;
-        margin-right: 2px;
-      }
-
-      .saldo-val {
-        font-weight: 800;
-        color: #d32f2f; // Rojo
-        font-size: 0.95rem;
-      }
-
-      .btn-abonar {
-        height: 28px;
-        line-height: 28px;
-        font-size: 0.7rem;
-        padding: 0 12px;
-        border-radius: 14px;
-        background-color: #4b1e3a; // Botón Vino Tinto
-        color: white;
-        box-shadow: none;
+    .search-wrapper {
+        margin: 25px auto 0; max-width: 600px;
+        background: white; border-radius: 50px; padding: 5px 20px;
+        display: flex; align-items: center; gap: 10px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25); 
         
-        &:active { transform: scale(0.95); }
-      }
+        .search-icon { color: #64748b; }
+        input { flex: 1; border: none; outline: none; height: 45px; font-size: 1rem; color: #333; background: transparent; font-weight: 600; }
+        .clear-btn { color: #94a3b8; }
     }
-  }
 }
 
-// ==========================================
-// 6. ESTADOS (CARGANDO Y VACÍO)
-// ==========================================
-.loading-state,
+// 2. CONTENEDOR FULL WIDTH
+.fiados-wrapper {
+    margin-top: -50px; 
+    padding: 0 20px 40px;
+    max-width: 1800px; width: 98%; 
+    margin-left: auto; margin-right: auto;
+    position: relative; z-index: 2;
+}
+
+// BARRA RESUMEN
+.summary-bar {
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 25px;
+    .stat {
+        background: white; padding: 15px 30px; border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: $borde-tarjeta;
+        display: flex; flex-direction: column; align-items: center;
+        min-width: 180px;
+        
+        .label { font-size: 0.8rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+        .value { font-size: 1.6rem; font-weight: 800; color: #334155; margin-top: 5px; }
+        .value.debt { color: $rojo; }
+    }
+}
+
+// 3. GRID DE DEUDORES
+.debtors-grid {
+    display: grid; gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+
+    .debtor-card {
+        background: white; border-radius: 20px; padding: 20px;
+        border: $borde-tarjeta; box-shadow: $sombra-card;
+        cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        display: flex; flex-direction: column; gap: 15px;
+
+        &:hover { 
+            transform: translateY(-4px); 
+            border-color: $vino-main; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            display: flex; align-items: center; gap: 15px;
+            .avatar-circle {
+                width: 50px; height: 50px; border-radius: 14px; color: white;
+                font-weight: 800; font-size: 1.4rem;
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+            .info {
+                h3 { margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700; }
+                .last-date { 
+                    font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; 
+                    .tiny-icon { font-size: 14px; width: 14px; height: 14px; }
+                }
+            }
+        }
+
+        .card-body {
+            background: #fff1f2; // Rojo muy suave de fondo
+            border-radius: 12px; padding: 15px; border: 1px solid #fecaca;
+            .balance-row {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 8px;
+                span { font-size: 0.9rem; font-weight: 600; color: #7f1d1d; }
+                .amount { font-size: 1.4rem; font-weight: 800; color: $rojo; }
+            }
+            .progress-bar {
+                height: 6px; background: rgba(239, 68, 68, 0.2); border-radius: 3px; overflow: hidden;
+                .fill { height: 100%; background: $rojo; border-radius: 3px; }
+            }
+        }
+
+        .card-actions {
+            display: flex; gap: 10px; margin-top: auto;
+            button { 
+                flex: 1; border-radius: 12px; height: 45px; font-weight: 700; 
+                box-shadow: none; border: 1px solid #e2e8f0;
+            }
+            .btn-pay { 
+                background: $verde; color: white; border: none;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                // 🟢 FIX: Usamos color fijo en lugar de darken() para evitar warning
+                &:hover { background: #059669; } 
+            }
+        }
+    }
+}
+
+// 4. LÍNEA DE TIEMPO (TIMELINE)
+.timeline {
+    margin-top: 20px; display: flex; flex-direction: column; gap: 20px;
+    
+    .timeline-item {
+        display: flex; gap: 15px; position: relative;
+        
+        .time-icon {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; flex-shrink: 0;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        // Línea conectora
+        &::after {
+            content: ''; position: absolute; top: 40px; left: 19px; bottom: -25px;
+            width: 2px; background: #e2e8f0; z-index: 1;
+        }
+        &:last-child::after { display: none; }
+
+        .time-content {
+            flex: 1; background: white; border: 1px solid #e2e8f0;
+            border-radius: 16px; padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            
+            .time-header {
+                display: flex; justify-content: space-between; margin-bottom: 5px;
+                .type { font-weight: 700; font-size: 0.95rem; }
+                .date { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+            }
+            .amount { font-size: 1.2rem; font-weight: 800; display: block; margin-bottom: 5px; }
+            .note { font-size: 0.85rem; color: #64748b; font-style: italic; background: #f8fafc; padding: 5px 10px; border-radius: 6px; display: inline-block; }
+            
+            .time-actions {
+                margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px;
+                display: flex; gap: 15px;
+                
+                button { 
+                    font-size: 0.8rem; font-weight: 600; padding: 0; min-width: auto;
+                    display: flex; align-items: center; gap: 4px;
+                    
+                    // Aquí usamos la variable $azul que faltaba
+                    &.edit-action { color: $azul; }
+                    &.delete-action { color: $rojo; }
+                    
+                    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+                }
+            }
+        }
+
+        &.payment {
+            .time-icon { background: $verde; }
+            .time-content { border-left: 4px solid $verde; }
+            .amount { color: $verde; }
+        }
+        &.debt {
+            .time-icon { background: $rojo; }
+            .time-content { border-left: 4px solid $rojo; }
+            .amount { color: $rojo; }
+        }
+    }
+}
+
+// ESTILOS DIALOGOS MODERNOS
+.modern-dialog {
+    .dialog-header {
+        padding: 20px 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;
+        h2 { margin: 0; font-weight: 800; font-size: 1.2rem; }
+        
+        &.pay-header { background: #ecfdf5; h2 { color: $verde; } }
+        &.warn-header { background: #fff1f2; h2 { color: $rojo; } }
+        
+        .close-btn { color: #94a3b8; }
+    }
+    
+    .dialog-body { 
+        padding: 25px; 
+        &.scrollable { max-height: 60vh; overflow-y: auto; }
+        
+        .dialog-subtitle { margin: 0 0 15px; color: #64748b; font-size: 1rem; }
+        .debt-box { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #fff1f2; padding: 10px 15px; border-radius: 10px; margin-bottom: 20px;
+            font-weight: 700; color: #7f1d1d;
+            .red { color: $rojo; font-size: 1.2rem; }
+        }
+        
+        .warning-box {
+            background: #fff7ed; border: 1px solid #ffedd5; color: #c2410c;
+            padding: 15px; border-radius: 10px; margin-bottom: 20px;
+            display: flex; gap: 10px; align-items: center; font-size: 0.9rem; font-weight: 500;
+        }
+        
+        .client-summary-card {
+            display: flex; gap: 15px; align-items: center; margin-bottom: 25px;
+            padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;
+            .avatar-small { 
+                width: 50px; height: 50px; border-radius: 50%; color: white; font-weight: 700; font-size: 1.2rem;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .sum-info {
+                h3 { margin: 0; font-size: 1.1rem; color: #334155; }
+                .big-balance { font-size: 1.5rem; font-weight: 800; color: $rojo; }
+                small { font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+            }
+        }
+    }
+
+    .dialog-actions { 
+        padding: 20px 25px; display: flex; justify-content: flex-end; gap: 10px; background: white; 
+        .action-btn { height: 45px; padding: 0 30px; font-weight: 700; border-radius: 12px; }
+    }
+    
+    // Inputs del modal
+    .custom-field {
+        margin-bottom: 10px;
+        ::ng-deep .mdc-text-field--filled { 
+            background: #f8fafc; border-radius: 12px; border: 1px solid #cbd5e1;
+            &:hover { background: #f1f5f9; }
+        }
+        .mat-icon { color: #94a3b8; }
+    }
+}
+
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-  color: #90a4ae;
-
-  mat-icon {
-    font-size: 50px;
-    width: 50px;
-    height: 50px;
-    margin-bottom: 15px;
-    opacity: 0.5;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: #546e7a;
-  }
-  
-  p {
-    font-size: 0.9rem;
-    margin-top: 5px;
-  }
+    text-align: center; padding: 60px 20px;
+    background: white; border-radius: 24px; border: $borde-tarjeta; box-shadow: $sombra-card;
+    .icon-circle {
+        width: 80px; height: 80px; background: #f1f5f9; border-radius: 50%; margin: 0 auto 20px;
+        display: flex; align-items: center; justify-content: center;
+        mat-icon { font-size: 40px; width: 40px; height: 40px; color: #cbd5e1; }
+    }
+    h3 { margin: 0; font-size: 1.3rem; color: #333; font-weight: 700; }
+    p { color: #64748b; margin-bottom: 25px; }
 }
 
-// Animación de rotación para el loading
-.spin {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { 
-  100% { transform: rotate(360deg); } 
-}
-
-// Animación de entrada suave
-.fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
