@@ -1,169 +1,81 @@
-﻿.page-container {
-  display: flex; flex-direction: column; height: 100%;
-  background-color: #f8f9fa; overflow-y: auto;
+﻿// VARIABLES
+$vino-main: #4b1e3a;
+$vino-dark: #2e0e22;
+
+.page-container {
+    background-color: #f3f4f6; // Fondo gris moderno
+    min-height: 100%;
+    display: flex; flex-direction: column;
 }
 
+// CABECERA "TOP"
 .header-section {
-  background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%);
-  color: white; padding: 30px 20px 70px;
-  border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
-  text-align: center; position: relative; z-index: 1;
-  box-shadow: 0 4px 20px rgba(75, 30, 58, 0.4);
+    background: linear-gradient(135deg, $vino-main 0%, $vino-dark 100%);
+    color: white;
+    padding: 40px 20px 90px; // Espacio extra abajo para que floten las pestañas
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(75, 30, 58, 0.25);
+    position: relative; z-index: 1;
 
-  h1 { font-size: 1.8rem; margin: 0; font-weight: 700; }
-  p { opacity: 0.8; margin: 5px 0 15px; font-size: 0.95rem; }
-
-  .actions-bar {
-    margin-top: 15px; display: flex; justify-content: center;
-    .btn-pdf {
-      background: white; color: #4b1e3a; font-weight: 700; border-radius: 20px; cursor: pointer;
-      &:hover { background: #f3e5f5; }
-    }
-    .hint-pill {
-      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 20px; padding: 5px 15px; font-size: 0.85rem;
-      display: flex; align-items: center; gap: 5px;
-    }
-  }
-
-  .tabs-container {
-    display: flex; justify-content: center; gap: 10px; margin-top: 25px;
-    .tab-btn {
-      background: rgba(255,255,255,0.15); border: none; color: rgba(255,255,255,0.7);
-      padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
-      display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;
-      &:hover { background: rgba(255,255,255,0.25); color: white; }
-      &.active { background: white; color: #4b1e3a; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    }
-  }
+    h2 { font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+    p { opacity: 0.8; margin-top: 5px; font-size: 0.95rem; }
 }
 
-.content-container {
-  padding: 0 20px 40px; margin-top: -30px;
-  max-width: 1200px; // Más ancho en PC
-  margin-left: auto; margin-right: auto;
-  position: relative; z-index: 2;
-}
-
-.filter-panel {
-  background: white; border-radius: 16px; padding: 20px; min-height: 200px;
-
-  .panel-header {
-    border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;
-    // En PC, alinea título y filtros a los lados
-    @media (min-width: 800px) {
-      display: flex; justify-content: space-between; align-items: flex-start;
-    }
-
-    .titles {
-      margin-bottom: 15px;
-      h3 { margin: 0; font-size: 1.1rem; color: #444; }
-      .pill-range { background: #f3e5f5; color: #4b1e3a; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 10px; }
-    }
-
-    .filters-grid {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-      .full-w { flex: 1; min-width: 200px; }
-      button { height: 40px; border-radius: 10px; cursor: pointer; }
-    }
-  }
-}
-
-// WRAPPER DE LA LISTA DE VENTAS
-.sales-list-wrapper {
-  .loading, .empty-state { text-align: center; padding: 30px; color: #777; }
-
-  // --- MÁGIA RESPONSIVA AQUÍ ---
-  // Si la pantalla es grande, hacemos grid de tarjetas
-  @media (min-width: 900px) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-
-  .sale-card {
-    border: 1px solid #eee; border-radius: 12px; margin-bottom: 10px;
-    // En grid no usamos margin-bottom
-    @media (min-width: 900px) { margin-bottom: 0; }
+// CONTENEDOR FLOTANTE
+.tabs-wrapper {
+    margin-top: -60px; // Truco visual: sube sobre la cabecera
+    padding: 0 15px 40px;
     
-    padding: 12px; cursor: pointer; transition: background 0.1s;
-    &:hover { background: #fafafa; }
-
-    .card-main {
-      display: flex; justify-content: space-between; align-items: center;
-      .info-block {
-        display: flex; flex-direction: column;
-        .time { font-size: 0.75rem; color: #999; }
-        .client { font-weight: 600; color: #333; font-size: 0.95rem; }
-        .meta { 
-          display: flex; gap: 8px; margin-top: 4px;
-          .badge { background: #e0f2f1; color: #00695c; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
-          .id { font-size: 0.7rem; color: #bbb; }
-        }
-      }
-      .money-block {
-        text-align: right; font-size: 0.85rem;
-        .row-small { color: #888; font-size: 0.8rem; }
-        .row-total { font-weight: 700; color: #4b1e3a; font-size: 1.1rem; margin-top: 2px; }
-      }
-    }
-
-    .card-details {
-      margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee;
-      .detail-header { font-size: 0.75rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px; }
-      .detail-item {
-        display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 3px;
-        .prod-price { font-weight: 500; }
-      }
-    }
-  }
-}
-// ... (El resto de tu archivo reports.scss arriba se queda igual) ...
-
-// AJUSTE 1: Filtros más flexibles (para que no se vean apretados)
-::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
-
-.dense { 
-  flex: 1;           // Que crezca si hay espacio
-  min-width: 140px;  // Ancho mínimo, no fijo
-  max-width: 200px;  // Para que no se estiren demasiado en PC
-}
-
-// AJUSTE 2: El Dropdown de Clientes (Igual de amplio que en el Home)
-::ng-deep .custom-client-panel {
-  // CLAVE: Ancho mínimo para que se lea bien el nombre
-  min-width: 320px !important; 
-  max-width: 90vw !important;
-  
-  border-radius: 0 0 12px 12px !important;
-  margin-top: 5px !important;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15) !important;
-
-  .mat-mdc-option {
-    height: 70px !important; // Más alto para mejor toque
-    padding: 0 15px !important; 
-    border-bottom: 1px solid #f8f8f8;
+    // 🟢 CAMBIO IMPORTANTE: Full Width
+    // Antes: max-width: 1000px;
+    max-width: 100%; 
+    width: 98%; // Usamos el 98% de la pantalla
     
-    .option-flex {
-      display: flex; align-items: center; gap: 15px; width: 100%;
-      
-      .avatar-mini {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: #f3e5f5; color: #4b1e3a;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; flex-shrink: 0; font-size: 1.1rem;
-      }
-      
-      .text-group {
-        display: flex; flex-direction: column; line-height: 1.2;
-        flex: 1; overflow: hidden; // Evitar desbordes
-        
-        .name { 
-          font-weight: 600; font-size: 1rem; color: #333; 
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .cedula { font-size: 0.8rem; color: #888; }
-      }
-    }
-  }
+    margin-left: auto; margin-right: auto;
+    position: relative; z-index: 2;
+}
+
+// ESTILOS DE PESTAÑAS (MATERIAL DESIGN PERSONALIZADO)
+::ng-deep .mat-mdc-tab-group {
+    background: white;
+    border-radius: 24px; // Bordes muy redondeados
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); // Sombra suave
+    overflow: hidden;
+}
+
+::ng-deep .mat-mdc-tab-header {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+// Tamaño de botones de pestaña (dedo gordo friendly)
+::ng-deep .mdc-tab {
+    height: 60px !important; 
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+// Texto activo
+::ng-deep .mdc-tab--active .mdc-tab__text-label {
+    color: $vino-main !important;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+// Línea activa
+::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab-indicator__content--underline {
+    border-color: $vino-main !important;
+    border-top-width: 4px !important;
+    border-radius: 4px;
+}
+
+// Placeholder (Estilo temporal para la pestaña 2)
+.placeholder-state {
+    padding: 60px 20px; text-align: center; color: #9ca3af;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    
+    mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.5; }
+    h3 { margin: 0; font-weight: 700; color: #374151; }
+    p { margin: 0; font-size: 0.9rem; }
 }

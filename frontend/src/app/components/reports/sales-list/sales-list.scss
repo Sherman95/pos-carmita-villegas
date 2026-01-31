@@ -1,0 +1,265 @@
+// VARIABLES
+$vino-main: #4b1e3a;
+$vino-dark: #2e0e22;
+$verde-excel: #10b981;
+$gris-fondo: #f3f4f6;
+$borde-suave: 1px solid #cbd5e1;
+$sombra-card: 0 4px 12px rgba(0,0,0,0.06);
+
+.list-container {
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+// --------------------------------------------------
+// 1. PANEL DE FILTROS (DISEÑO MODERNO)
+// --------------------------------------------------
+.filters-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: $sombra-card;
+    border: $borde-suave;
+    margin-bottom: 30px;
+
+    .inputs-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-start; // Alineación superior para que coincidan alturas
+
+        // ESTILO DE LOS INPUTS Y SELECTS (MATERIAL HACK)
+        // Esto transforma los inputs grises en cajas blancas modernas
+        ::ng-deep .mat-mdc-form-field {
+            flex: 1;
+            min-width: 200px;
+            
+            .mdc-text-field--filled {
+                background-color: #f8fafc !important; // Gris muy claro
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                transition: all 0.2s ease;
+                
+                &:hover {
+                    background-color: #f1f5f9 !important;
+                    border-color: #94a3b8;
+                }
+
+                // Quitar la línea de abajo fea
+                &::before, &::after { display: none !important; }
+            }
+
+            // Cuando tiene foco
+            .mdc-text-field--focused {
+                background-color: white !important;
+                border-color: $vino-main !important;
+                box-shadow: 0 0 0 3px rgba(75, 30, 58, 0.1);
+            }
+
+            // Texto de etiqueta
+            .mdc-floating-label { color: #64748b; font-weight: 500; }
+            
+            // Iconos internos
+            .mat-mdc-select-arrow { color: #64748b; }
+        }
+
+        // Botón Buscar
+        .search-btn {
+            height: 56px; // Misma altura que los inputs
+            border-radius: 12px;
+            padding: 0 35px;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(75, 30, 58, 0.2);
+            
+            @media (max-width: 600px) { width: 100%; }
+        }
+    }
+}
+
+// --------------------------------------------------
+// 2. BARRA DE TOTALES Y ACCIONES
+// --------------------------------------------------
+.actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, $vino-main, $vino-dark); // Degradado sutil
+    color: white;
+    padding: 20px 30px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: 0 10px 25px rgba(75, 30, 58, 0.25);
+
+    .total-info {
+        display: flex; flex-direction: column;
+        .label { 
+            font-size: 0.9rem; opacity: 0.9; 
+            text-transform: uppercase; letter-spacing: 1px; font-weight: 600; 
+        }
+        .value { 
+            font-size: 2rem; font-weight: 800; line-height: 1; margin-top: 5px;
+        }
+    }
+
+    .buttons-group {
+        display: flex; gap: 15px;
+        
+        button {
+            border-radius: 12px;
+            font-weight: 700;
+            height: 48px;
+            padding: 0 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.2s;
+
+            &:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+            
+            mat-icon { margin-right: 8px; }
+
+            // Botón Excel destaca
+            &.btn-excel {
+                background: $verde-excel;
+                border-color: $verde-excel;
+                color: white;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                &:hover { background: darken($verde-excel, 5%); }
+            }
+        }
+    }
+}
+
+// --------------------------------------------------
+// 3. GRID DE VENTAS (FULL WIDTH & CARDS PRO)
+// --------------------------------------------------
+.sales-grid {
+    display: grid;
+    gap: 20px;
+    
+    // Grid Inteligente: Llena todo el ancho con tarjetas de aprox 320px
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+
+    .sale-card {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        cursor: pointer;
+        
+        // Borde real + sombra
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        display: flex; flex-direction: column; gap: 15px;
+
+        &:hover {
+            transform: translateY(-4px); // Efecto levitación
+            box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+            border-color: $vino-main;
+        }
+
+        &:active { transform: scale(0.98); }
+
+        .card-header {
+            display: flex; align-items: center; gap: 15px;
+
+            // AVATAR CON ESTILO
+            .avatar {
+                width: 56px; height: 56px; border-radius: 16px; 
+                color: white; font-weight: 800; font-size: 1.3rem;
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15); // Sombra interna del avatar
+                border: 2px solid white; // Anillo blanco
+                outline: 1px solid #e2e8f0; // Borde externo sutil
+            }
+
+            .card-meta {
+                flex: 1; display: flex; flex-direction: column; overflow: hidden;
+                .name { 
+                    font-weight: 700; color: #1e293b; font-size: 1.1rem; 
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+                }
+                .date { 
+                    font-size: 0.85rem; color: #64748b; font-weight: 500; margin-top: 4px; 
+                    display: flex; align-items: center; gap: 4px;
+                }
+            }
+
+            .card-price {
+                display: flex; align-items: center;
+                .price { 
+                    font-size: 1.3rem; font-weight: 800; color: $vino-main; 
+                    background: #fdf2f8; padding: 4px 10px; border-radius: 8px;
+                }
+                mat-icon { color: #cbd5e1; margin-left: 5px; }
+            }
+        }
+
+        // TABLA DE DETALLES
+        .card-details {
+            margin-top: 10px; 
+            border-top: 1px dashed #e2e8f0; 
+            padding-top: 15px;
+            animation: slideDown 0.2s ease-out;
+
+            .detail-table {
+                width: 100%; font-size: 0.95rem; border-collapse: separate; border-spacing: 0 6px;
+                
+                tr:hover td { color: $vino-main; }
+
+                td { 
+                    padding: 4px 0; 
+                    border-bottom: 1px solid #f8fafc; 
+                }
+                .prod-name { color: #334155; font-weight: 500; }
+                .prod-qty { color: #94a3b8; text-align: right; padding-right: 15px; font-size: 0.85rem; }
+                .prod-total { text-align: right; font-weight: 700; color: #1e293b; }
+            }
+        }
+    }
+}
+
+// ESTADO VACÍO
+.no-data {
+    text-align: center; color: #94a3b8; margin-top: 60px;
+    display: flex; flex-direction: column; align-items: center; gap: 15px;
+    padding: 40px; background: white; border-radius: 20px; border: 1px dashed #e2e8f0;
+    
+    mat-icon { font-size: 56px; width: 56px; height: 56px; opacity: 0.3; }
+    p { font-size: 1.1rem; }
+}
+
+// ANIMACIONES
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+// --------------------------------------------------
+// 4. ESTILOS GLOBALES PARA EL POPUP DEL SELECT (Opcional pero recomendado)
+// --------------------------------------------------
+// Esto afecta al menú desplegable para que sea blanco y limpio
+::ng-deep .mat-mdc-select-panel {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    border: 1px solid #e2e8f0;
+    padding: 5px !important;
+
+    .mat-mdc-option {
+        border-radius: 8px;
+        margin-bottom: 2px;
+        transition: background 0.1s;
+        
+        &:hover { background-color: #f1f5f9 !important; }
+        &.mdc-list-item--selected { 
+            background-color: #fdf2f8 !important; 
+            .mdc-list-item__primary-text { color: $vino-main; font-weight: 700; }
+        }
+    }
+}

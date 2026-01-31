@@ -55,7 +55,20 @@ export class ReportsService {
 
     return this.http.get<{ sales: any[]; summary: { count: number; total: number } }>(`${this.baseUrl}/by-item/${itemId}`, { params });
   }
+  
+  // 👇 AGREGAR ESTO para conectar con los Gastos
+  getExpenses(from: string, to: string): Observable<any[]> {
+    // Reutilizamos tu lógica maestra de horas para que cuadre perfecto
+    const utcFrom = this.toEcuadorStart(from);
+    const utcTo = this.toEcuadorEnd(to);
 
+    const params = new HttpParams().set('from', utcFrom).set('to', utcTo);
+    
+    // OJO: Aquí usamos 'environment.apiBaseUrl' directo para ir a /api/reports/expenses
+    // NO usamos 'this.baseUrl' porque esa apunta a /sales
+    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/reports/expenses`, { params });
+  }
+  
   // ===========================================================================
   // 🧠 LÓGICA DE ZONA HORARIA (ECUADOR UTC-5) - VERSIÓN AGRESIVA
   // ===========================================================================

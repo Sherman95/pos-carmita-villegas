@@ -19,6 +19,7 @@ router.get('/details', getClosingDetails);
 router.post('/close/:id', closeRegister);
 router.get('/history', getCashHistory);
 
+
 // 👇 ESTA ES LA LÍNEA QUE SUELE FALTAR. ¿LA TIENES?
 router.get('/report/:id', getClosingReport);
 

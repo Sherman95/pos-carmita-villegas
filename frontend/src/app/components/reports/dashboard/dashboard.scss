@@ -1,0 +1,165 @@
+$vino: #4b1e3a;
+$verde: #10b981;
+$rojo: #ef4444;
+$azul: #0284c7;
+
+.dashboard-content { 
+    padding: 20px; 
+    width: 100%; 
+    box-sizing: border-box; 
+}
+
+// --- ZONA DE FILTROS ---
+.filters-container {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 15px;
+    margin-bottom: 30px;
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    
+    // Sombra suave y borde
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.05);
+
+    // En PC se pone en fila y ocupa el ancho necesario
+    @media (min-width: 768px) {
+        flex-direction: row; 
+        justify-content: center;
+        gap: 25px;
+    }
+}
+
+// Botones Toggle (Hoy, Mes, Año)
+.toggle-group-custom {
+    border: none; 
+    background: #f3f4f6; 
+    border-radius: 50px; 
+    padding: 5px;
+    
+    mat-button-toggle {
+        background: transparent; 
+        border: none; 
+        border-radius: 50px !important;
+        padding: 0 20px;
+        font-weight: 600; 
+        color: #666;
+        font-size: 0.95rem;
+        
+        &.mat-button-toggle-checked { 
+            background-color: white; 
+            color: $vino; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+    }
+}
+
+// Fechas Personalizadas (Desde - Hasta)
+.custom-dates {
+    display: flex; 
+    gap: 15px; 
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    .date-input {
+        display: flex; flex-direction: column;
+        label { font-size: 0.8rem; color: #666; margin-left: 5px; margin-bottom: 4px; font-weight: 500; }
+        input {
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-family: inherit;
+            color: #333;
+            outline: none;
+            transition: all 0.2s;
+            &:focus { border-color: $vino; background: white; box-shadow: 0 0 0 3px rgba(75, 30, 58, 0.1); }
+        }
+    }
+    
+    button { 
+        box-shadow: none; 
+        width: 42px; height: 42px; 
+        border-radius: 12px;
+    }
+}
+
+// --- TARJETAS KPI (FULL WIDTH) ---
+.kpi-grid {
+    display: grid; 
+    gap: 20px; 
+    margin-bottom: 30px;
+
+    // 🟢 MÁGIA RESPONSIVE:
+    // En lugar de forzar 3 columnas, le decimos:
+    // "Mete tantas como quepan de mínimo 300px, y estíralas para llenar el hueco (1fr)"
+    // En un monitor gigante, las 3 tarjetas se estirarán para llenar todo el ancho.
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+
+    .kpi-card {
+        background: white; border-radius: 20px; padding: 25px;
+        display: flex; align-items: center; gap: 20px;
+        
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+
+        &:hover { transform: translateY(-3px); }
+
+        .icon-box {
+            width: 60px; height: 60px; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            mat-icon { font-size: 32px; width: 32px; height: 32px; }
+        }
+
+        .data {
+            display: flex; flex-direction: column;
+            span { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+            h3 { margin: 0; font-size: 1.8rem; font-weight: 800; color: #1e293b; }
+            small { font-size: 0.9rem; font-weight: 500; color: #94a3b8; }
+        }
+
+        &.income { .icon-box { background: #d1fae5; color: $verde; } }
+        &.expense { .icon-box { background: #fee2e2; color: $rojo; } }
+        &.profit { 
+            .icon-box { background: #e0f2fe; color: $azul; } h3 { color: $azul; }
+            &.negative h3 { color: $rojo; }
+            .good { color: $verde; font-weight: bold; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; border: 1px solid #a7f3d0; }
+        }
+    }
+}
+
+// --- GRÁFICO (CENTRADO Y ANCHO) ---
+.chart-card {
+    background: white; border-radius: 24px; padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+    min-height: 450px; 
+    
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    
+    h3 { font-weight: 700; color: #334155; margin-bottom: 30px; font-size: 1.2rem; }
+    
+    // Limitamos el ancho del pastel para que no se vea gigante en pantallas 4K
+    .canvas-container { 
+        width: 100%; 
+        height: 350px; 
+        position: relative;
+        max-width: 600px; // Evita que la dona sea monstruosa
+    }
+    
+    .no-data { 
+        margin-top: 60px; color: #94a3b8; text-align: center; 
+        display: flex; flex-direction: column; align-items: center; gap: 15px;
+        mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.3; }
+        p { font-size: 1.1rem; }
+    }
+}
+
+.fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

@@ -1,201 +1,153 @@
-<div class="page-container">
+<div class="page-container fade-in">
 
-  <!-- ================= HEADER ================= -->
   <header class="header-section">
     <div class="header-content">
       <h1>Clientes 👥</h1>
-      <p>Gestiona tu base de datos</p>
+      <p>Gestiona tu base de datos de clientes</p>
 
-      <div class="search-box">
+      <div class="search-wrapper">
         <mat-icon class="search-icon">search</mat-icon>
-
         <input
           type="text"
           placeholder="Buscar por nombre, cédula o email..."
           [ngModel]="searchTerm()"
           (ngModelChange)="setSearch($event)"
         />
-
         @if (searchTerm()) {
-          <button mat-icon-button (click)="setSearch('')">
+          <button mat-icon-button (click)="setSearch('')" class="clear-btn">
             <mat-icon>close</mat-icon>
           </button>
         }
       </div>
-
-      <button mat-flat-button class="btn-add" (click)="showCreateForm()">
-        <mat-icon>add</mat-icon>
-        NUEVO CLIENTE
-      </button>
     </div>
   </header>
 
-  <!-- ================= LISTA ================= -->
-  <div class="list-container">
-
-    @if (loading()) {
-      <div class="state-message">Cargando clientes...</div>
-
-    } @else if (filteredClients().length === 0) {
-      <div class="state-message empty">
-        <mat-icon>person_off</mat-icon>
-        <p>No se encontraron clientes.</p>
-      </div>
-
-    } @else {
-      @for (c of filteredClients(); track c.id) {
-        <div class="client-card elevation-z2" (click)="editClient(c)">
-
-          <div class="card-content">
-            <div class="avatar-circle">
-              {{ c.nombre.charAt(0).toUpperCase() }}
-            </div>
-
-            <div class="text-info">
-              <span class="name">{{ c.nombre }}</span>
-
-              <span class="details">
-                <mat-icon class="tiny-icon">badge</mat-icon>
-                {{ c.cedula || 'S/N' }}
-              </span>
-
-              <span class="details secondary">
-                <mat-icon class="tiny-icon">phone</mat-icon>
-                {{ c.telefono || 'Sin cel' }} · {{ c.email || 'Sin email' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button
-              mat-icon-button
-              color="warn"
-              (click)="deleteClient(c.id); $event.stopPropagation()"
-            >
-              <mat-icon>delete_outline</mat-icon>
-            </button>
-          </div>
-        </div>
-      }
-    }
-  </div>
-
-  <!-- ================= MODAL ================= -->
-  <ng-template #clientFormDialog>
-
-    <!-- Header -->
-    <div class="dialog-header-modern">
-      <h2 mat-dialog-title>
-        {{ selectedClientId() ? 'Editar Cliente 👤' : 'Nuevo Cliente ✨' }}
-      </h2>
-
-      <button mat-icon-button mat-dialog-close tabindex="-1" class="close-btn">
-        <mat-icon>close</mat-icon>
+  <div class="clients-wrapper">
+    
+    <div class="actions-bar">
+      <button mat-flat-button class="btn-new" (click)="showCreateForm()">
+        <mat-icon>person_add</mat-icon> NUEVO CLIENTE
       </button>
     </div>
 
-    <!-- Contenido -->
-    <mat-dialog-content class="modern-content">
-
-      <p class="subtitle">Información de contacto y facturación.</p>
-
-      <!-- 🔴 ERROR DEL BACKEND -->
-      @if (formError()) {
-        <div class="form-error">
-          <mat-icon>error_outline</mat-icon>
-          {{ formError() }}
+    <div class="clients-grid">
+      
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando agenda...</p>
         </div>
+
+      } @else if (filteredClients().length === 0) {
+        <div class="empty-state">
+          <div class="icon-circle"><mat-icon>group_off</mat-icon></div>
+          <h3>No se encontraron clientes</h3>
+          <p>Intenta con otro nombre o registra uno nuevo.</p>
+          <button mat-stroked-button color="primary" (click)="setSearch('')">Limpiar búsqueda</button>
+        </div>
+
+      } @else {
+        @for (c of filteredClients(); track c.id) {
+          <div class="client-card elevation-z2" (click)="editClient(c)">
+            
+            <div class="card-left">
+              <div class="avatar-circle" [style.background-color]="getColor(c.nombre)">
+                {{ c.nombre.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+
+            <div class="card-center">
+              <h3 class="name">{{ c.nombre }}</h3>
+              
+              <div class="details-row">
+                @if(c.cedula) {
+                  <span class="badge"><mat-icon>badge</mat-icon> {{ c.cedula }}</span>
+                }
+                @if(c.telefono) {
+                  <span class="badge"><mat-icon>phone</mat-icon> {{ c.telefono }}</span>
+                }
+              </div>
+              
+              @if(c.email) {
+                <span class="email-text">{{ c.email }}</span>
+              }
+            </div>
+
+            <div class="card-right">
+              <button mat-icon-button color="warn" class="delete-btn" 
+                      (click)="deleteClient(c.id); $event.stopPropagation()"
+                      matTooltip="Eliminar cliente">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+              <mat-icon class="edit-icon">chevron_right</mat-icon>
+            </div>
+
+          </div>
+        }
       }
+    </div>
+  </div>
 
-      <div class="form-grid-2">
-
-        <!-- NOMBRE -->
-        <mat-form-field appearance="outline" class="col-span-2">
-          <mat-label>Apellidos y Nombres (Razón Social)</mat-label>
-          <mat-icon matPrefix>person</mat-icon>
-
-          <input
-            matInput
-            [ngModel]="form().nombre"
-            (ngModelChange)="updateField('nombre', $event.toUpperCase())"
-            placeholder="Ej. PEREZ LOPEZ JUAN CARLOS"
-            required
-          />
-
-          <mat-hint>Tal cual aparece en el RUC o Cédula</mat-hint>
-        </mat-form-field>
-
-        <!-- CEDULA -->
-        <mat-form-field appearance="outline">
-          <mat-label>Cédula / RUC</mat-label>
-          <mat-icon matPrefix>badge</mat-icon>
-
-          <input
-            matInput
-            [ngModel]="form().cedula"
-            (ngModelChange)="updateField('cedula', $event)"
-            placeholder="10 dígitos (Cédula) o 13 (RUC)"
-            maxlength="13"
-          />
-        </mat-form-field>
-
-        <!-- TELEFONO -->
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono</mat-label>
-          <mat-icon matPrefix>phone</mat-icon>
-
-          <input
-            matInput
-            [ngModel]="form().telefono"
-            (ngModelChange)="updateField('telefono', $event)"
-            placeholder="099..."
-            type="tel"
-            maxlength="10"
-          />
-        </mat-form-field>
-
-        <!-- EMAIL -->
-        <mat-form-field appearance="outline" class="col-span-2">
-          <mat-label>Correo Electrónico</mat-label>
-          <mat-icon matPrefix>mail</mat-icon>
-
-          <input
-            matInput
-            [ngModel]="form().email"
-            (ngModelChange)="updateField('email', $event.toLowerCase())"
-            placeholder="cliente@email.com"
-          />
-        </mat-form-field>
-
-        <!-- DIRECCION -->
-        <mat-form-field appearance="outline" class="col-span-2">
-          <mat-label>Dirección</mat-label>
-          <mat-icon matPrefix>place</mat-icon>
-
-          <input
-            matInput
-            [ngModel]="form().direccion"
-            (ngModelChange)="updateField('direccion', $event.toUpperCase())"
-            placeholder="CALLE PRINCIPAL Y SECUNDARIA..."
-          />
-        </mat-form-field>
-
+  <ng-template #clientFormDialog>
+    <div class="modern-dialog">
+      
+      <div class="dialog-header">
+        <h2>{{ selectedClientId() ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
+        <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
       </div>
-    </mat-dialog-content>
 
-    <!-- Acciones -->
-    <mat-dialog-actions align="end" class="modern-actions">
-      <button mat-button (click)="cancelar()">Cancelar</button>
+      <div class="dialog-body">
+        <p class="dialog-subtitle">Ingresa los datos para facturación y contacto.</p>
 
-      <button
-        mat-flat-button
-        color="primary"
-        (click)="guardar()"
-        [disabled]="!form().nombre"
-      >
-        {{ selectedClientId() ? 'Actualizar' : 'Guardar Cliente' }}
-      </button>
-    </mat-dialog-actions>
+        @if (formError()) {
+          <div class="error-box">
+            <mat-icon>error</mat-icon> {{ formError() }}
+          </div>
+        }
 
+        <div class="form-grid">
+          
+          <mat-form-field appearance="outline" class="col-full custom-field">
+            <mat-label>Apellidos y Nombres (Razón Social)</mat-label>
+            <mat-icon matPrefix class="prefix-icon">person</mat-icon>
+            <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event.toUpperCase())" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-half custom-field">
+            <mat-label>Cédula / RUC</mat-label>
+            <mat-icon matPrefix class="prefix-icon">badge</mat-icon>
+            <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" maxlength="13" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-half custom-field">
+            <mat-label>Teléfono</mat-label>
+            <mat-icon matPrefix class="prefix-icon">phone</mat-icon>
+            <input matInput type="tel" [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" maxlength="10" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-full custom-field">
+            <mat-label>Correo Electrónico</mat-label>
+            <mat-icon matPrefix class="prefix-icon">mail</mat-icon>
+            <input matInput type="email" [ngModel]="form().email" (ngModelChange)="updateField('email', $event.toLowerCase())" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-full custom-field">
+            <mat-label>Dirección</mat-label>
+            <mat-icon matPrefix class="prefix-icon">place</mat-icon>
+            <input matInput [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event.toUpperCase())" />
+          </mat-form-field>
+
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button mat-stroked-button mat-dialog-close (click)="cancelar()">Cancelar</button>
+        <button mat-flat-button color="primary" class="save-btn" (click)="guardar()" [disabled]="!form().nombre">
+          {{ selectedClientId() ? 'ACTUALIZAR' : 'GUARDAR' }}
+        </button>
+      </div>
+
+    </div>
   </ng-template>
+
 </div>

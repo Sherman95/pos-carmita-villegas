@@ -12,11 +12,22 @@ import { Item } from '../../interfaces/interfaces';
 import { PriceDialogComponent } from '../price-dialog/price-dialog';
 import { CartService } from '../../services/cart.service';
 import { Router } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatDialogModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    MatCardModule, 
+    MatButtonModule, 
+    MatIconModule, 
+    MatFormFieldModule, 
+    MatInputModule, 
+    MatDialogModule,
+    MatTooltipModule // Agregamos Tooltip por si acaso
+  ],
   templateUrl: './catalog.html',
   styleUrl: './catalog.scss'
 })
@@ -33,6 +44,7 @@ export class CatalogComponent implements OnInit {
   selectedId = signal<string>('');
   form = signal<{ nombre: string; precio: number | null }>({ nombre: '', precio: null });
   searchTerm = signal<string>('');
+  
   filteredItems = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     if (!term) return this.items();
@@ -62,7 +74,7 @@ export class CatalogComponent implements OnInit {
   cargarItems() {
     this.itemsService.getItems().subscribe({
       next: (data: Item[]) => {
-        // Filtramos solo servicios porque esta vista es de servicios
+        // Filtramos solo servicios
         this.items.set((data || []).filter((i) => i.tipo === 'SERVICIO'));
       },
       error: (err: any) => {
@@ -162,7 +174,8 @@ export class CatalogComponent implements OnInit {
   private openDialog() {
     this.dialogRef = this.dialog.open(this.formDialog, {
       width: '520px',
-      autoFocus: true
+      autoFocus: true,
+      panelClass: 'custom-dialog-container' // Clase opcional por si queremos estilos globales
     });
 
     this.dialogRef.afterClosed().subscribe(() => this.limpiar());
@@ -171,5 +184,13 @@ export class CatalogComponent implements OnInit {
   private closeDialog() {
     this.dialogRef?.close();
     this.dialogRef = undefined;
+  }
+
+  // 👇 ESTA ES LA FUNCIÓN QUE TE FALTABA
+  getColor(name: string): string {
+    const colors = ['#e11d48', '#db2777', '#9333ea', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
   }
 }

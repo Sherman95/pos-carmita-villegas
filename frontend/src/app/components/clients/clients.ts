@@ -250,4 +250,17 @@ export class ClientsComponent implements OnInit {
   setSearch(term: string) {
     this.searchTerm.set(term || '');
   }
+
+// ... dentro de la clase ClientsComponent ...
+
+  // 👇 Agregar esta función al final
+  getColor(name: string): string {
+    const colors = ['#e11d48', '#db2777', '#9333ea', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+// ... fin de la clase
+
 }

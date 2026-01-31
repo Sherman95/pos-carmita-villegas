@@ -1,0 +1,78 @@
+<div class="dashboard-content fade-in">
+    
+    <div class="filters-container">
+        
+        <mat-button-toggle-group [(ngModel)]="periodo" (change)="cargarDatos()" class="toggle-group-custom">
+            <mat-button-toggle value="today">Hoy</mat-button-toggle>
+            <mat-button-toggle value="month">Mes</mat-button-toggle>
+            <mat-button-toggle value="year">Año</mat-button-toggle>
+            <mat-button-toggle value="custom">Rango</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        @if (periodo() === 'custom') {
+            <div class="custom-dates fade-in">
+                <div class="date-input">
+                    <label>Desde</label>
+                    <input type="date" [(ngModel)]="customFrom">
+                </div>
+                <div class="date-input">
+                    <label>Hasta</label>
+                    <input type="date" [(ngModel)]="customTo">
+                </div>
+                <button mat-mini-fab color="primary" (click)="cargarDatos()">
+                    <mat-icon>search</mat-icon>
+                </button>
+            </div>
+        }
+    </div>
+
+    <div class="kpi-grid">
+        <mat-card class="kpi-card income">
+            <div class="icon-box"><mat-icon>trending_up</mat-icon></div>
+            <div class="data">
+                <span>Ingresos</span>
+                <h3>{{ totalVentas() | currency }}</h3>
+            </div>
+        </mat-card>
+
+        <mat-card class="kpi-card expense">
+            <div class="icon-box"><mat-icon>trending_down</mat-icon></div>
+            <div class="data">
+                <span>Gastos</span>
+                <h3>{{ totalGastos() | currency }}</h3>
+            </div>
+        </mat-card>
+
+        <mat-card class="kpi-card profit" [class.negative]="utilidadNeta() < 0">
+            <div class="icon-box"><mat-icon>savings</mat-icon></div>
+            <div class="data">
+                <span>Utilidad Neta</span>
+                <h3>{{ utilidadNeta() | currency }}</h3>
+                <small [class.good]="margenRentabilidad() > 20">
+                    {{ margenRentabilidad() | number:'1.0-1' }}% Rentabilidad
+                </small>
+            </div>
+        </mat-card>
+    </div>
+
+    <div class="charts-section">
+        <mat-card class="chart-card">
+            <h3>🍰 Distribución de Gastos</h3>
+            
+            <div class="canvas-container">
+                <canvas baseChart 
+                    [data]="pieChartData" 
+                    [options]="pieChartOptions" 
+                    [type]="'doughnut'">
+                </canvas>
+            </div>
+
+            @if (totalGastos() === 0) {
+                <div class="no-data">
+                    <mat-icon>info</mat-icon>
+                    <p>No hay gastos registrados en este periodo.</p>
+                </div>
+            }
+        </mat-card>
+    </div>
+</div>

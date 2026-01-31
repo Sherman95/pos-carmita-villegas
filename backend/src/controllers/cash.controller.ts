@@ -306,4 +306,6 @@ export const getClosingReport = async (req: Request, res: Response) => {
         console.error("❌ ERROR EN REPORTE:", error);
         res.status(500).json({ error: 'Error obteniendo reporte' });
     }
+    
 };
+

@@ -1,119 +1,253 @@
-.page-container {
-  display: flex; flex-direction: column; height: 100%;
-  background-color: #f8f9fa; overflow-y: auto;
+// VARIABLES DE DISEÑO (AJUSTADAS PARA CONTRASTE)
+$vino-main: #4b1e3a;
+$vino-light: #8a3c6b;
+
+// 🟢 CAMBIO 1: Fondo un poco más oscuro para que resalte lo blanco
+$fondo-app: #eef2f6; 
+$blanco: #ffffff;
+$sombra-suave: 0 4px 20px rgba(0, 0, 0, 0.08); // Sombra más marcada
+$borde-tarjeta: 1px solid #cbd5e1; // Borde físico para separar
+
+.main-layout {
+    min-height: 100vh;
+    background-color: $fondo-app;
+    position: relative;
+    display: flex; flex-direction: column;
 }
 
-// 1. HEADER VINO TINTO
-.header-section {
-  background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%);
-  color: white;
-  padding: 40px 20px 100px; // Mucho padding abajo para la tarjeta flotante
-  border-bottom-left-radius: 35px; border-bottom-right-radius: 35px;
-  text-align: center; position: relative; z-index: 1;
-  box-shadow: 0 4px 20px rgba(75, 30, 58, 0.4);
-
-  h1 { font-size: 1.8rem; margin: 0; font-weight: 700; }
-  p { opacity: 0.8; margin: 5px 0 0; font-size: 0.95rem; }
+// FONDO DECORATIVO SUPERIOR
+.header-bg {
+    height: 240px; // Un poco más alto para cubrir el rebote en móvil
+    background: linear-gradient(135deg, $vino-main 0%, #2e0e22 100%);
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+    position: absolute; top: 0; left: 0; right: 0; z-index: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-// 2. CONTENEDOR PRINCIPAL
-.profile-container {
-  padding: 0 20px 60px; 
-  margin-top: -60px; // Se monta sobre el header
-  max-width: 900px; margin-left: auto; margin-right: auto;
-  position: relative; z-index: 2;
+// CONTENEDOR GRID
+.content-wrapper {
+    position: relative; z-index: 1;
+    max-width: 1100px; width: 100%; margin: 0 auto;
+    
+    // 🟢 CAMBIO 2: Padding lateral seguro en móvil
+    padding: 20px 15px; 
+    
+    display: grid; gap: 20px;
+    grid-template-columns: 1fr; // Móvil
 
-  // TARJETA DE IDENTIDAD FLOTANTE
-  .identity-card {
-    background: white; border-radius: 20px; padding: 25px;
-    display: flex; align-items: center; gap: 20px;
-    margin-bottom: 30px;
-    position: relative; // Para el botón de logout absoluto
-
-    .avatar-circle {
-      width: 70px; height: 70px; border-radius: 50%;
-      background: #f3e5f5; color: #4b1e3a;
-      font-size: 2rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      border: 2px solid white;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    @media (min-width: 900px) {
+        grid-template-columns: 350px 1fr; // PC
+        padding: 60px 20px 40px;
+        gap: 30px;
     }
+}
 
-    .identity-info {
-      flex: 1;
-      .username { margin: 0; font-size: 1.4rem; font-weight: 700; color: #333; }
-      .role-badge { 
-        background: #e3f2fd; color: #1565c0; font-size: 0.75rem; 
-        padding: 2px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase;
-      }
-      .status { 
-        font-size: 0.8rem; color: #666; margin-top: 5px; display: flex; align-items: center; gap: 5px; 
-        .dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; display: inline-block; }
-      }
-    }
-
-    .btn-logout-icon {
-      position: absolute; top: 15px; right: 15px;
-    }
-  }
-
-  // GRID DE TARJETAS (Responsivo)
-  .grid-layout {
-    display: grid; 
-    grid-template-columns: 1fr; // Móvil: 1 columna
-    gap: 20px;
-
-    @media (min-width: 768px) {
-      grid-template-columns: 1fr 1fr; // PC: 2 columnas
-      align-items: start;
-    }
-
-    // TARJETAS DE SECCIÓN
-    .section-card {
-      background: white; border-radius: 16px; padding: 0;
-      overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
-
-      .card-header {
-        background: #fcfcfc; padding: 15px 20px; border-bottom: 1px solid #eee;
-        font-weight: 700; color: #4b1e3a; display: flex; align-items: center; gap: 8px;
-        small { font-weight: 400; color: #999; margin-left: auto; font-size: 0.75rem; }
-      }
-
-      .card-body {
-        padding: 20px;
+// ----------------------------------------------------
+// 🎨 1. SIDEBAR (TARJETA DE PERFIL)
+// ----------------------------------------------------
+.profile-sidebar {
+    .identity-card {
+        background: $blanco;
+        border-radius: 20px;
+        padding: 30px 20px;
+        text-align: center;
+        box-shadow: $sombra-suave;
+        position: relative; overflow: hidden;
         
-        .form-grid {
-          display: flex; flex-direction: column; gap: 10px;
-          
-          .row-inputs {
-            display: flex; gap: 10px;
-            .half { flex: 1; }
-          }
-          
-          .actions { text-align: right; margin-top: 10px; }
+        // 🟢 CAMBIO 3: Borde físico para separar del fondo
+        border: $borde-tarjeta;
 
-          .success-msg {
-            background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 8px;
-            margin-top: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
-          }
+        // Decoración superior
+        &::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(90deg, $vino-main, $vino-light);
         }
-      }
-    }
 
-    // Botón logout solo visible en móvil (o como extra)
-    .btn-logout-mobile {
-      width: 100%; height: 50px; border-radius: 12px; margin-top: 10px;
-      @media (min-width: 768px) { grid-column: 1 / -1; width: auto; justify-self: center; }
-    }
-  }
+        .avatar-container {
+            position: relative; width: 100px; height: 100px; margin: 0 auto 15px;
+            
+            .avatar-circle {
+                width: 100%; height: 100%;
+                background: white; color: $vino-main;
+                font-size: 2.5rem; font-weight: 800;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                border: 4px solid #fdf2f8;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.15); // Sombra más fuerte al avatar
+            }
+            
+            .status-indicator {
+                position: absolute; bottom: 5px; right: 5px; width: 22px; height: 22px;
+                background: #10b981; border: 3px solid white; border-radius: 50%;
+            }
+        }
 
-  // ESTADO VACÍO
-  .empty-state {
-    text-align: center; margin-top: 50px; color: #666;
-    mat-icon { font-size: 60px; width: 60px; height: 60px; opacity: 0.3; margin-bottom: 10px; }
-    h2 { margin: 0 0 20px; }
-  }
+        .user-info {
+            h2 { margin: 0; font-size: 1.5rem; color: #1e293b; font-weight: 800; }
+            .role-pill {
+                display: inline-block; margin-top: 8px;
+                background: #f1f5f9; color: #64748b;
+                padding: 5px 14px; border-radius: 50px;
+                font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+                border: 1px solid #e2e8f0; // Borde al badge
+            }
+        }
+
+        .sidebar-actions {
+            margin-top: 25px;
+            .logout-btn {
+                width: 100%; height: 50px; border-radius: 12px; font-weight: 600;
+                box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+            }
+        }
+    }
 }
 
-.full-width { width: 100%; }
-::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; } // Compact inputs
+// ----------------------------------------------------
+// 🎨 2. FORMULARIOS (TARJETAS PRINCIPALES)
+// ----------------------------------------------------
+.profile-forms {
+    .section-header {
+        margin-bottom: 20px;
+        
+        // 🟢 FIX MÓVIL: Color oscuro para que se lea sobre el fondo gris
+        color: $vino-main; 
+        text-align: center; 
+        margin-top: 10px;
+        text-shadow: none; // Quitamos sombra en móvil para que se vea limpio
+
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; }
+        p { margin: 5px 0 0; opacity: 0.8; font-size: 0.95rem; font-weight: 600; color: #64748b; }
+
+        // 💻 FIX PC: Cuando la pantalla es grande, el texto sube al área morada
+        @media (min-width: 900px) {
+            color: white; // Vuelve a ser blanco
+            text-align: left;
+            margin-top: 0;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2); // Vuelve la sombra
+            
+            p { color: rgba(255,255,255,0.9); } // Subtítulo blanco
+        }
+    }
+
+    .form-card {
+        background: $blanco;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        box-shadow: $sombra-suave;
+        
+        // 🟢 CAMBIO 4: Borde para definir la tarjeta en pantallas malas
+        border: $borde-tarjeta; 
+
+        .card-header-styled {
+            padding: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex; align-items: center; gap: 15px;
+            background: #fafbfc; // Cabecera gris muy tenue
+            border-radius: 20px 20px 0 0;
+
+            .icon-wrapper {
+                width: 42px; height: 42px; border-radius: 10px;
+                display: flex; align-items: center; justify-content: center;
+                mat-icon { font-size: 24px; width: 24px; height: 24px; }
+            }
+
+            &.biz-header { 
+                .icon-wrapper { background: #dbeafe; color: #2563eb; }
+                h3 { color: #1e40af; }
+            }
+            &.user-header { 
+                .icon-wrapper { background: #ffedd5; color: #ea580c; }
+                h3 { color: #9a3412; }
+            }
+
+            h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+        }
+
+        .card-content {
+            padding: 20px;
+            @media (min-width: 768px) { padding: 30px; }
+        }
+    }
+}
+
+// ----------------------------------------------------
+// ✨ 3. INPUTS MODERNOS (CONTRASTADOS)
+// ----------------------------------------------------
+::ng-deep .modern-input {
+    width: 100%;
+    margin-bottom: 8px;
+
+    // 🟢 CAMBIO 5: Fondo gris tenue para el input, no blanco puro
+    .mdc-text-field--filled {
+        background-color: #f8fafc !important; 
+        border: 1px solid #cbd5e1; // Borde gris visible
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        
+        &:hover { 
+            background-color: #f1f5f9 !important;
+            border-color: #94a3b8; 
+        }
+        
+        &::before, &::after { display: none !important; }
+    }
+
+    .mdc-text-field--focused {
+        background-color: #ffffff !important; // Al escribir se pone blanco
+        border-color: $vino-main !important;
+        box-shadow: 0 0 0 3px rgba(75, 30, 58, 0.15) !important;
+    }
+
+    .mdc-floating-label {
+        color: #64748b !important;
+        font-weight: 600;
+    }
+}
+
+.form-grid-row {
+    display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;
+    .col-full { flex: 100%; }
+    .col-half { flex: 1; min-width: 100%; @media(min-width: 600px) { min-width: 140px; } }
+}
+
+// ----------------------------------------------------
+// 💎 4. EXTRAS
+// ----------------------------------------------------
+.tax-box {
+    background: #f0fdf4; border: 1px solid #86efac; // Borde verde más fuerte
+    border-radius: 16px; padding: 15px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 20px 0;
+
+    .tax-text {
+        strong { display: block; color: #14532d; font-size: 0.95rem; }
+        span { color: #16a34a; font-size: 0.8rem; }
+    }
+    
+    .tax-field-mini {
+        width: 90px; height: 40px;
+        background: white; border-radius: 8px; border: 1px solid #22c55e;
+        font-weight: 700; color: #14532d; font-size: 1.1rem; text-align: center;
+        outline: none;
+    }
+}
+
+.btn-save {
+    width: 100%; height: 50px; 
+    border-radius: 12px; font-size: 1rem; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(75, 30, 58, 0.25);
+    @media (min-width: 900px) { width: auto; min-width: 200px; float: right; }
+}
+
+.feedback-msg {
+    margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 8px; clear: both;
+    
+    &.success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    &.info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+}
+
+.fade-in { animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
