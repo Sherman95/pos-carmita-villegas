@@ -1,50 +1,137 @@
-.expenses-container { padding: 20px; max-width: 800px; margin: 0 auto; }
+.expenses-container {
+  padding: 16px;
+  max-width: 1000px; /* En PC no se estira al infinito */
+  margin: 0 auto;
+}
 
-.header-summary {
-  margin-bottom: 25px; position: relative;
-  .summary-card {
-    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
-    color: white; border-radius: 20px; padding: 25px;
-    display: flex; align-items: center; justify-content: space-between;
-    overflow: hidden; position: relative;
-    .info { z-index: 2; h3 { margin: 0; opacity: 0.9; font-size: 0.9rem; } h1 { margin: 5px 0 0; font-size: 2.5rem; font-weight: 800; } }
-    .icon-bg { position: absolute; left: -20px; bottom: -20px; opacity: 0.2; mat-icon { font-size: 120px; width: 120px; height: 120px; } }
-    .add-btn { background: white; color: #d32f2f; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+// 🟢 HEADER
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .total-card {
+    background: #fff;
+    padding: 15px 25px;
+    border-radius: 12px;
+    border-left: 5px solid #d32f2f; // Rojo gasto
+    
+    .label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .amount { font-size: 24px; font-weight: 800; color: #d32f2f; }
   }
 }
 
-.filters-bar { margin-bottom: 20px; overflow-x: auto; }
-.list-container { background: white; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
-
-.expense-item {
-  margin-bottom: 5px;
-  .cat-icon { background: #ffebee; color: #d32f2f; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-  .item-title { font-weight: 600; font-size: 0.95rem; }
-  .item-amount { color: #d32f2f; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; }
-}
-
-.empty-state { text-align: center; padding: 40px; color: #999; mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.5; } p { margin: 0; } }
-
-.details-line {
-    display: flex;
+// 🔵 FILTROS
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  
+  // En PC poner filtros en linea
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    .search-field { width: 300px; }
+  }
+}
+
+// 🟡 TIMELINE & LISTA
+.date-group {
+  margin-bottom: 25px;
+}
+
+.date-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f5f5f5; /* Color de fondo suave */
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  color: #555;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 8px;
+  
+  .day-total { font-weight: bold; color: #333; }
+}
+
+.expense-row {
+  background: white;
+  border-bottom: 1px solid #eee;
+  padding: 12px 0;
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  
+  /* 📱 DISEÑO MÓVIL (Grid de 3 columnas compactas) */
+  grid-template-columns: 50px 1fr auto;
+  grid-template-areas: 
+    "icon info amount";
+
+  .col-icon   { grid-area: icon; display: flex; justify-content: center; }
+  .col-info   { grid-area: info; }
+  .col-method { display: none; } /* Oculto en móvil para no saturar */
+  .col-amount { grid-area: amount; text-align: right; }
+
+  /* 💻 DISEÑO PC (Grid expandido de 4 columnas) */
+  @media (min-width: 768px) {
+    grid-template-columns: 60px 2fr 1fr auto;
+    grid-template-areas: "icon info method amount";
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
     
-    .dot { color: #ccc; }
+    &:hover { background-color: #fafafa; } // Efecto hover solo en PC
+    .col-method { display: block; grid-area: method; }
+  }
 }
 
-.method-badge {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background-color: #e8f5e9; // Verde suave (Caja)
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
-    font-weight: 500;
-
-    &.banco {
-        background-color: #e3f2fd; // Azul suave (Banco)
-        color: #1565c0;
-        border-color: #bbdefb;
-    }
+// ESTILOS INTERNOS DE LA FILA
+.icon-circle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  
+  &.blue { background: #1976d2; }
+  &.orange { background: #f57c00; }
+  &.purple { background: #7b1fa2; }
+  &.green { background: #388e3c; }
+  &.red { background: #d32f2f; }
+  &.grey { background: #757575; }
 }
+
+.col-info {
+  .desc { font-weight: 600; font-size: 16px; margin-bottom: 4px; text-transform: capitalize;}
+  .cat-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    &.blue { background: #1976d2; }
+    &.purple { background: #7b1fa2; }
+    &.orange { background: #f57c00; }
+    &.green { background: #388e3c; }
+    &.red { background: #d32f2f; }
+    &.grey { background: #757575; }
+  }
+}
+
+.col-method {
+  .tag-bank { color: #1976d2; font-weight: 500; font-size: 13px; background: #e3f2fd; padding: 4px 8px; border-radius: 4px; }
+  .tag-cash { color: #388e3c; font-weight: 500; font-size: 13px; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
+}
+
+.col-amount {
+  .value { display: block; font-weight: bold; color: #d32f2f; font-size: 16px; }
+}
+
+.state-msg { text-align: center; padding: 40px; color: #999; font-style: italic; }

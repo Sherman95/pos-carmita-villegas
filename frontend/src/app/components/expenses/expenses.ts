@@ -4,18 +4,32 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatChipsModule } from '@angular/material/chips';
-import { Router } from '@angular/router'; // 👈 Nuevo
-import Swal from 'sweetalert2'; // 👈 Nuevo
+import { MatTabsModule } from '@angular/material/tabs';
+import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 import { ExpensesService } from '../../services/expenses';
 import { Expense, ExpensesResponse } from '../../models/expense.model';
 import { AddExpenseDialogComponent } from './add-expense-dialog/add-expense-dialog';
-import { CashService } from '../../services/cash'; // 👈 Nuevo
+import { CashService } from '../../services/cash';
+
+// 1. Interfaz estricta para el grupo
+interface ExpenseGroup {
+  date: string; // Usaremos string ISO para que el HTML pipe funcione feliz
+  total: number;
+  items: Expense[];
+}
+
+// 2. Interfaz para la configuración visual
+interface CategoryConfig {
+  icon: string;
+  color: string;
+  type: 'LOCAL' | 'PERSONAL';
+}
 
 @Component({
   selector: 'app-expenses',
@@ -23,38 +37,42 @@ import { CashService } from '../../services/cash'; // 👈 Nuevo
   imports: [
     CommonModule, FormsModule, 
     MatButtonModule, MatIconModule, MatCardModule, 
-    MatListModule, MatFormFieldModule, MatSelectModule,
-    MatDialogModule, MatChipsModule
+    MatFormFieldModule, MatSelectModule, MatInputModule,
+    MatDialogModule, MatTabsModule
   ],
   templateUrl: './expenses.html',
   styleUrls: ['./expenses.scss']
 })
 export class ExpensesComponent implements OnInit {
   
-  expenses: Expense[] = [];
+  // Datos
+  allExpenses: Expense[] = []; 
+  groupedExpenses: ExpenseGroup[] = []; 
   totalAmount = 0;
   loading = false;
-  selectedCategory = 'TODAS';
   
-  // 👇 INYECCIONES DE SERVICIOS ADICIONALES
+  // Filtros
+  searchTerm: string = '';
+  currentTab: 'ALL' | 'LOCAL' | 'PERSONAL' = 'ALL';
+
+  // Inyecciones
   private cashService = inject(CashService);
   private router = inject(Router);
-  
-  categoryIcons: any = {
-    'SERVICIOS_BASICOS': 'lightbulb',
-    'INSUMOS_LOCAL': 'content_cut',
-    'MANTENIMIENTO': 'cleaning_services',
-    'GASTOS_PERSONALES': 'person',
-    'ALIMENTACION': 'restaurant',
-    'SALUD': 'local_pharmacy',
-    'OTROS': 'help_outline'
-  };
+  private expensesService = inject(ExpensesService); // Inyección moderna
+  private dialog = inject(MatDialog);
+  private cd = inject(ChangeDetectorRef);
 
-  constructor(
-    private expensesService: ExpensesService,
-    private dialog: MatDialog,
-    private cd: ChangeDetectorRef
-  ) {}
+  // Configuración Visual Centralizada
+  // Si añades una categoría nueva en BD, asegúrate de ponerla aquí o saldrá por defecto
+  categoryConfig: Record<string, CategoryConfig> = {
+    'SERVICIOS_BASICOS': { icon: 'lightbulb', color: 'orange', type: 'LOCAL' },
+    'INSUMOS_LOCAL':     { icon: 'store', color: 'blue', type: 'LOCAL' },
+    'MANTENIMIENTO':     { icon: 'build', color: 'grey', type: 'LOCAL' },
+    'GASTOS_PERSONALES': { icon: 'person', color: 'purple', type: 'PERSONAL' },
+    'ALIMENTACION':      { icon: 'restaurant', color: 'green', type: 'PERSONAL' },
+    'SALUD':             { icon: 'medical_services', color: 'red', type: 'PERSONAL' },
+    'OTROS':             { icon: 'help', color: 'grey', type: 'PERSONAL' }
+  };
 
   ngOnInit() {
     this.loadExpenses();
@@ -62,71 +80,148 @@ export class ExpensesComponent implements OnInit {
 
   loadExpenses() {
     this.loading = true;
-    this.cd.detectChanges(); 
-
-    this.expensesService.getExpenses(undefined, undefined, this.selectedCategory)
+    this.expensesService.getExpenses(undefined, undefined, undefined)
       .subscribe({
         next: (res: ExpensesResponse) => {
-          this.expenses = res.expenses;
-          this.totalAmount = res.total; 
+          this.allExpenses = res.expenses || []; // Protección contra arrays nulos
+          this.applyFilters(); 
           this.loading = false;
-          this.cd.detectChanges();
         },
         error: (err: any) => {
-          console.error(err);
+          console.error('Error cargando gastos:', err);
           this.loading = false;
-          this.cd.detectChanges();
         }
       });
   }
 
-  openAddDialog() {
-    // 👇 1. SEGURIDAD: VERIFICAR CAJA ANTES DE ABRIR EL DIÁLOGO
-    this.cashService.getStatus().subscribe(status => {
+  // 🔥 EL CORAZÓN DE LA LÓGICA PRO
+  applyFilters() {
+    let filtered = [...this.allExpenses]; // Trabajamos sobre una copia
+
+    // 1. Filtro por Pestaña (Local vs Personal)
+    if (this.currentTab !== 'ALL') {
+      filtered = filtered.filter(e => {
+        // Si la categoría no existe en el config, asumimos que es PERSONAL por seguridad
+        const config = this.categoryConfig[e.categoria];
+        const type = config ? config.type : 'PERSONAL';
+        return type === this.currentTab;
+      });
+    }
+
+    // 2. Filtro por Buscador
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(e => 
+        (e.descripcion || '').toLowerCase().includes(term) ||
+        (e.categoria || '').toLowerCase().includes(term)
+      );
+    }
+
+    // 3. Agrupación por Fecha (Solución a los errores de TS)
+    const groups: { [key: string]: ExpenseGroup } = {};
+
+    filtered.forEach(item => {
+      // A. Protección de Fecha: Si es null/undefined, usa HOY
+      const rawDate = item.fecha ? new Date(item.fecha) : new Date();
       
+      // B. Clave de agrupación (Ej: "Fri Feb 12 2026")
+      const dateKey = rawDate.toDateString(); 
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = { 
+          date: rawDate.toISOString(), // Guardamos string ISO para el HTML
+          total: 0, 
+          items: [] 
+        };
+      }
+      
+      // C. Protección de Monto: Asegurar que sea número
+      const montoNum = Number(item.monto || 0);
+
+      groups[dateKey].items.push(item);
+      groups[dateKey].total += montoNum;
+    });
+
+    // 4. Ordenar Grupos (Del más reciente al más antiguo)
+    this.groupedExpenses = Object.values(groups).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // 5. Calcular Total General Visible
+    this.totalAmount = filtered.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+    
+    // Forzar actualización de vista
+    this.cd.detectChanges();
+  }
+
+  // Cambio de pestañas
+  onTabChange(index: number) {
+    switch (index) {
+      case 0: this.currentTab = 'ALL'; break;
+      case 1: this.currentTab = 'LOCAL'; break;
+      case 2: this.currentTab = 'PERSONAL'; break;
+    }
+    this.applyFilters();
+  }
+
+  // Abrir diálogo (Verifica caja primero)
+  openAddDialog() {
+    this.cashService.getStatus().subscribe(status => {
       if (!status.isOpen) {
-        // ⛔ SI ESTÁ CERRADA: ALERTA Y REDIRECCIÓN
         Swal.fire({
           title: '⛔ Caja Cerrada',
-          text: 'Debes abrir turno para poder registrar salidas de dinero.',
+          text: 'Debes abrir turno para registrar salidas de dinero.',
           icon: 'warning',
           showCancelButton: true,
           confirmButtonText: 'Ir a Abrir Caja',
-          confirmButtonColor: '#d32f2f',
           cancelButtonText: 'Cancelar'
         }).then((res) => {
-          if (res.isConfirmed) {
-            this.router.navigate(['/cash-control']);
-          }
+          if(res.isConfirmed) this.router.navigate(['/cash-control']);
         });
-        return; // 🛑 DETENEMOS AQUÍ
+        return;
       }
 
-      // ✅ SI ESTÁ ABIERTA: CONTINUAMOS NORMAL
-      const dialogRef = this.dialog.open(AddExpenseDialogComponent, {
-        width: '400px',
-        disableClose: true
+      const dialogRef = this.dialog.open(AddExpenseDialogComponent, { 
+        width: '400px', 
+        disableClose: true 
       });
-
-      dialogRef.afterClosed().subscribe((result: any) => {
-        if (result === true) {
-          this.loadExpenses();
-        }
+      
+      dialogRef.afterClosed().subscribe(result => { 
+        if (result) this.loadExpenses(); 
       });
-
     });
   }
 
+  // Borrar gasto
   deleteExpense(id: string | undefined) {
     if (!id) return;
-    if (confirm('¿Borrar este gasto?')) {
-      this.expensesService.deleteExpense(id).subscribe(() => {
-        this.loadExpenses();
-      });
-    }
+    
+    Swal.fire({
+      title: '¿Borrar gasto?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, borrar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.expensesService.deleteExpense(id).subscribe({
+          next: () => {
+            this.loadExpenses();
+            // Opcional: Mostrar toast de éxito
+          },
+          error: () => Swal.fire('Error', 'No se pudo borrar el gasto', 'error')
+        });
+      }
+    });
   }
 
-  getIcon(cat: string) {
-    return this.categoryIcons[cat] || 'paid';
+  // Helpers Visuales (Con valores por defecto)
+  getIcon(cat: string): string {
+    return this.categoryConfig[cat]?.icon || 'paid';
+  }
+
+  getColor(cat: string): string {
+    return this.categoryConfig[cat]?.color || 'grey';
   }
 }

@@ -1,62 +1,74 @@
 <div class="expenses-container">
   
-  <div class="header-summary">
-    <div class="summary-card elevation-z4">
-      <div class="icon-bg"> <mat-icon>trending_down</mat-icon> </div>
-      <div class="info">
-        <h3>Total Gastado (Mes)</h3>
-        <h1>{{ totalAmount | currency }}</h1>
-      </div>
-      <button mat-fab color="warn" class="add-btn" (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-      </button>
+  <div class="header-section">
+    <div class="total-card elevation-z2">
+      <div class="label">Total Gastado</div>
+      <div class="amount">{{ totalAmount | currency }}</div>
     </div>
+    
+    <button mat-fab extended color="primary" (click)="openAddDialog()">
+      <mat-icon>add</mat-icon> Nuevo Gasto
+    </button>
   </div>
 
-  <div class="filters-bar">
-    <mat-chip-listbox [(ngModel)]="selectedCategory" (change)="loadExpenses()">
-      <mat-chip-option value="TODAS" selected (click)="selectedCategory='TODAS'; loadExpenses()">Todas</mat-chip-option>
-      <mat-chip-option value="INSUMOS_LOCAL" (click)="selectedCategory='INSUMOS_LOCAL'; loadExpenses()">Local</mat-chip-option>
-      <mat-chip-option value="GASTOS_PERSONALES" (click)="selectedCategory='GASTOS_PERSONALES'; loadExpenses()">Personal</mat-chip-option>
-    </mat-chip-listbox>
+  <div class="filters-section">
+    <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onTabChange($event)">
+      <mat-tab label="Todos"></mat-tab>
+      <mat-tab label="🏠 Local"></mat-tab>
+      <mat-tab label="👤 Personal"></mat-tab>
+    </mat-tab-group>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Buscar (ej: Taxis, Cole...)" [(ngModel)]="searchTerm" (keyup)="applyFilters()">
+    </mat-form-field>
   </div>
 
-  <div class="list-container">
-    <div *ngIf="loading" class="loading-state">Cargando...</div>
-
-    <div *ngIf="!loading && expenses.length === 0" class="empty-state">
-      <mat-icon>savings</mat-icon>
-      <p>No hay gastos registrados</p>
+  <div class="timeline-container">
+    
+    <div *ngIf="loading" class="state-msg">Cargando gastos...</div>
+    <div *ngIf="!loading && groupedExpenses.length === 0" class="state-msg">
+      <mat-icon>savings</mat-icon> No hay gastos aquí.
     </div>
 
-    <mat-list *ngIf="!loading && expenses.length > 0">
-      <div mat-subheader>Historial de Gastos</div>
+    <div *ngFor="let group of groupedExpenses" class="date-group">
       
-      <mat-list-item *ngFor="let item of expenses" class="expense-item">
-        <mat-icon matListItemIcon [class]="'cat-icon ' + item.categoria">
-          {{ getIcon(item.categoria) }}
-        </mat-icon>
-        
-        <div matListItemTitle class="item-title">{{ item.categoria.replace('_', ' ') }}</div>
-        
-        <div matListItemLine class="details-line">
-            <span>{{ item.descripcion || 'Sin nota' }}</span>
-            <span class="dot">•</span>
-            <span>{{ item.fecha | date:'shortDate' }}</span>
-            
-            <span class="method-badge" [class.banco]="item.metodo_pago === 'TRANSFERENCIA'">
-                {{ item.metodo_pago === 'TRANSFERENCIA' ? '🏦 Banco' : '💵 Caja' }}
-            </span>
-        </div>
+      <div class="date-header">
+        <span class="the-date">{{ group.date | date:'EEEE d MMMM' }}</span>
+        <span class="day-total">Día: {{ group.total | currency }}</span>
+      </div>
 
-        <div matListItemMeta class="item-amount">
-          - {{ item.monto | currency }}
-          <button mat-icon-button color="warn" (click)="deleteExpense(item.id)">
-            <mat-icon>delete_outline</mat-icon>
-          </button>
+      <div class="items-list">
+        <div *ngFor="let item of group.items" class="expense-row">
+          
+          <div class="col-icon">
+            <div class="icon-circle" [ngClass]="getColor(item.categoria)">
+              <mat-icon>{{ getIcon(item.categoria) }}</mat-icon>
+            </div>
+          </div>
+
+          <div class="col-info">
+            <div class="desc">{{ item.descripcion || 'Sin descripción' }}</div>
+            <div class="cat-badge" [ngClass]="getColor(item.categoria)">
+              {{ item.categoria.replace('_', ' ') }}
+            </div>
+          </div>
+
+          <div class="col-method">
+            <span *ngIf="item.metodo_pago === 'TRANSFERENCIA'" class="tag-bank">🏦 Banco</span>
+            <span *ngIf="item.metodo_pago === 'EFECTIVO'" class="tag-cash">💵 Caja</span>
+          </div>
+
+          <div class="col-amount">
+            <span class="value">-{{ item.monto | currency }}</span>
+            <button mat-icon-button color="warn" (click)="deleteExpense(item.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
         </div>
-      </mat-list-item>
-      <mat-divider></mat-divider>
-    </mat-list>
+      </div>
+    </div>
+
   </div>
 </div>
