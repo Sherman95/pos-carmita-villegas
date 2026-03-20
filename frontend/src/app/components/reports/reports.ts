@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { DashboardComponent } from './dashboard/dashboard'; 
 import { SalesListComponent } from './sales-list/sales-list'; // <--- OJO AQUI
+import { TopAnalyticsComponent } from './top-analytics/top-analytics';
 
 @Component({
   selector: 'app-reports',
@@ -12,7 +13,8 @@ import { SalesListComponent } from './sales-list/sales-list'; // <--- OJO AQUI
   imports: [
     CommonModule, MatTabsModule, MatIconModule,
     DashboardComponent,
-    SalesListComponent // <--- Y AQUI
+    SalesListComponent,
+    TopAnalyticsComponent
   ],
   templateUrl: './reports.html',
   styleUrl: './reports.scss'

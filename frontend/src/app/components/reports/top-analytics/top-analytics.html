@@ -1,0 +1,168 @@
+<div class="analytics-container fade-in">
+  <div class="filters-panel">
+    <div class="inputs-row">
+      <mat-form-field appearance="outline" class="dense-input">
+        <mat-label>Periodo</mat-label>
+        <mat-select [(ngModel)]="period">
+          <mat-option value="today">Hoy</mat-option>
+          <mat-option value="yesterday">Ayer</mat-option>
+          <mat-option value="last7">Últimos 7 días</mat-option>
+          <mat-option value="last15">Últimos 15 días</mat-option>
+          <mat-option value="last30">Últimos 30 días</mat-option>
+          <mat-option value="month">Este Mes</mat-option>
+          <mat-option value="prevMonth">Mes Pasado</mat-option>
+          <mat-option value="year">Este Año</mat-option>
+          <mat-option value="prevYear">Año Pasado</mat-option>
+          <mat-option value="custom">Rango Personalizado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if (period() === 'custom') {
+        <mat-form-field appearance="outline" class="dense-input">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="fromPicker" [(ngModel)]="from" readonly (click)="fromPicker.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dense-input">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="toPicker" [(ngModel)]="to" readonly (click)="toPicker.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline" class="dense-input limit-input">
+        <mat-label>Top N</mat-label>
+        <mat-select [(ngModel)]="limit">
+          <mat-option [value]="5">Top 5</mat-option>
+          <mat-option [value]="10">Top 10</mat-option>
+          <mat-option [value]="20">Top 20</mat-option>
+          <mat-option [value]="50">Top 50</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" class="search-btn" (click)="loadAnalytics()" [disabled]="loading()">
+        <mat-icon>search</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <div class="kpis-row" *ngIf="!loading()">
+    <div class="kpi-card">
+      <span class="kpi-label">Ventas en rango</span>
+      <span class="kpi-value">{{ totals().salesCount }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Monto total</span>
+      <span class="kpi-value">{{ totals().totalSalesAmount | currency }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Clientes únicos</span>
+      <span class="kpi-value">{{ totals().uniqueClients }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Servicios únicos</span>
+      <span class="kpi-value">{{ totals().uniqueServices }}</span>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading()">
+    <mat-icon>hourglass_top</mat-icon>
+    <span>Calculando analítica...</span>
+  </div>
+
+  <mat-tab-group animationDuration="0ms" [(selectedIndex)]="selectedTab" *ngIf="!loading()">
+    <mat-tab label="Top Clientes">
+      <div class="tab-content">
+        <div class="sort-row">
+          <mat-button-toggle-group [(ngModel)]="sortClientsBy" aria-label="Orden clientes">
+            <mat-button-toggle value="amount">Por dinero</mat-button-toggle>
+            <mat-button-toggle value="count">Por frecuencia</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="table-wrap" *ngIf="topClients().length > 0; else noClients">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Compras</th>
+                <th>Servicios (líneas)</th>
+                <th>Cant. servicios</th>
+                <th>Ticket prom.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of topClients(); let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ row.clientName }}</td>
+                <td>{{ row.totalAmount | currency }}</td>
+                <td>{{ row.salesCount }}</td>
+                <td>{{ row.serviceLines }}</td>
+                <td>{{ row.serviceQuantity }}</td>
+                <td>{{ row.avgTicket | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Top Servicios">
+      <div class="tab-content">
+        <div class="sort-row">
+          <mat-button-toggle-group [(ngModel)]="sortServicesBy" aria-label="Orden servicios">
+            <mat-button-toggle value="amount">Por dinero</mat-button-toggle>
+            <mat-button-toggle value="count">Por frecuencia</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="table-wrap" *ngIf="topServices().length > 0; else noServices">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Servicio</th>
+                <th>Ingresos</th>
+                <th>Veces pedido</th>
+                <th>Cantidad total</th>
+                <th>Clientes únicos</th>
+                <th>Valor unidad prom.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of topServices(); let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ row.serviceName }}</td>
+                <td>{{ row.totalAmount | currency }}</td>
+                <td>{{ row.ordersCount }}</td>
+                <td>{{ row.quantityTotal }}</td>
+                <td>{{ row.uniqueClients }}</td>
+                <td>{{ row.avgUnitValue | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <ng-template #noClients>
+    <div class="no-data">
+      <mat-icon>groups</mat-icon>
+      <p>Sin datos de clientes para este rango.</p>
+    </div>
+  </ng-template>
+
+  <ng-template #noServices>
+    <div class="no-data">
+      <mat-icon>room_service</mat-icon>
+      <p>Sin datos de servicios para este rango.</p>
+    </div>
+  </ng-template>
+</div>
