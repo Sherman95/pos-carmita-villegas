@@ -12,6 +12,10 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
     box-sizing: border-box;
 }
 
+.tab-content {
+    width: 100%;
+}
+
 // --------------------------------------------------
 // 1. PANEL DE FILTROS (DISEÑO MODERNO)
 // --------------------------------------------------
@@ -29,11 +33,28 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
         gap: 15px;
         align-items: flex-start; // Alineación superior para que coincidan alturas
 
+        .dense-input {
+            flex: 1 1 220px;
+            min-width: 220px;
+        }
+
+        .full-w-mobile {
+            flex: 1 1 320px;
+        }
+
         // ESTILO DE LOS INPUTS Y SELECTS (MATERIAL HACK)
         // Esto transforma los inputs grises en cajas blancas modernas
         ::ng-deep .mat-mdc-form-field {
             flex: 1;
             min-width: 200px;
+
+            input[matinput] {
+                cursor: pointer;
+            }
+
+            .mat-datepicker-toggle {
+                color: #64748b;
+            }
             
             .mdc-text-field--filled {
                 background-color: #f8fafc !important; // Gris muy claro
@@ -72,6 +93,7 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
             font-weight: 700;
             font-size: 1rem;
             box-shadow: 0 4px 15px rgba(75, 30, 58, 0.2);
+            flex: 0 0 auto;
             
             @media (max-width: 600px) { width: 100%; }
         }
@@ -260,6 +282,199 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
         &.mdc-list-item--selected { 
             background-color: #fdf2f8 !important; 
             .mdc-list-item__primary-text { color: $vino-main; font-weight: 700; }
+        }
+    }
+}
+
+::ng-deep .mat-datepicker-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2) !important;
+    overflow: hidden;
+}
+
+::ng-deep .mat-calendar {
+    background: #ffffff !important;
+    color: #1e293b;
+}
+
+::ng-deep .mat-calendar-body-cell-content {
+    color: #334155;
+}
+
+::ng-deep .mat-calendar-body-selected {
+    background-color: $vino-main !important;
+    color: #ffffff !important;
+}
+
+::ng-deep .mat-calendar-table-header th,
+::ng-deep .mat-calendar-body-label,
+::ng-deep .mat-calendar-period-button,
+::ng-deep .mat-calendar-previous-button,
+::ng-deep .mat-calendar-next-button {
+    color: #334155 !important;
+}
+
+::ng-deep .mat-mdc-tab-group {
+    .mat-mdc-tab {
+        min-width: 0;
+        padding: 0 14px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .list-container {
+        padding: 16px;
+    }
+
+    .filters-panel {
+        padding: 18px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+
+        .inputs-row {
+            gap: 12px;
+
+            .dense-input {
+                flex: 1 1 240px;
+                min-width: 180px;
+            }
+
+            .full-w-mobile {
+                flex-basis: 100%;
+            }
+        }
+    }
+
+    .actions-bar {
+        padding: 16px 18px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+
+        .total-info .value {
+            font-size: 1.7rem;
+        }
+
+        .buttons-group {
+            flex-wrap: wrap;
+
+            button {
+                min-width: 132px;
+            }
+        }
+    }
+
+    .sales-grid {
+        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+
+        .sale-card {
+            border-radius: 16px;
+            padding: 16px;
+        }
+    }
+
+    .no-data {
+        margin-top: 30px;
+        padding: 28px;
+    }
+}
+
+@media (max-width: 767px) {
+    .list-container {
+        padding: 12px;
+    }
+
+    .filters-panel {
+        padding: 14px;
+        border-radius: 14px;
+
+        .inputs-row {
+            gap: 10px;
+
+            .dense-input,
+            .full-w-mobile {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+
+            .search-btn {
+                width: 100%;
+                padding: 0 16px;
+                font-size: 0.95rem;
+            }
+        }
+    }
+
+    .actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+
+        .total-info {
+            .label { font-size: 0.8rem; }
+            .value { font-size: 1.45rem; }
+        }
+
+        .buttons-group {
+            width: 100%;
+            gap: 10px;
+
+            button {
+                flex: 1;
+                min-width: 0;
+                height: 44px;
+                padding: 0 10px;
+            }
+        }
+    }
+
+    .sales-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+
+        .sale-card {
+            padding: 14px;
+            border-radius: 14px;
+
+            .card-header {
+                gap: 10px;
+
+                .avatar {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    font-size: 1rem;
+                }
+
+                .card-meta {
+                    .name { font-size: 1rem; }
+                    .date { font-size: 0.8rem; }
+                }
+
+                .card-price .price {
+                    font-size: 1.05rem;
+                    padding: 3px 8px;
+                }
+            }
+        }
+    }
+
+    .no-data {
+        margin-top: 20px;
+        padding: 20px;
+
+        p { font-size: 1rem; }
+    }
+
+    ::ng-deep .mat-mdc-tab-group {
+        .mat-mdc-tab {
+            padding: 0 8px;
+
+            .mdc-tab__text-label {
+                font-size: 0.82rem;
+            }
         }
     }
 }

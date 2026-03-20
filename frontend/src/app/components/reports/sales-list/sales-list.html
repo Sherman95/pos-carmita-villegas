@@ -11,8 +11,14 @@
                             <mat-label>Periodo</mat-label>
                             <mat-select [(ngModel)]="periodGeneral">
                                 <mat-option value="today">Hoy</mat-option>
-                                <mat-option value="week">Esta Semana</mat-option>
+                                <mat-option value="yesterday">Ayer</mat-option>
+                                <mat-option value="last7">Últimos 7 días</mat-option>
+                                <mat-option value="last15">Últimos 15 días</mat-option>
+                                <mat-option value="last30">Últimos 30 días</mat-option>
                                 <mat-option value="month">Este Mes</mat-option>
+                                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                                <mat-option value="year">Este Año</mat-option>
+                                <mat-option value="prevYear">Año Pasado</mat-option>
                                 <mat-option value="custom">Rango Personalizado</mat-option>
                             </mat-select>
                         </mat-form-field>
@@ -20,11 +26,15 @@
                         @if(periodGeneral() === 'custom') {
                             <mat-form-field appearance="outline" class="dense-input">
                                 <mat-label>Desde</mat-label>
-                                <input matInput type="date" [(ngModel)]="fromGeneral">
+                                <input matInput [matDatepicker]="fromGeneralPicker" [(ngModel)]="fromGeneral" readonly (click)="fromGeneralPicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="fromGeneralPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #fromGeneralPicker></mat-datepicker>
                             </mat-form-field>
                             <mat-form-field appearance="outline" class="dense-input">
                                 <mat-label>Hasta</mat-label>
-                                <input matInput type="date" [(ngModel)]="toGeneral">
+                                <input matInput [matDatepicker]="toGeneralPicker" [(ngModel)]="toGeneral" readonly (click)="toGeneralPicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="toGeneralPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #toGeneralPicker></mat-datepicker>
                             </mat-form-field>
                         }
 
@@ -99,8 +109,35 @@
                         </mat-form-field>
                         <mat-form-field appearance="outline" class="dense-input">
                             <mat-label>Periodo</mat-label>
-                            <mat-select [(ngModel)]="periodClient"><mat-option value="month">Este Mes</mat-option><mat-option value="year">Este Año</mat-option></mat-select>
+                            <mat-select [(ngModel)]="periodClient">
+                                <mat-option value="today">Hoy</mat-option>
+                                <mat-option value="yesterday">Ayer</mat-option>
+                                <mat-option value="last7">Últimos 7 días</mat-option>
+                                <mat-option value="last15">Últimos 15 días</mat-option>
+                                <mat-option value="last30">Últimos 30 días</mat-option>
+                                <mat-option value="month">Este Mes</mat-option>
+                                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                                <mat-option value="year">Este Año</mat-option>
+                                <mat-option value="prevYear">Año Pasado</mat-option>
+                                <mat-option value="custom">Rango Personalizado</mat-option>
+                            </mat-select>
                         </mat-form-field>
+
+                        @if(periodClient() === 'custom') {
+                            <mat-form-field appearance="outline" class="dense-input">
+                                <mat-label>Desde</mat-label>
+                                <input matInput [matDatepicker]="fromClientPicker" [(ngModel)]="fromClient" readonly (click)="fromClientPicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="fromClientPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #fromClientPicker></mat-datepicker>
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="dense-input">
+                                <mat-label>Hasta</mat-label>
+                                <input matInput [matDatepicker]="toClientPicker" [(ngModel)]="toClient" readonly (click)="toClientPicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="toClientPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #toClientPicker></mat-datepicker>
+                            </mat-form-field>
+                        }
+
                         <button mat-flat-button color="primary" class="search-btn" (click)="loadByClient()"><mat-icon>search</mat-icon></button>
                     </div>
                 </div>
@@ -151,8 +188,35 @@
                         </mat-form-field>
                         <mat-form-field appearance="outline" class="dense-input">
                             <mat-label>Periodo</mat-label>
-                            <mat-select [(ngModel)]="periodService"><mat-option value="month">Este Mes</mat-option><mat-option value="year">Este Año</mat-option></mat-select>
+                            <mat-select [(ngModel)]="periodService">
+                                <mat-option value="today">Hoy</mat-option>
+                                <mat-option value="yesterday">Ayer</mat-option>
+                                <mat-option value="last7">Últimos 7 días</mat-option>
+                                <mat-option value="last15">Últimos 15 días</mat-option>
+                                <mat-option value="last30">Últimos 30 días</mat-option>
+                                <mat-option value="month">Este Mes</mat-option>
+                                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                                <mat-option value="year">Este Año</mat-option>
+                                <mat-option value="prevYear">Año Pasado</mat-option>
+                                <mat-option value="custom">Rango Personalizado</mat-option>
+                            </mat-select>
                         </mat-form-field>
+
+                        @if(periodService() === 'custom') {
+                            <mat-form-field appearance="outline" class="dense-input">
+                                <mat-label>Desde</mat-label>
+                                <input matInput [matDatepicker]="fromServicePicker" [(ngModel)]="fromService" readonly (click)="fromServicePicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="fromServicePicker"></mat-datepicker-toggle>
+                                <mat-datepicker #fromServicePicker></mat-datepicker>
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="dense-input">
+                                <mat-label>Hasta</mat-label>
+                                <input matInput [matDatepicker]="toServicePicker" [(ngModel)]="toService" readonly (click)="toServicePicker.open()">
+                                <mat-datepicker-toggle matIconSuffix [for]="toServicePicker"></mat-datepicker-toggle>
+                                <mat-datepicker #toServicePicker></mat-datepicker>
+                            </mat-form-field>
+                        }
+
                         <button mat-flat-button color="primary" class="search-btn" (click)="loadByService()"><mat-icon>search</mat-icon></button>
                     </div>
                 </div>

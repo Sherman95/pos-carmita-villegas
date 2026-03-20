@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 // Servicios
 import { ReportsService } from '../../../services/reports.service';
@@ -23,7 +25,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx'; // 🟢 NUEVO: Para Excel
 import { firstValueFrom } from 'rxjs';
 
-type Period = 'today' | 'week' | 'month' | 'year' | 'custom';
+type Period = 'today' | 'yesterday' | 'last7' | 'last15' | 'last30' | 'month' | 'prevMonth' | 'year' | 'prevYear' | 'custom';
 
 interface SaleRow {
   id: string; total: number; metodo_pago?: string; client_id?: string;
@@ -39,7 +41,8 @@ interface DetailRow {
   standalone: true,
   imports: [
     CommonModule, FormsModule, MatCardModule, MatButtonModule, 
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatIconModule, MatTabsModule
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatIconModule, MatTabsModule,
+    MatDatepickerModule, MatNativeDateModule
   ],
   templateUrl: './sales-list.html',
   styleUrls: ['./sales-list.scss']
@@ -61,14 +64,14 @@ export class SalesListComponent implements OnInit {
 
   // 1. GENERAL
   periodGeneral = signal<Period>('today');
-  fromGeneral = signal<string>(''); toGeneral = signal<string>('');
+  fromGeneral = signal<Date | null>(null); toGeneral = signal<Date | null>(null);
   salesGeneral = signal<SaleRow[]>([]);
   summaryGeneral = signal<{ count: number; total: number }>({ count: 0, total: 0 });
   loadingGeneral = signal<boolean>(false);
 
   // 2. CLIENTE
   periodClient = signal<Period>('month');
-  fromClient = signal<string>(''); toClient = signal<string>('');
+  fromClient = signal<Date | null>(null); toClient = signal<Date | null>(null);
   selectedClientId = signal<string>('');
   salesClient = signal<SaleRow[]>([]);
   summaryClient = signal<{ count: number; total: number }>({ count: 0, total: 0 });
@@ -76,7 +79,7 @@ export class SalesListComponent implements OnInit {
 
   // 3. SERVICIO
   periodService = signal<Period>('month');
-  fromService = signal<string>(''); toService = signal<string>('');
+  fromService = signal<Date | null>(null); toService = signal<Date | null>(null);
   selectedServiceId = signal<string>('');
   salesServiceList = signal<SaleRow[]>([]);
   summaryService = signal<{ count: number; total: number }>({ count: 0, total: 0 });
@@ -94,7 +97,7 @@ export class SalesListComponent implements OnInit {
     this.loadClients();
     this.loadServicios();
     
-    const today = new Date().toLocaleDateString('en-CA');
+    const today = new Date();
     this.fromGeneral.set(today); this.toGeneral.set(today);
     this.fromClient.set(today);  this.toClient.set(today);
     this.fromService.set(today); this.toService.set(today);
@@ -105,16 +108,56 @@ export class SalesListComponent implements OnInit {
   loadClients() { this.clientsService.getClients().subscribe(d => this.clients.set(d || [])); }
   loadServicios() { this.itemsService.getItems().subscribe(d => this.servicios.set((d || []).filter(i => i.tipo === 'SERVICIO'))); }
 
-  private getRangeParams(period: Period, customFrom: string, customTo: string) {
+  private getRangeParams(period: Period, customFrom: Date | null, customTo: Date | null) {
     const now = new Date();
-    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    if (period === 'week') start.setDate(now.getDate() - 6);
-    else if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1); end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59); }
-    else if (period === 'year') { start = new Date(now.getFullYear(), 0, 1); end = new Date(now.getFullYear(), 11, 31, 23, 59, 59); }
-    else if (period === 'custom') { start = new Date(customFrom + 'T00:00:00'); end = new Date(customTo + 'T23:59:59'); }
-    return { from: start.toISOString(), to: end.toISOString() };
+    if (period === 'today') {
+      // sin cambios
+    } else if (period === 'yesterday') {
+      start.setDate(start.getDate() - 1);
+      end.setDate(end.getDate() - 1);
+    } else if (period === 'last7') {
+      start.setDate(start.getDate() - 6);
+    } else if (period === 'last15') {
+      start.setDate(start.getDate() - 14);
+    } else if (period === 'last30') {
+      start.setDate(start.getDate() - 29);
+    } else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (period === 'prevMonth') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (period === 'year') {
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
+    } else if (period === 'prevYear') {
+      start = new Date(now.getFullYear() - 1, 0, 1);
+      end = new Date(now.getFullYear() - 1, 11, 31);
+    } else if (period === 'custom') {
+      if (customFrom && customTo) {
+        start = this.normalizeDate(customFrom);
+        end = this.normalizeDate(customTo);
+      }
+    }
+
+    if (end < start) {
+      const temp = start;
+      start = end;
+      end = temp;
+    }
+
+    return { from: this.toDateOnly(start), to: this.toDateOnly(end) };
+  }
+
+  private normalizeDate(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  private toDateOnly(date: Date): string {
+    return date.toLocaleDateString('en-CA');
   }
 
   loadGeneral() {

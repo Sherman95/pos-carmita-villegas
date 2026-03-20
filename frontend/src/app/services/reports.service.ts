@@ -30,7 +30,6 @@ export class ReportsService {
     // MODIFICADO: Si mandamos fechas específicas, también las ajustamos
     if (opts.from) params = params.set('from', this.toEcuadorStart(opts.from));
     if (opts.to) params = params.set('to', this.toEcuadorEnd(opts.to));
-
     return this.http.get<{ count: number; total: number }>(`${this.baseUrl}/summary`, { params });
   }
 
@@ -41,7 +40,6 @@ export class ReportsService {
     // MODIFICADO: Ajuste de zona horaria
     if (opts.from) params = params.set('from', this.toEcuadorStart(opts.from));
     if (opts.to) params = params.set('to', this.toEcuadorEnd(opts.to));
-
     return this.http.get<{ sales: any[]; summary: { count: number; total: number } }>(`${this.baseUrl}/by-client/${clientId}`, { params });
   }
 
@@ -52,7 +50,6 @@ export class ReportsService {
     // MODIFICADO: Ajuste de zona horaria
     if (opts.from) params = params.set('from', this.toEcuadorStart(opts.from));
     if (opts.to) params = params.set('to', this.toEcuadorEnd(opts.to));
-
     return this.http.get<{ sales: any[]; summary: { count: number; total: number } }>(`${this.baseUrl}/by-item/${itemId}`, { params });
   }
   
