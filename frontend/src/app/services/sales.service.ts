@@ -28,16 +28,6 @@ export class SalesService {
     return this.http.post(this.apiUrl, payload);
   }
 
-  uploadReceipt(saleId: string, pdfBase64: string, docType: string = 'receipt'): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${saleId}/receipt`, { pdfBase64, docType });
-  }
-
-  getReceipt(saleId: string, docType?: string): Observable<Blob> {
-    const params: any = {};
-    if (docType) params.docType = docType;
-    return this.http.get(`${this.apiUrl}/${saleId}/receipt`, { params, responseType: 'blob' });
-  }
-
   getReceiptsByClient(clientId: string, params?: any): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/receipt-by-client/${clientId}`, { params });
   }
@@ -49,6 +39,10 @@ export class SalesService {
 
   getSaleDetails(id: string): Observable<{ sale: any; details: any[] }> {
     return this.http.get<{ sale: any; details: any[] }>(`${this.apiUrl}/${id}`);
+  }
+
+  getSaleDetailsBatch(ids: string[]): Observable<Record<string, any[]>> {
+    return this.http.post<Record<string, any[]>>(`${this.apiUrl}/details/batch`, { ids });
   }
 
   getSalesByRange(from: string, to: string): Observable<any[]> {

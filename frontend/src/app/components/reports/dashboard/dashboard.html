@@ -1,78 +1,48 @@
-<div class="dashboard-content fade-in">
-    
-    <div class="filters-container">
-        
-        <mat-button-toggle-group [(ngModel)]="periodo" (change)="cargarDatos()" class="toggle-group-custom">
-            <mat-button-toggle value="today">Hoy</mat-button-toggle>
-            <mat-button-toggle value="month">Mes</mat-button-toggle>
-            <mat-button-toggle value="year">Año</mat-button-toggle>
-            <mat-button-toggle value="custom">Rango</mat-button-toggle>
-        </mat-button-toggle-group>
+<section class="dashboard-content fade-in" aria-label="Resumen financiero">
+  <div class="section-heading">
+    <div><span class="section-kicker">Resumen financiero</span><h2>Así va el negocio</h2><p>{{ rangeLabel() }}</p></div>
+  </div>
 
-        @if (periodo() === 'custom') {
-            <div class="custom-dates fade-in">
-                <div class="date-input">
-                    <label>Desde</label>
-                    <input type="date" [(ngModel)]="customFrom">
-                </div>
-                <div class="date-input">
-                    <label>Hasta</label>
-                    <input type="date" [(ngModel)]="customTo">
-                </div>
-                <button mat-mini-fab color="primary" (click)="cargarDatos()">
-                    <mat-icon>search</mat-icon>
-                </button>
-            </div>
-        }
-    </div>
+  <div class="filters-container">
+    <mat-button-toggle-group [(ngModel)]="periodo" (change)="cargarDatos()" class="toggle-group-custom" aria-label="Periodo del reporte">
+      <mat-button-toggle value="today">Hoy</mat-button-toggle><mat-button-toggle value="month">Mes</mat-button-toggle>
+      <mat-button-toggle value="year">Año</mat-button-toggle><mat-button-toggle value="custom">Rango</mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (periodo() === 'custom') {
+      <div class="custom-dates fade-in">
+        <label class="date-input"><span>Desde</span><input type="date" [(ngModel)]="customFrom" [max]="customTo()"></label>
+        <label class="date-input"><span>Hasta</span><input type="date" [(ngModel)]="customTo" [min]="customFrom()"></label>
+        <button mat-flat-button class="apply-button" (click)="cargarDatos()" [disabled]="loading()"><mat-icon>search</mat-icon><span>Aplicar</span></button>
+      </div>
+    }
+  </div>
 
-    <div class="kpi-grid">
-        <mat-card class="kpi-card income">
-            <div class="icon-box"><mat-icon>trending_up</mat-icon></div>
-            <div class="data">
-                <span>Ingresos</span>
-                <h3>{{ totalVentas() | currency }}</h3>
-            </div>
-        </mat-card>
+  @if (errorMessage()) {
+    <div class="feedback error" role="alert"><mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span><button mat-button (click)="cargarDatos()">Reintentar</button></div>
+  }
 
-        <mat-card class="kpi-card expense">
-            <div class="icon-box"><mat-icon>trending_down</mat-icon></div>
-            <div class="data">
-                <span>Gastos</span>
-                <h3>{{ totalGastos() | currency }}</h3>
-            </div>
-        </mat-card>
+  <div class="kpi-grid" [class.is-loading]="loading()">
+    <mat-card class="kpi-card income"><div class="icon-box"><mat-icon>trending_up</mat-icon></div><div class="data"><span>Ingresos</span><h3>{{ totalVentas() | currency }}</h3><small>{{ cantidadVentas() }} ventas</small></div></mat-card>
+    <mat-card class="kpi-card expense"><div class="icon-box"><mat-icon>trending_down</mat-icon></div><div class="data"><span>Gastos</span><h3>{{ totalGastos() | currency }}</h3><small>{{ cantidadGastos() }} registros</small></div></mat-card>
+    <mat-card class="kpi-card profit" [class.negative]="utilidadNeta() < 0"><div class="icon-box"><mat-icon>savings</mat-icon></div><div class="data"><span>Resultado neto</span><h3>{{ utilidadNeta() | currency }}</h3><small>{{ margenRentabilidad() | number:'1.0-1' }}% sobre ingresos</small></div></mat-card>
+    <mat-card class="kpi-card ticket"><div class="icon-box"><mat-icon>receipt</mat-icon></div><div class="data"><span>Ticket promedio</span><h3>{{ ticketPromedio() | currency }}</h3><small>Por venta</small></div></mat-card>
+  </div>
 
-        <mat-card class="kpi-card profit" [class.negative]="utilidadNeta() < 0">
-            <div class="icon-box"><mat-icon>savings</mat-icon></div>
-            <div class="data">
-                <span>Utilidad Neta</span>
-                <h3>{{ utilidadNeta() | currency }}</h3>
-                <small [class.good]="margenRentabilidad() > 20">
-                    {{ margenRentabilidad() | number:'1.0-1' }}% Rentabilidad
-                </small>
-            </div>
-        </mat-card>
-    </div>
-
-    <div class="charts-section">
-        <mat-card class="chart-card">
-            <h3>🍰 Distribución de Gastos</h3>
-            
-            <div class="canvas-container">
-                <canvas baseChart 
-                    [data]="pieChartData" 
-                    [options]="pieChartOptions" 
-                    [type]="'doughnut'">
-                </canvas>
-            </div>
-
-            @if (totalGastos() === 0) {
-                <div class="no-data">
-                    <mat-icon>info</mat-icon>
-                    <p>No hay gastos registrados en este periodo.</p>
-                </div>
-            }
-        </mat-card>
-    </div>
-</div>
+  <mat-card class="chart-card">
+    <div class="chart-heading"><span class="section-kicker">Gastos</span><h3>Distribución por categoría</h3></div>
+    @if (loading()) {
+      <div class="loading-state"><span class="spinner"></span><p>Actualizando indicadores…</p></div>
+    } @else if (totalGastos() === 0) {
+      <div class="no-data"><mat-icon>donut_large</mat-icon><h4>Sin gastos en este periodo</h4><p>Cuando registres un gasto aparecerá aquí.</p></div>
+    } @else {
+      <div class="chart-layout">
+        <div class="canvas-container"><canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="'doughnut'"></canvas></div>
+        <div class="category-list">
+          @for (category of expenseBreakdown(); track category.name) {
+            <div class="category-row"><span class="dot" [style.background]="category.color"></span><div><strong>{{ category.name }}</strong><small>{{ category.percent | number:'1.0-1' }}%</small></div><b>{{ category.amount | currency }}</b></div>
+          }
+        </div>
+      </div>
+    }
+  </mat-card>
+</section>

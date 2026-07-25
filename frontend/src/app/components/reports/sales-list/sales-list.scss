@@ -1,4 +1,3 @@
-// VARIABLES
 $vino-main: #4b1e3a;
 $vino-dark: #2e0e22;
 $verde-excel: #10b981;
@@ -150,7 +149,7 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
                 border-color: $verde-excel;
                 color: white;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                &:hover { background: darken($verde-excel, 5%); }
+                &:hover { background: #0d966f; }
             }
         }
     }
@@ -186,6 +185,11 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
         }
 
         &:active { transform: scale(0.98); }
+
+        &:focus-visible {
+            outline: 3px solid rgba(75, 30, 58, 0.2);
+            outline-offset: 2px;
+        }
 
         .card-header {
             display: flex; align-items: center; gap: 15px;
@@ -246,6 +250,53 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
         }
     }
 }
+
+.feedback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+
+    &.error { color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; }
+    button { margin-left: auto; }
+}
+
+.loading-panel {
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #64748b;
+
+    p { margin: 0; }
+}
+
+.spinner,
+.loading-spinner span {
+    width: 26px;
+    height: 26px;
+    border: 3px solid #e2e8f0;
+    border-top-color: $vino-main;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 0;
+    color: #64748b;
+    font-size: .86rem;
+
+    span { width: 17px; height: 17px; border-width: 2px; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 // ESTADO VACÍO
 .no-data {
@@ -469,6 +520,8 @@ $sombra-card: 0 4px 12px rgba(0,0,0,0.06);
     }
 
     ::ng-deep .mat-mdc-tab-group {
+        .mat-mdc-tab-header-pagination { display: none; }
+
         .mat-mdc-tab {
             padding: 0 8px;
 

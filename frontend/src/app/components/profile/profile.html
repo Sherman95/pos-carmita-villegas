@@ -12,6 +12,7 @@
           <div class="user-info">
             <h2>{{ u.username }}</h2>
             <span class="role-pill">{{ u.role || 'Admin' }}</span>
+            <span class="session-label"><mat-icon>verified_user</mat-icon> Sesión activa</span>
           </div>
           <div class="sidebar-actions">
             <button mat-flat-button color="warn" class="logout-btn" (click)="logout()">
@@ -25,6 +26,7 @@
     <main class="profile-forms">
       
       <div class="section-header">
+        <span class="section-kicker"><mat-icon>tune</mat-icon> Panel de ajustes</span>
         <h1>Configuración</h1>
         <p>Actualiza la información de tu negocio</p>
       </div>
@@ -32,7 +34,10 @@
       <div class="form-card">
         <div class="card-header-styled biz-header">
           <div class="icon-wrapper"><mat-icon>storefront</mat-icon></div>
-          <h3>Datos del Negocio (Recibos)</h3>
+          <div class="header-copy">
+            <h3>Datos del Negocio</h3>
+            <p>Esta información aparecerá en tus recibos.</p>
+          </div>
         </div>
 
         <div class="card-content">
@@ -49,12 +54,13 @@
             <div class="form-grid-row">
               <mat-form-field appearance="fill" class="modern-input col-half">
                 <mat-label>RUC / CI</mat-label>
-                <input matInput [(ngModel)]="business().ruc" name="bizRuc" />
+                <input matInput [(ngModel)]="business().ruc" name="bizRuc" inputmode="numeric" />
+                <mat-icon matSuffix>fingerprint</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="fill" class="modern-input col-half">
                 <mat-label>Teléfono</mat-label>
-                <input matInput [(ngModel)]="business().phone" name="bizPhone" />
+                <input matInput [(ngModel)]="business().phone" name="bizPhone" type="tel" inputmode="tel" />
                 <mat-icon matSuffix>phone</mat-icon>
               </mat-form-field>
             </div>
@@ -68,18 +74,20 @@
             </div>
 
             <div class="tax-box">
+              <div class="tax-icon"><mat-icon>percent</mat-icon></div>
               <div class="tax-text">
                 <strong>Impuesto (IVA)</strong>
                 <span>Valor en decimal (0.15 = 15%)</span>
               </div>
               <input type="number" step="0.01" class="tax-field-mini"
+                 inputmode="decimal" aria-label="Tasa de IVA en decimal"
                  [ngModel]="taxRateInput()" 
                  (ngModelChange)="taxRateInput.set($event)"
                  name="bizIva" />
             </div>
 
             <button mat-flat-button color="primary" type="submit" class="btn-save">
-              GUARDAR CAMBIOS
+              <mat-icon>cloud_done</mat-icon> Guardar cambios
             </button>
 
             @if (message() && message().includes('Sincronizado')) {
@@ -94,7 +102,10 @@
       <div class="form-card">
         <div class="card-header-styled user-header">
           <div class="icon-wrapper"><mat-icon>manage_accounts</mat-icon></div>
-          <h3>Cuenta de Usuario</h3>
+          <div class="header-copy">
+            <h3>Cuenta de Usuario</h3>
+            <p>Cambia el nombre utilizado para acceder al sistema.</p>
+          </div>
         </div>
 
         <div class="card-content">
@@ -107,8 +118,8 @@
               </mat-form-field>
             </div>
             
-            <button mat-stroked-button color="primary" type="submit" class="btn-save" style="box-shadow: none;">
-              ACTUALIZAR USUARIO
+            <button mat-stroked-button color="primary" type="submit" class="btn-save secondary-save">
+              <mat-icon>person_check</mat-icon> Actualizar usuario
             </button>
 
             @if (message() && message().includes('nombre')) {

@@ -30,6 +30,7 @@ type Period = 'today' | 'yesterday' | 'last7' | 'last15' | 'last30' | 'month' | 
 interface SaleRow {
   id: string; total: number; metodo_pago?: string; client_id?: string;
   client_nombre?: string | null; client_cedula?: string | null; created_at: string; tax_rate?: number;
+  cantidad?: number; precio_unitario?: number;
 }
 
 interface DetailRow {
@@ -89,7 +90,9 @@ export class SalesListComponent implements OnInit {
   selectedSaleId = signal<string | null>(null);
   saleDetails = signal<Record<string, DetailRow[]>>({});
   loadingDetail = signal<boolean>(false);
-  canExport = signal<boolean>(false);
+  loadingDetailId = signal<string | null>(null);
+  errorMessage = signal<string | null>(null);
+  exporting = signal<boolean>(false);
 
   ngOnInit(): void {
     const settings = this.settingsService.settings();
@@ -105,8 +108,18 @@ export class SalesListComponent implements OnInit {
     this.loadGeneral();
   }
 
-  loadClients() { this.clientsService.getClients().subscribe(d => this.clients.set(d || [])); }
-  loadServicios() { this.itemsService.getItems().subscribe(d => this.servicios.set((d || []).filter(i => i.tipo === 'SERVICIO'))); }
+  loadClients() {
+    this.clientsService.getClients().subscribe({
+      next: data => this.clients.set(data || []),
+      error: () => this.errorMessage.set('No se pudo cargar la lista de clientes.')
+    });
+  }
+  loadServicios() {
+    this.itemsService.getItems().subscribe({
+      next: data => this.servicios.set((data || []).filter(item => item.tipo === 'SERVICIO')),
+      error: () => this.errorMessage.set('No se pudo cargar la lista de servicios.')
+    });
+  }
 
   private getRangeParams(period: Period, customFrom: Date | null, customTo: Date | null) {
     const now = new Date();
@@ -160,46 +173,66 @@ export class SalesListComponent implements OnInit {
     return date.toLocaleDateString('en-CA');
   }
 
-  loadGeneral() {
+  async loadGeneral() {
     this.loadingGeneral.set(true);
+    this.errorMessage.set(null);
     const { from, to } = this.getRangeParams(this.periodGeneral(), this.fromGeneral(), this.toGeneral());
-    this.reportsService.getSummary({ from, to }).subscribe(d => this.summaryGeneral.set(d || { count: 0, total: 0 }));
-    this.reportsService.getByRange(from, to).subscribe({
-      next: (rows) => { this.salesGeneral.set(rows || []); this.loadingGeneral.set(false); this.canExport.set(true); },
-      error: () => this.loadingGeneral.set(false)
-    });
+    try {
+      const [summary, rows] = await Promise.all([
+        firstValueFrom(this.reportsService.getSummary({ from, to })),
+        firstValueFrom(this.reportsService.getByRange(from, to))
+      ]);
+      this.summaryGeneral.set(summary || { count: 0, total: 0 });
+      this.salesGeneral.set(rows || []);
+    } catch (error: any) {
+      this.salesGeneral.set([]);
+      this.summaryGeneral.set({ count: 0, total: 0 });
+      this.errorMessage.set(error?.error?.error || 'No se pudo cargar el historial de ventas.');
+    } finally {
+      this.loadingGeneral.set(false);
+    }
   }
 
-  loadByClient() {
-    if (!this.selectedClientId()) return;
+  async loadByClient() {
+    if (!this.selectedClientId()) {
+      this.errorMessage.set('Selecciona un cliente para generar el reporte.');
+      return;
+    }
     this.loadingClient.set(true);
+    this.errorMessage.set(null);
     const { from, to } = this.getRangeParams(this.periodClient(), this.fromClient(), this.toClient());
-    this.reportsService.getByClient(this.selectedClientId(), { from, to }).subscribe({
-      next: (data) => {
-        const fixed = (data.sales || []).map((s: any) => ({ ...s, id: s.id || s.sale_id }));
-        this.salesClient.set(fixed);
-        this.summaryClient.set(data.summary || { count: 0, total: 0 });
-        this.loadingClient.set(false);
-        this.canExport.set(true);
-      },
-      error: () => this.loadingClient.set(false)
-    });
+    try {
+      const data = await firstValueFrom(this.reportsService.getByClient(this.selectedClientId(), { from, to }));
+      this.salesClient.set((data.sales || []).map((sale: any) => ({ ...sale, id: sale.id || sale.sale_id })));
+      this.summaryClient.set(data.summary || { count: 0, total: 0 });
+    } catch (error: any) {
+      this.salesClient.set([]);
+      this.summaryClient.set({ count: 0, total: 0 });
+      this.errorMessage.set(error?.error?.error || 'No se pudo cargar el reporte del cliente.');
+    } finally {
+      this.loadingClient.set(false);
+    }
   }
 
-  loadByService() {
-    if (!this.selectedServiceId()) return;
+  async loadByService() {
+    if (!this.selectedServiceId()) {
+      this.errorMessage.set('Selecciona un servicio para generar el reporte.');
+      return;
+    }
     this.loadingService.set(true);
+    this.errorMessage.set(null);
     const { from, to } = this.getRangeParams(this.periodService(), this.fromService(), this.toService());
-    this.reportsService.getByItem(this.selectedServiceId(), { from, to }).subscribe({
-      next: (data) => {
-        const fixed = (data.sales || []).map((s: any) => ({ ...s, id: s.id || s.sale_id }));
-        this.salesServiceList.set(fixed);
-        this.summaryService.set(data.summary || { count: 0, total: 0 });
-        this.loadingService.set(false);
-        this.canExport.set(true);
-      },
-      error: () => this.loadingService.set(false)
-    });
+    try {
+      const data = await firstValueFrom(this.reportsService.getByItem(this.selectedServiceId(), { from, to }));
+      this.salesServiceList.set((data.sales || []).map((sale: any) => ({ ...sale, id: sale.id || sale.sale_id })));
+      this.summaryService.set(data.summary || { count: 0, total: 0 });
+    } catch (error: any) {
+      this.salesServiceList.set([]);
+      this.summaryService.set({ count: 0, total: 0 });
+      this.errorMessage.set(error?.error?.error || 'No se pudo cargar el reporte del servicio.');
+    } finally {
+      this.loadingService.set(false);
+    }
   }
 
   toggleDetalles(id: string) {
@@ -207,25 +240,37 @@ export class SalesListComponent implements OnInit {
     this.selectedSaleId.set(id);
     if (this.saleDetails()[id]) return; 
     this.loadingDetail.set(true);
+    this.loadingDetailId.set(id);
     this.salesService.getSaleDetails(id).subscribe({
-      next: (r) => { this.saleDetails.set({ ...this.saleDetails(), [id]: r.details || [] }); this.loadingDetail.set(false); },
-      error: () => this.loadingDetail.set(false)
+      next: (response) => {
+        this.saleDetails.set({ ...this.saleDetails(), [id]: response.details || [] });
+        this.loadingDetail.set(false);
+        this.loadingDetailId.set(null);
+      },
+      error: () => {
+        this.loadingDetail.set(false);
+        this.loadingDetailId.set(null);
+        this.errorMessage.set('No se pudo cargar el detalle de esa venta.');
+      }
     });
   }
 
   // --- 🟢 EXCEL PRO PARA CONTADORES ---
   async exportExcel() {
-    if (!this.canExport()) return;
+    if (!this.canExportCurrent() || this.exporting()) return;
+    this.exporting.set(true);
 
     let rows: SaleRow[] = [];
     let filename = 'reporte';
+    const activeTab = this.innerTab();
 
-    if (this.innerTab() === 0) { rows = this.salesGeneral(); filename = 'ventas_general'; }
-    else if (this.innerTab() === 1) { rows = this.salesClient(); filename = 'ventas_cliente'; }
+    if (activeTab === 0) { rows = this.salesGeneral(); filename = 'ventas_general'; }
+    else if (activeTab === 1) { rows = this.salesClient(); filename = 'ventas_cliente'; }
     else { rows = this.salesServiceList(); filename = 'ventas_servicio'; }
 
     // Asegurar detalles antes de exportar
-    await this.ensureDetails(rows);
+    try {
+      if (activeTab !== 2) await this.ensureDetails(rows);
 
     const exportData: any[] = [];
 
@@ -240,15 +285,15 @@ export class SalesListComponent implements OnInit {
             'CLIENTE': sale.client_nombre || 'Consumidor Final',
             'CEDULA': sale.client_cedula || '-',
             'METODO PAGO': sale.metodo_pago || 'N/D',
-            'PRODUCTO/SERVICIO': '---',
-            'CANTIDAD': 1,
+            'PRODUCTO/SERVICIO': activeTab === 2 ? this.selectedServiceName() : '---',
+            'CANTIDAD': activeTab === 2 ? Number(sale.cantidad || 0) : 1,
             'SUBTOTAL': vals.subtotal,
             'IVA': vals.iva,
             'TOTAL': vals.total
         });
 
         // Filas de los Detalles
-        const details = this.saleDetails()[sale.id] || [];
+        const details = activeTab === 2 ? [] : (this.saleDetails()[sale.id] || []);
         details.forEach(d => {
             const vItem = this.getValues(Number(d.subtotal)||0, 'additive', tasa);
             exportData.push({
@@ -269,11 +314,19 @@ export class SalesListComponent implements OnInit {
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-    XLSX.writeFile(wb, `${filename}_${new Date().getTime()}.xlsx`);
+      XLSX.writeFile(wb, `${filename}_${new Date().getTime()}.xlsx`);
+    } catch (error) {
+      this.errorMessage.set('No se pudo generar el archivo Excel.');
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   async exportPDF() {
-    if (!this.canExport()) return;
+    if (!this.canExportCurrent() || this.exporting()) return;
+    this.exporting.set(true);
+    try {
+    const activeTab = this.innerTab();
     const doc = new jsPDF();
     const generatedAt = new Date();
     const currentTaxRate = this.taxRate(); 
@@ -284,7 +337,7 @@ export class SalesListComponent implements OnInit {
     doc.setFontSize(10); doc.text(`Generado: ${generatedAt.toLocaleString('es-EC')}`, 14, cursorY + 6);
 
     const addSection = async (title: string, subtitle: string, rows: SaleRow[]) => {
-      await this.ensureDetails(rows);
+      if (activeTab !== 2) await this.ensureDetails(rows);
       cursorY += 16; doc.setFontSize(13); doc.text(title, 14, cursorY);
       doc.setFontSize(9); doc.text(subtitle, 14, cursorY + 5);
 
@@ -304,7 +357,7 @@ export class SalesListComponent implements OnInit {
           subtotal: `$${vals.subtotal.toFixed(2)}`, iva: `$${vals.iva.toFixed(2)}`, total: `$${vals.total.toFixed(2)}`
         });
 
-        const details = this.saleDetails()[sale.id] || [];
+        const details = activeTab === 2 ? [] : (this.saleDetails()[sale.id] || []);
         for (const d of details) {
           const vItem = this.getValues(Number(d.subtotal)||0, 'additive', tasa);
           body.push({ type: 'detail', fecha: '', cliente: `  ${d.nombre_producto}`, metodo: `x${d.cantidad}`, subtotal: `$${vItem.subtotal.toFixed(2)}`, iva: '', total: `$${vItem.total.toFixed(2)}` });
@@ -326,21 +379,40 @@ export class SalesListComponent implements OnInit {
       doc.text(`Total Sección: $${sectionTotal.toFixed(2)}`, 14, cursorY);
     };
 
-    if (this.innerTab() === 0) await addSection('General', '', this.salesGeneral());
-    else if (this.innerTab() === 1) await addSection('Por Cliente', '', this.salesClient());
-    else if (this.innerTab() === 2) await addSection('Por Servicio', '', this.salesServiceList());
+    if (activeTab === 0) await addSection('General', '', this.salesGeneral());
+    else if (activeTab === 1) await addSection('Por Cliente', '', this.salesClient());
+    else await addSection('Por Servicio', this.selectedServiceName(), this.salesServiceList());
 
-    doc.save(`reporte.pdf`);
+      doc.save(`reporte.pdf`);
+    } catch (error) {
+      this.errorMessage.set('No se pudo generar el archivo PDF.');
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   private async ensureDetails(rows: SaleRow[]) {
     const pending = rows.filter((r) => !this.saleDetails()[r.id]);
-    for (const sale of pending) {
-      try {
-        const resp = await firstValueFrom(this.salesService.getSaleDetails(sale.id));
-        this.saleDetails.set({ ...this.saleDetails(), [sale.id]: resp.details || [] });
-      } catch (err) { }
-    }
+    if (!pending.length) return;
+
+    const grouped = await firstValueFrom(
+      this.salesService.getSaleDetailsBatch(pending.map((sale) => sale.id))
+    );
+    this.saleDetails.set({ ...this.saleDetails(), ...grouped });
+  }
+
+  canExportCurrent(): boolean {
+    return this.getActiveRows().length > 0;
+  }
+
+  private getActiveRows(): SaleRow[] {
+    if (this.innerTab() === 0) return this.salesGeneral();
+    if (this.innerTab() === 1) return this.salesClient();
+    return this.salesServiceList();
+  }
+
+  selectedServiceName(): string {
+    return this.servicios().find(service => service.id === this.selectedServiceId())?.nombre || 'Servicio';
   }
 
   getValues(monto: any, type: any, rate: any) {

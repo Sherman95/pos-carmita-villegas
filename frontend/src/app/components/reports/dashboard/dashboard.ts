@@ -1,142 +1,151 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field'; // Nuevo
-import { MatInputModule } from '@angular/material/input';         // Nuevo
-import { MatButtonModule } from '@angular/material/button';       // Nuevo
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, Chart, registerables } from 'chart.js';
+import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
+import { firstValueFrom } from 'rxjs';
 import { ReportsService } from '../../../services/reports.service';
 
 Chart.register(...registerables);
 
+type DashboardPeriod = 'today' | 'month' | 'year' | 'custom';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule, 
-    MatCardModule, 
-    MatButtonToggleModule, 
-    MatIconModule, 
-    BaseChartDirective,
-    MatFormFieldModule, // Necesario para inputs de fecha
-    MatInputModule,
-    MatButtonModule
-  ],
+  imports: [CommonModule, FormsModule, MatCardModule, MatButtonToggleModule, MatIconModule, MatButtonModule, BaseChartDirective],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
 export class DashboardComponent implements OnInit {
   private reportsService = inject(ReportsService);
+  private requestId = 0;
 
-  // 1. AHORA SOPORTAMOS MÁS PERIODOS
-  periodo = signal<'today' | 'month' | 'year' | 'custom'>('today'); // 'today' por defecto
-
-  // 2. VARIABLES PARA RANGO PERSONALIZADO
-  customFrom = signal<string>('');
-  customTo = signal<string>('');
-
-  // DATOS FINANCIEROS
+  periodo = signal<DashboardPeriod>('today');
+  customFrom = signal('');
+  customTo = signal('');
   totalVentas = signal(0);
   totalGastos = signal(0);
-  
+  cantidadVentas = signal(0);
+  cantidadGastos = signal(0);
+  loading = signal(false);
+  errorMessage = signal<string | null>(null);
+  rangeLabel = signal('Hoy');
+  expenseBreakdown = signal<Array<{ name: string; amount: number; percent: number; color: string }>>([]);
+
   utilidadNeta = computed(() => this.totalVentas() - this.totalGastos());
-  margenRentabilidad = computed(() => {
-    return this.totalVentas() > 0 ? ((this.utilidadNeta() / this.totalVentas()) * 100) : 0;
-  });
+  margenRentabilidad = computed(() => this.totalVentas() > 0 ? this.utilidadNeta() / this.totalVentas() * 100 : 0);
+  ticketPromedio = computed(() => this.cantidadVentas() > 0 ? this.totalVentas() / this.cantidadVentas() : 0);
 
   pieChartData: ChartData<'doughnut'> = { labels: [], datasets: [] };
-  pieChartOptions: ChartConfiguration['options'] = { 
-    responsive: true, 
-    maintainAspectRatio: false, 
-    plugins: { 
-      legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } 
-    } 
+  pieChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { display: false } }
   };
 
-  ngOnInit() {
-    // Inicializar fechas personalizadas con HOY por si acaso
-    const today = new Date().toLocaleDateString('en-CA');
+  ngOnInit(): void {
+    const today = this.toDateOnly(new Date());
     this.customFrom.set(today);
     this.customTo.set(today);
-
-    this.cargarDatos();
+    void this.cargarDatos();
   }
 
-  cargarDatos() {
+  async cargarDatos(): Promise<void> {
+    const requestId = ++this.requestId;
+    const range = this.getRange();
+    if (!range) return;
+
+    this.loading.set(true);
+    this.errorMessage.set(null);
+    this.rangeLabel.set(this.buildRangeLabel(range.from, range.to));
+
+    try {
+      const [ventas, gastos] = await Promise.all([
+        firstValueFrom(this.reportsService.getByRange(range.from, range.to)),
+        firstValueFrom(this.reportsService.getExpenses(range.from, range.to))
+      ]);
+      if (requestId !== this.requestId) return;
+
+      this.cantidadVentas.set((ventas || []).length);
+      this.cantidadGastos.set((gastos || []).length);
+      this.totalVentas.set((ventas || []).reduce((sum: number, sale: any) => sum + Number(sale.total || 0), 0));
+      this.totalGastos.set((gastos || []).reduce((sum: number, expense: any) => sum + Number(expense.monto || 0), 0));
+      this.actualizarGrafico(gastos || []);
+    } catch (error: any) {
+      if (requestId === this.requestId) {
+        this.errorMessage.set(error?.error?.error || 'No se pudieron cargar los indicadores. Intenta nuevamente.');
+      }
+    } finally {
+      if (requestId === this.requestId) this.loading.set(false);
+    }
+  }
+
+  private getRange(): { from: string; to: string } | null {
     const now = new Date();
-    let startStr = '', endStr = '';
+    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let end = new Date(start);
 
-    // --- LÓGICA DE FECHAS MEJORADA ---
-    if (this.periodo() === 'today') {
-        // Hoy (00:00 a 23:59)
-        startStr = now.toLocaleDateString('en-CA');
-        endStr = now.toLocaleDateString('en-CA');
-
-    } else if (this.periodo() === 'month') {
-        // Mes Actual (1 al 30/31)
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        startStr = start.toLocaleDateString('en-CA');
-        endStr = end.toLocaleDateString('en-CA');
-
+    if (this.periodo() === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     } else if (this.periodo() === 'year') {
-        // Año Actual
-        startStr = `${now.getFullYear()}-01-01`;
-        endStr = `${now.getFullYear()}-12-31`;
-
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
     } else if (this.periodo() === 'custom') {
-        // Rango Personalizado (lo que diga el input)
-        startStr = this.customFrom();
-        endStr = this.customTo();
+      if (!this.customFrom() || !this.customTo()) {
+        this.errorMessage.set('Selecciona las fechas Desde y Hasta.');
+        return null;
+      }
+      let from = this.customFrom();
+      let to = this.customTo();
+      if (to < from) [from, to] = [to, from];
+      return { from, to };
     }
-
-    // 1. Traer Ventas
-    this.reportsService.getByRange(startStr, endStr).subscribe({
-        next: (ventas) => {
-            const total = (ventas || []).reduce((acc: number, curr: any) => acc + Number(curr.total), 0);
-            this.totalVentas.set(total);
-        },
-        error: (err) => console.error(err)
-    });
-
-    // 2. Traer Gastos y pintar Gráfico
-    this.reportsService.getExpenses(startStr, endStr).subscribe({
-        next: (gastos) => {
-            const total = (gastos || []).reduce((acc: number, curr: any) => acc + Number(curr.monto), 0);
-            this.totalGastos.set(total);
-            this.actualizarGrafico(gastos || []);
-        },
-        error: (err) => console.error(err)
-    });
+    return { from: this.toDateOnly(start), to: this.toDateOnly(end) };
   }
 
-  actualizarGrafico(gastos: any[]) {
-    const categorias: Record<string, number> = {};
-    
-    if (gastos.length === 0) {
-        this.pieChartData = { labels: [], datasets: [] };
-        return;
+  private actualizarGrafico(gastos: any[]): void {
+    const categories: Record<string, number> = {};
+    for (const expense of gastos) {
+      const name = String(expense.categoria || 'OTROS').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+      categories[name] = (categories[name] || 0) + Number(expense.monto || 0);
     }
 
-    gastos.forEach(g => {
-        let cat = g.categoria || 'OTROS';
-        cat = cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l:string)=>l.toUpperCase());
-        categorias[cat] = (categorias[cat] || 0) + Number(g.monto);
-    });
+    const labels = Object.keys(categories);
+    const values = Object.values(categories);
+    const colors = ['#be185d', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626', '#64748b'];
+    const total = values.reduce((sum, value) => sum + value, 0);
 
-    this.pieChartData = {
-        labels: Object.keys(categorias),
-        datasets: [{
-            data: Object.values(categorias),
-            backgroundColor: ['#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#00bcd4'],
-            hoverOffset: 10,
-            borderWidth: 0
-        }]
-    };
+    this.expenseBreakdown.set(labels.map((name, index) => ({
+      name,
+      amount: values[index],
+      percent: total > 0 ? values[index] / total * 100 : 0,
+      color: colors[index % colors.length]
+    })).sort((a, b) => b.amount - a.amount));
+
+    this.pieChartData = labels.length ? {
+      labels,
+      datasets: [{ data: values, backgroundColor: labels.map((_, index) => colors[index % colors.length]), borderWidth: 0, hoverOffset: 7 }]
+    } : { labels: [], datasets: [] };
+  }
+
+  private toDateOnly(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private buildRangeLabel(from: string, to: string): string {
+    if (from === to) return new Date(`${from}T12:00:00`).toLocaleDateString('es-EC', { dateStyle: 'long' });
+    const start = new Date(`${from}T12:00:00`).toLocaleDateString('es-EC', { day: 'numeric', month: 'short' });
+    const end = new Date(`${to}T12:00:00`).toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${start} – ${end}`;
   }
 }

@@ -1,253 +1,673 @@
-// VARIABLES DE DISEÑO (AJUSTADAS PARA CONTRASTE)
-$vino-main: #4b1e3a;
-$vino-light: #8a3c6b;
-
-// 🟢 CAMBIO 1: Fondo un poco más oscuro para que resalte lo blanco
-$fondo-app: #eef2f6; 
-$blanco: #ffffff;
-$sombra-suave: 0 4px 20px rgba(0, 0, 0, 0.08); // Sombra más marcada
-$borde-tarjeta: 1px solid #cbd5e1; // Borde físico para separar
+$wine: #4b1e3a;
+$wine-dark: #2e0e22;
+$wine-accent: #7a294f;
+$wine-soft: #f8edf2;
+$page-bg: #f5f6f8;
+$surface: #ffffff;
+$text: #211923;
+$muted: #697386;
+$border: rgba(75, 30, 58, 0.1);
+$shadow: 0 16px 40px rgba(46, 14, 34, 0.1);
 
 .main-layout {
-    min-height: 100vh;
-    background-color: $fondo-app;
-    position: relative;
-    display: flex; flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 8% 30%, rgba(122, 41, 79, 0.08), transparent 24rem),
+    $page-bg;
+  color: $text;
 }
 
-// FONDO DECORATIVO SUPERIOR
 .header-bg {
-    height: 240px; // Un poco más alto para cubrir el rebote en móvil
-    background: linear-gradient(135deg, $vino-main 0%, #2e0e22 100%);
-    border-bottom-left-radius: 40px;
-    border-bottom-right-radius: 40px;
-    position: absolute; top: 0; left: 0; right: 0; z-index: 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 240px;
+  overflow: hidden;
+  border-radius: 0 0 40px 40px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.14), transparent 18rem),
+    linear-gradient(135deg, $wine 0%, $wine-dark 100%);
+  box-shadow: 0 16px 38px rgba(46, 14, 34, 0.2);
+
 }
 
-// CONTENEDOR GRID
 .content-wrapper {
-    position: relative; z-index: 1;
-    max-width: 1100px; width: 100%; margin: 0 auto;
-    
-    // 🟢 CAMBIO 2: Padding lateral seguro en móvil
-    padding: 20px 15px; 
-    
-    display: grid; gap: 20px;
-    grid-template-columns: 1fr; // Móvil
-
-    @media (min-width: 900px) {
-        grid-template-columns: 350px 1fr; // PC
-        padding: 60px 20px 40px;
-        gap: 30px;
-    }
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 15px 110px;
 }
 
-// ----------------------------------------------------
-// 🎨 1. SIDEBAR (TARJETA DE PERFIL)
-// ----------------------------------------------------
 .profile-sidebar {
-    .identity-card {
-        background: $blanco;
-        border-radius: 20px;
-        padding: 30px 20px;
-        text-align: center;
-        box-shadow: $sombra-suave;
-        position: relative; overflow: hidden;
-        
-        // 🟢 CAMBIO 3: Borde físico para separar del fondo
-        border: $borde-tarjeta;
+  .identity-card {
+    position: relative;
+    overflow: hidden;
+    padding: 30px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: $shadow;
+    text-align: center;
 
-        // Decoración superior
-        &::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
-            background: linear-gradient(90deg, $vino-main, $vino-light);
-        }
-
-        .avatar-container {
-            position: relative; width: 100px; height: 100px; margin: 0 auto 15px;
-            
-            .avatar-circle {
-                width: 100%; height: 100%;
-                background: white; color: $vino-main;
-                font-size: 2.5rem; font-weight: 800;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                border: 4px solid #fdf2f8;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.15); // Sombra más fuerte al avatar
-            }
-            
-            .status-indicator {
-                position: absolute; bottom: 5px; right: 5px; width: 22px; height: 22px;
-                background: #10b981; border: 3px solid white; border-radius: 50%;
-            }
-        }
-
-        .user-info {
-            h2 { margin: 0; font-size: 1.5rem; color: #1e293b; font-weight: 800; }
-            .role-pill {
-                display: inline-block; margin-top: 8px;
-                background: #f1f5f9; color: #64748b;
-                padding: 5px 14px; border-radius: 50px;
-                font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
-                border: 1px solid #e2e8f0; // Borde al badge
-            }
-        }
-
-        .sidebar-actions {
-            margin-top: 25px;
-            .logout-btn {
-                width: 100%; height: 50px; border-radius: 12px; font-weight: 600;
-                box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
-            }
-        }
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 7px;
+      background: linear-gradient(90deg, $wine, $wine-accent);
     }
+
+  }
+
+  .avatar-container {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    margin: 2px auto 17px;
+
+    .avatar-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      border: 5px solid $wine-soft;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #ffffff, #fbf4f7);
+      color: $wine;
+      box-shadow: 0 10px 28px rgba(75, 30, 58, 0.18);
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
+
+    .status-indicator {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 22px;
+      height: 22px;
+      border: 4px solid white;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.28);
+    }
+  }
+
+  .user-info {
+    h2 {
+      margin: 0;
+      color: $text;
+      font-size: 1.5rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 9px;
+      padding: 6px 15px;
+      border: 1px solid rgba(75, 30, 58, 0.12);
+      border-radius: 999px;
+      background: $wine-soft;
+      color: $wine;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .session-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 12px;
+      color: $muted;
+      font-size: 0.76rem;
+      font-weight: 500;
+
+      mat-icon {
+        width: 16px;
+        height: 16px;
+        color: #059669;
+        font-size: 16px;
+      }
+    }
+  }
+
+  .sidebar-actions {
+    margin-top: 26px;
+
+    .logout-btn {
+      width: 100%;
+      height: 48px;
+      border: 1px solid rgba(180, 35, 24, 0.16);
+      border-radius: 14px;
+      background: #fff1f2 !important;
+      color: #b42318 !important;
+      font-weight: 600;
+      box-shadow: none;
+
+      &:hover {
+        background: #ffe4e6 !important;
+      }
+    }
+  }
 }
 
-// ----------------------------------------------------
-// 🎨 2. FORMULARIOS (TARJETAS PRINCIPALES)
-// ----------------------------------------------------
 .profile-forms {
-    .section-header {
-        margin-bottom: 20px;
-        
-        // 🟢 FIX MÓVIL: Color oscuro para que se lea sobre el fondo gris
-        color: $vino-main; 
-        text-align: center; 
-        margin-top: 10px;
-        text-shadow: none; // Quitamos sombra en móvil para que se vea limpio
+  min-width: 0;
 
-        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; }
-        p { margin: 5px 0 0; opacity: 0.8; font-size: 0.95rem; font-weight: 600; color: #64748b; }
+  .section-header {
+    margin: 10px 0 20px;
+    color: $wine;
+    text-align: center;
 
-        // 💻 FIX PC: Cuando la pantalla es grande, el texto sube al área morada
-        @media (min-width: 900px) {
-            color: white; // Vuelve a ser blanco
-            text-align: left;
-            margin-top: 0;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.2); // Vuelve la sombra
-            
-            p { color: rgba(255,255,255,0.9); } // Subtítulo blanco
-        }
+    .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 7px;
+      color: $wine-accent;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+
+      mat-icon {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+      }
     }
 
-    .form-card {
-        background: $blanco;
-        border-radius: 20px;
-        margin-bottom: 20px;
-        box-shadow: $sombra-suave;
-        
-        // 🟢 CAMBIO 4: Borde para definir la tarjeta en pantallas malas
-        border: $borde-tarjeta; 
-
-        .card-header-styled {
-            padding: 20px;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex; align-items: center; gap: 15px;
-            background: #fafbfc; // Cabecera gris muy tenue
-            border-radius: 20px 20px 0 0;
-
-            .icon-wrapper {
-                width: 42px; height: 42px; border-radius: 10px;
-                display: flex; align-items: center; justify-content: center;
-                mat-icon { font-size: 24px; width: 24px; height: 24px; }
-            }
-
-            &.biz-header { 
-                .icon-wrapper { background: #dbeafe; color: #2563eb; }
-                h3 { color: #1e40af; }
-            }
-            &.user-header { 
-                .icon-wrapper { background: #ffedd5; color: #ea580c; }
-                h3 { color: #9a3412; }
-            }
-
-            h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-        }
-
-        .card-content {
-            padding: 20px;
-            @media (min-width: 768px) { padding: 30px; }
-        }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 5vw, 2.15rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
     }
+
+    p {
+      margin: 5px 0 0;
+      color: $muted;
+      font-size: 0.94rem;
+      font-weight: 500;
+    }
+  }
+
+  .form-card {
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 1px solid $border;
+    border-radius: 22px;
+    background: $surface;
+    box-shadow: $shadow;
+  }
+
+  .card-header-styled {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 19px 20px;
+    border-bottom: 1px solid $border;
+    background: linear-gradient(90deg, #fdf9fb, #ffffff);
+
+    .icon-wrapper {
+      display: flex;
+      flex: 0 0 44px;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(75, 30, 58, 0.1);
+      border-radius: 13px;
+      background: $wine-soft;
+      color: $wine;
+
+      mat-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+      }
+    }
+
+    .header-copy {
+      min-width: 0;
+
+      h3 {
+        margin: 0;
+        color: $wine;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+
+      p {
+        margin: 3px 0 0;
+        color: $muted;
+        font-size: 0.79rem;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .card-content {
+    padding: 22px 20px 24px;
+
+    form {
+      display: flow-root;
+    }
+  }
 }
 
-// ----------------------------------------------------
-// ✨ 3. INPUTS MODERNOS (CONTRASTADOS)
-// ----------------------------------------------------
 ::ng-deep .modern-input {
-    width: 100%;
-    margin-bottom: 8px;
+  width: 100%;
+  margin-bottom: 6px;
 
-    // 🟢 CAMBIO 5: Fondo gris tenue para el input, no blanco puro
-    .mdc-text-field--filled {
-        background-color: #f8fafc !important; 
-        border: 1px solid #cbd5e1; // Borde gris visible
-        border-radius: 12px;
-        transition: all 0.2s ease;
-        
-        &:hover { 
-            background-color: #f1f5f9 !important;
-            border-color: #94a3b8; 
-        }
-        
-        &::before, &::after { display: none !important; }
+  .mdc-text-field--filled {
+    border: 1px solid #d8dce3;
+    border-radius: 13px;
+    background-color: #f8f9fb !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: rgba(75, 30, 58, 0.36);
+      background-color: #fdf9fb !important;
     }
 
-    .mdc-text-field--focused {
-        background-color: #ffffff !important; // Al escribir se pone blanco
-        border-color: $vino-main !important;
-        box-shadow: 0 0 0 3px rgba(75, 30, 58, 0.15) !important;
+    &::before,
+    &::after {
+      display: none !important;
     }
+  }
 
-    .mdc-floating-label {
-        color: #64748b !important;
-        font-weight: 600;
-    }
+  .mdc-text-field--focused {
+    border-color: $wine !important;
+    background-color: white !important;
+    box-shadow: 0 0 0 4px rgba(75, 30, 58, 0.1) !important;
+  }
+
+  .mdc-floating-label {
+    color: $muted !important;
+    font-weight: 500;
+  }
+
+  mat-icon {
+    color: $wine-accent;
+  }
 }
 
 .form-grid-row {
-    display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;
-    .col-full { flex: 100%; }
-    .col-half { flex: 1; min-width: 100%; @media(min-width: 600px) { min-width: 140px; } }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+
+  .col-full {
+    flex: 1 1 100%;
+  }
+
+  .col-half {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
 }
 
-// ----------------------------------------------------
-// 💎 4. EXTRAS
-// ----------------------------------------------------
 .tax-box {
-    background: #f0fdf4; border: 1px solid #86efac; // Borde verde más fuerte
-    border-radius: 16px; padding: 15px;
-    display: flex; align-items: center; justify-content: space-between;
-    margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 16px 0 22px;
+  padding: 16px;
+  border: 1px solid rgba(75, 30, 58, 0.14);
+  border-radius: 16px;
+  background: linear-gradient(135deg, $wine-soft, #fdf9fb);
 
-    .tax-text {
-        strong { display: block; color: #14532d; font-size: 0.95rem; }
-        span { color: #16a34a; font-size: 0.8rem; }
+  .tax-icon {
+    display: flex;
+    flex: 0 0 38px;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: $wine;
+    color: white;
+
+    mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
     }
-    
-    .tax-field-mini {
-        width: 90px; height: 40px;
-        background: white; border-radius: 8px; border: 1px solid #22c55e;
-        font-weight: 700; color: #14532d; font-size: 1.1rem; text-align: center;
-        outline: none;
+  }
+
+  .tax-text {
+    min-width: 0;
+
+    strong {
+      display: block;
+      color: $wine;
+      font-size: 0.95rem;
     }
+
+    span {
+      display: block;
+      margin-top: 2px;
+      color: $muted;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+  }
+
+  .tax-field-mini {
+    flex: 0 0 94px;
+    width: 94px;
+    height: 44px;
+    outline: none;
+    border: 1px solid rgba(75, 30, 58, 0.3);
+    border-radius: 11px;
+    background: white;
+    color: $wine;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+
+    &:focus {
+      border-color: $wine;
+      box-shadow: 0 0 0 4px rgba(75, 30, 58, 0.1);
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      margin: 0;
+      appearance: none;
+    }
+  }
 }
 
 .btn-save {
-    width: 100%; height: 50px; 
-    border-radius: 12px; font-size: 1rem; font-weight: 700;
-    box-shadow: 0 4px 12px rgba(75, 30, 58, 0.25);
-    @media (min-width: 900px) { width: auto; min-width: 200px; float: right; }
+  width: 100%;
+  min-height: 50px;
+  border-radius: 13px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 22px rgba(75, 30, 58, 0.22);
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    font-size: 20px;
+  }
+}
+
+.secondary-save {
+  border-color: rgba(75, 30, 58, 0.28) !important;
+  background: #ffffff;
+  color: $wine !important;
+  box-shadow: none;
+
+  &:hover {
+    background: $wine-soft;
+  }
 }
 
 .feedback-msg {
-    margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
-    display: flex; align-items: center; gap: 8px; clear: both;
-    
-    &.success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    &.info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+  display: flex;
+  clear: both;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+
+  &.success {
+    border: 1px solid #86efac;
+    background: #ecfdf3;
+    color: #15803d;
+  }
+
+  &.info {
+    border: 1px solid rgba(75, 30, 58, 0.16);
+    background: $wine-soft;
+    color: $wine;
+  }
 }
 
-.fade-in { animation: fadeIn 0.5s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+@media (min-width: 600px) {
+  .form-grid-row .col-half {
+    flex: 1 1 calc(50% - 7px);
+  }
+}
+
+@media (min-width: 768px) {
+  .profile-forms .card-content {
+    padding: 30px;
+  }
+}
+
+@media (min-width: 900px) {
+  .content-wrapper {
+    grid-template-columns: 310px minmax(0, 1fr);
+    gap: 34px;
+    padding: 54px 24px 120px;
+  }
+
+  .profile-sidebar {
+    position: sticky;
+    top: 30px;
+    align-self: start;
+  }
+
+  .profile-forms .section-header {
+    margin-top: 0;
+    color: white;
+    text-align: left;
+    text-shadow: 0 2px 8px rgba(20, 5, 15, 0.25);
+
+    .section-kicker {
+      color: rgba(255, 255, 255, 0.76);
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.84);
+    }
+  }
+
+  .btn-save {
+    float: right;
+    width: auto;
+    min-width: 210px;
+  }
+}
+
+@media (max-width: 899px) {
+  .main-layout {
+    background:
+      radial-gradient(circle at 50% 0, rgba(122, 41, 79, 0.07), transparent 18rem),
+      $page-bg;
+  }
+
+  .header-bg {
+    height: 132px;
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 10px 28px rgba(46, 14, 34, 0.18) !important;
+
+  }
+
+  .content-wrapper {
+    gap: 16px;
+    padding-top: 14px;
+  }
+
+  .profile-sidebar {
+    .identity-card {
+      padding: 21px 18px 18px;
+      border-radius: 20px;
+
+    }
+
+    .avatar-container {
+      width: 82px;
+      height: 82px;
+      margin-bottom: 10px;
+
+      .avatar-circle {
+        border-width: 4px;
+        font-size: 2rem;
+      }
+
+      .status-indicator {
+        right: 2px;
+        bottom: 2px;
+        width: 19px;
+        height: 19px;
+        border-width: 3px;
+      }
+    }
+
+    .user-info {
+      h2 {
+        font-size: 1.3rem;
+      }
+
+      .role-pill {
+        margin-top: 6px;
+        padding: 4px 12px;
+      }
+    }
+
+    .sidebar-actions {
+      margin-top: 16px;
+
+      .logout-btn {
+        height: 44px;
+      }
+    }
+  }
+
+  .profile-forms {
+    .section-header {
+      margin: 2px 0 13px;
+      text-align: left;
+
+      h1 {
+        font-size: 1.65rem;
+      }
+
+      p {
+        font-size: 0.86rem;
+      }
+    }
+
+    .form-card {
+      border-radius: 18px;
+    }
+
+    .card-header-styled {
+      .icon-wrapper {
+        flex-basis: 40px;
+        width: 40px;
+        height: 40px;
+      }
+    }
+  }
+}
+
+@media (max-width: 599px) {
+  .header-bg {
+    height: 112px;
+  }
+
+  .profile-sidebar {
+    .identity-card {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      grid-template-areas:
+        'avatar user'
+        'actions actions';
+      align-items: center;
+      column-gap: 15px;
+      padding: 20px 17px 17px;
+      text-align: left;
+    }
+
+    .avatar-container {
+      grid-area: avatar;
+      width: 76px;
+      height: 76px;
+      margin: 0;
+    }
+
+    .user-info {
+      grid-area: user;
+
+      .role-pill {
+        margin-right: 8px;
+      }
+
+      .session-label {
+        display: inline-flex;
+        justify-content: flex-start;
+        margin-top: 8px;
+      }
+    }
+
+    .sidebar-actions {
+      grid-area: actions;
+      margin-top: 15px;
+    }
+  }
+
+  .tax-box {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 82px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .profile-sidebar .identity-card {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 180px;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    text-align: left;
+
+    .avatar-container {
+      width: 82px;
+      height: 82px;
+      margin: 0;
+    }
+
+    .user-info .session-label {
+      justify-content: flex-start;
+    }
+
+    .sidebar-actions {
+      margin-top: 0;
+    }
+  }
+}
+
+@media (min-width: 1180px) {
+  .content-wrapper {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 42px;
+  }
+}

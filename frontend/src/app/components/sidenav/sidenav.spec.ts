@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
-import { Sidenav } from './sidenav';
+import { SidenavComponent } from './sidenav';
 
 describe('Sidenav', () => {
-  let component: Sidenav;
-  let fixture: ComponentFixture<Sidenav>;
+  let component: SidenavComponent;
+  let fixture: ComponentFixture<SidenavComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Sidenav]
+      imports: [SidenavComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Sidenav);
+    fixture = TestBed.createComponent(SidenavComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

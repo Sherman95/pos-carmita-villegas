@@ -37,10 +37,10 @@
     display: flex;
     align-items: center;
     gap: 15px;
-    background: #f8f9fa;
+    background: #fbf7f9;
     padding: 15px;
     border-radius: 12px;
-    border: 1px solid #eee;
+    border: 1px solid rgba(75, 30, 58, 0.09);
 
     .icon-box {
       width: 45px; height: 45px;
@@ -89,7 +89,7 @@
 // BOTONES
 .dialog-actions {
   padding: 10px 0 0 0;
-  border-top: 1px dashed #eee;
+  border-top: 1px dashed rgba(75, 30, 58, 0.14);
   
   .btn-cancel {
     color: #888;

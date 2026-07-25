@@ -11,7 +11,7 @@
   max-width: 500px;
   
   background: #ffffff;
-  color: #333;
+  color: #211923;
   
   border-radius: 50px;
   padding: 10px 10px 10px 25px;
@@ -23,15 +23,16 @@
   // Z-INDEX MAYOR QUE LA NAVEGACIÓN (1000 vs 1100)
   z-index: 1100; 
   
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 16px 40px rgba(46, 14, 34, 0.2);
+  border: 1px solid rgba(75, 30, 58, 0.1);
+  backdrop-filter: blur(14px);
 
   // ... (El resto del CSS se queda igual) ...
   .info-group {
     display: flex;
     flex-direction: column;
     line-height: 1.1;
-    .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .label { font-size: 0.75rem; color: #697386; text-transform: uppercase; letter-spacing: 0.5px; }
     .amount { font-size: 1.3rem; font-weight: 800; color: #4b1e3a; }
   }
 
@@ -43,6 +44,12 @@
     padding: 0 20px;
     font-weight: 700;
     display: flex; align-items: center; gap: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(75, 30, 58, 0.34);
+    }
     
     .badge-count {
       background: rgba(255,255,255,0.2);

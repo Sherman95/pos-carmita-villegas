@@ -8,8 +8,8 @@ $primary-gradient: linear-gradient(135deg, #4b1e3a 0%, #2e0e22 100%);
 // Colores para el estado "Activo" (Derivados de tu marca)
 $active-bg: rgba(75, 30, 58, 0.08); // Un vino muy clarito y transparente
 $active-color: #4b1e3a;             // Texto color vino
-$hover-bg: #f9f9f9;
-$text-muted: #757575;
+$hover-bg: #fbf4f7;
+$text-muted: #697386;
 
 .sidenav-container {
   display: flex;
@@ -17,6 +17,7 @@ $text-muted: #757575;
   height: 100%;
   background-color: #fff;
   overflow-x: hidden;
+  border-right: 1px solid rgba(75, 30, 58, 0.08);
 }
 
 // 1. CABECERA CON DEGRADADO PREMIUM
@@ -29,7 +30,7 @@ $text-muted: #757575;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 15px rgba(46, 14, 34, 0.3); // Sombra con tono vino oscuro
+  box-shadow: 0 10px 28px rgba(46, 14, 34, 0.24);
 
   .header-content {
     position: relative;
@@ -50,7 +51,7 @@ $text-muted: #757575;
     font-size: 28px;
     font-weight: 600;
     color: white;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 22px rgba(20, 5, 15, 0.25);
   }
 
   .user-info {
@@ -191,6 +192,6 @@ $text-muted: #757575;
   text-align: center;
   color: #bdbdbd;
   font-size: 0.7rem;
-  background-color: #fafafa;
-  border-top: 1px solid #f0f0f0;
+  background-color: #fbf8fa;
+  border-top: 1px solid rgba(75, 30, 58, 0.08);
 }

@@ -274,7 +274,7 @@ export const getSalesByClient = async (req: Request, res: Response) => {
         const params: any[] = [clientId];
 
         if (from && to) {
-            dateFilter = 'AND s.created_at::date >= $2 AND s.created_at::date <= $3';
+            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz';
             params.push(from, to);
         } else if (period === 'week') {
             dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
@@ -290,8 +290,8 @@ export const getSalesByClient = async (req: Request, res: Response) => {
                 s.total, 
                 s.metodo_pago, 
                 s.created_at,
-                c.nombre as client_nombre, 
-                c.cedula as client_cedula,
+                COALESCE(s.client_nombre, c.nombre) AS client_nombre,
+                COALESCE(s.client_cedula, c.cedula) AS client_cedula,
                 s.tax_rate as tax_rate
             FROM sales s
             LEFT JOIN clients c ON s.client_id = c.id
@@ -324,7 +324,7 @@ export const getSalesByItem = async (req: Request, res: Response) => {
         const params: any[] = [itemId];
 
         if (from && to) {
-            dateFilter = 'AND s.created_at::date >= $2 AND s.created_at::date <= $3';
+            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz';
             params.push(from, to);
         } else if (period === 'week') {
             dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
@@ -339,8 +339,8 @@ export const getSalesByItem = async (req: Request, res: Response) => {
                 s.id as sale_id,
                 s.created_at,
                 s.metodo_pago,
-                c.nombre as client_nombre,
-                c.cedula as client_cedula,
+                COALESCE(s.client_nombre, c.nombre) AS client_nombre,
+                COALESCE(s.client_cedula, c.cedula) AS client_cedula,
                 sd.cantidad,
                 sd.precio_unitario,
                 sd.subtotal as total,
@@ -398,11 +398,14 @@ export const getSaleWithDetails = async (req: Request, res: Response) => {
         const detailQuery = `
             SELECT 
                 sd.id,
+                sd.item_id,
                 sd.nombre_producto,
                 sd.cantidad,
                 sd.precio_unitario,
-                sd.subtotal
+                sd.subtotal,
+                i.tipo AS item_tipo
             FROM sale_details sd
+            LEFT JOIN items i ON i.id = sd.item_id
             WHERE sd.sale_id = $1
             ORDER BY sd.created_at ASC
         `;
@@ -421,83 +424,38 @@ export const getSaleWithDetails = async (req: Request, res: Response) => {
     }
 };
 
-export const saveSaleReceipt = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { pdfBase64, docType } = req.body as { pdfBase64?: string; docType?: string };
+export const getSaleDetailsBatch = async (req: Request, res: Response) => {
+    const ids: unknown[] = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validIds = [...new Set(ids.filter((id): id is string => typeof id === 'string' && uuidPattern.test(id)))];
 
-    if (!id) return res.status(400).json({ error: 'id requerido' });
-    if (!pdfBase64 || typeof pdfBase64 !== 'string') {
-        return res.status(400).json({ error: 'pdfBase64 requerido' });
-    }
-
-    const kind = docType && typeof docType === 'string' ? docType : 'receipt';
+    if (validIds.length === 0) return res.status(200).json({});
+    if (validIds.length > 2000) return res.status(400).json({ error: 'Máximo 2000 ventas por consulta' });
 
     try {
-        const saleExists = await pool.query('SELECT 1 FROM sales WHERE id = $1', [id]);
-        if (saleExists.rowCount === 0) {
-            return res.status(404).json({ error: 'Venta no encontrada' });
-        }
-
-        const insertSql = `
-            INSERT INTO sale_receipts (sale_id, pdf_base64, doc_type)
-            VALUES ($1, $2, $3)
-            RETURNING id, created_at, doc_type
-        `;
-        const { rows } = await pool.query(insertSql, [id, pdfBase64, kind]);
-
-        res.status(201).json({ receiptId: rows[0].id, created_at: rows[0].created_at, doc_type: rows[0].doc_type });
-    } catch (error) {
-        console.error('Error guardando recibo:', error);
-        res.status(500).json({ error: 'Error al guardar recibo' });
-    }
-};
-
-export const getSaleReceipt = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { docType } = req.query as { docType?: string };
-    
-    if (!id) return res.status(400).json({ error: 'id requerido' });
-
-    try {
-        const params: any[] = [id];
-        let clause = '';
-        if (docType) {
-            clause = 'AND doc_type = $2';
-            params.push(docType);
-        }
-
         const { rows } = await pool.query(
-            `SELECT pdf_base64, created_at, doc_type
-             FROM sale_receipts
-             WHERE sale_id = $1
-             ${clause}
-             ORDER BY created_at DESC
-             LIMIT 1`,
-            params
+            `SELECT sd.sale_id, sd.id, sd.item_id, sd.nombre_producto,
+                    sd.cantidad, sd.precio_unitario, sd.subtotal,
+                    i.tipo AS item_tipo
+             FROM sale_details sd
+             LEFT JOIN items i ON i.id = sd.item_id
+             WHERE sd.sale_id = ANY($1::uuid[])
+             ORDER BY sd.sale_id, sd.created_at ASC`,
+            [validIds]
         );
 
-        if (rows.length === 0) {
-             console.warn(`[getSaleReceipt] No hay recibo para venta ID: ${id}`);
-             return res.status(404).json({ error: 'Recibo no encontrado.' });
-        }
-
-        const record = rows[0];
-        const pdfBuffer = Buffer.from(record.pdf_base64, 'base64');
-
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="recibo-${id}.pdf"`);
-        res.setHeader('Content-Length', pdfBuffer.length);
-        res.send(pdfBuffer);
-
+        const grouped: Record<string, unknown[]> = Object.fromEntries(validIds.map((id) => [id, []]));
+        for (const row of rows) grouped[row.sale_id].push(row);
+        res.status(200).json(grouped);
     } catch (error) {
-        console.error('Error obteniendo recibo:', error);
-        res.status(500).json({ error: 'Error interno al obtener recibo' });
+        console.error('Error obteniendo detalles agrupados:', error);
+        res.status(500).json({ error: 'Error al obtener detalles de ventas' });
     }
 };
 
 export const getReceiptsByClient = async (req: Request, res: Response) => {
     const { clientId } = req.params;
-    const { from, to, docType } = req.query as { from?: string; to?: string; docType?: string };
+    const { from, to } = req.query as { from?: string; to?: string };
     if (!clientId) return res.status(400).json({ error: 'clientId requerido' });
 
     try {
@@ -508,23 +466,18 @@ export const getReceiptsByClient = async (req: Request, res: Response) => {
             dateClause = "AND s.created_at >= $2::date AND s.created_at < ($3::date + INTERVAL '1 day')";
         }
 
-        const typeClause = docType ? 'AND sr.doc_type = $' + (params.length + 1) : '';
-        if (docType) params.push(docType);
-
         const { rows } = await pool.query(
-            `SELECT sr.id AS receipt_id, sr.sale_id, sr.created_at AS receipt_created_at,
+            `SELECT s.id AS receipt_id, s.id AS sale_id, s.created_at AS receipt_created_at,
                     s.total, s.metodo_pago,
                     COALESCE(s.client_nombre, c.nombre) AS client_nombre,
                     COALESCE(s.client_cedula, c.cedula) AS client_cedula,
                     s.created_at AS sale_created_at,
-                    sr.doc_type
-             FROM sale_receipts sr
-             JOIN sales s ON sr.sale_id = s.id
+                    'generated'::text AS doc_type
+             FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
              WHERE s.client_id = $1
              ${dateClause}
-             ${typeClause}
-             ORDER BY sr.created_at DESC`,
+             ORDER BY s.created_at DESC`,
             params
         );
 

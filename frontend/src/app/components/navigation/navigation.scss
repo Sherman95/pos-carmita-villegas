@@ -11,8 +11,9 @@
   align-items: center;
   padding-bottom: env(safe-area-inset-bottom); // Para iPhones nuevos
   z-index: 9000; // ¡Encima de todo!
-  box-shadow: 0 -5px 20px rgba(75, 30, 58, 0.3); // Sombra morada suave
-  border-top: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 -8px 28px rgba(46, 14, 34, 0.24);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(14px);
 
   // ESTILO DE LOS BOTONES
   .nav-item {
@@ -84,6 +85,11 @@
         color: #f8bbd0;
       }
     }
+
+    &:hover:not(.active) {
+      color: rgba(255, 255, 255, 0.86);
+      background: rgba(255, 255, 255, 0.06);
+    }
   }
 }
 
@@ -100,6 +106,8 @@
     padding: 0 20px;
     justify-content: center;
     gap: 10px; // Espacio entre botones
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 45px rgba(46, 14, 34, 0.34);
     
     // Los botones en PC tienen bordes redondos
     .nav-item {

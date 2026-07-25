@@ -15,6 +15,19 @@ export interface Client {
   updated_at?: string;
 }
 
+export interface DeleteClientResponse {
+  message: string;
+  reassignedSales: number;
+}
+
+export interface ClientDeletionImpact {
+  clientName: string;
+  salesCount: number;
+  pendingDebtCount: number;
+  pendingDebtAmount: number;
+  isFinalConsumer: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClientsService {
   private http = inject(HttpClient);
@@ -32,7 +45,11 @@ export class ClientsService {
     return this.http.put<Client>(`${this.apiUrl}/${id}`, payload);
   }
 
-  deleteClient(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  deleteClient(id: string): Observable<DeleteClientResponse> {
+    return this.http.delete<DeleteClientResponse>(`${this.apiUrl}/${id}`);
+  }
+
+  getDeletionImpact(id: string): Observable<ClientDeletionImpact> {
+    return this.http.get<ClientDeletionImpact>(`${this.apiUrl}/${id}/deletion-impact`);
   }
 }

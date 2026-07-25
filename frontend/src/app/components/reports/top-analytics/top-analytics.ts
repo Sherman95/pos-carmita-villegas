@@ -33,6 +33,7 @@ interface DetailRow {
   nombre_producto: string;
   cantidad: number;
   subtotal: number;
+  item_tipo?: string | null;
 }
 
 interface TopClientRow {
@@ -87,6 +88,7 @@ export class TopAnalyticsComponent implements OnInit {
   sortServicesBy = signal<SortMode>('amount');
 
   loading = signal<boolean>(false);
+  errorMessage = signal<string | null>(null);
   selectedTab = signal<number>(0);
 
   salesRows = signal<SaleRow[]>([]);
@@ -129,6 +131,7 @@ export class TopAnalyticsComponent implements OnInit {
 
   async loadAnalytics() {
     this.loading.set(true);
+    this.errorMessage.set(null);
 
     try {
       const { from, to } = this.getRangeParams(this.period(), this.from(), this.to());
@@ -144,18 +147,20 @@ export class TopAnalyticsComponent implements OnInit {
       }
 
       const detailsBySale = new Map<string, DetailRow[]>();
-      const detailRequests = normalizedSales.map(async (sale) => {
-        try {
-          const resp = await firstValueFrom(this.salesService.getSaleDetails(sale.id));
-          detailsBySale.set(sale.id, (resp.details || []) as DetailRow[]);
-        } catch {
-          detailsBySale.set(sale.id, []);
-        }
-      });
-      await Promise.all(detailRequests);
+      const groupedDetails = await firstValueFrom(
+        this.salesService.getSaleDetailsBatch(normalizedSales.map((sale) => sale.id))
+      );
+      for (const sale of normalizedSales) {
+        detailsBySale.set(sale.id, (groupedDetails[sale.id] || []) as DetailRow[]);
+      }
 
       this.topClientsRaw.set(this.buildTopClients(normalizedSales, detailsBySale));
       this.topServicesRaw.set(this.buildTopServices(normalizedSales, detailsBySale));
+    } catch (error: any) {
+      this.salesRows.set([]);
+      this.topClientsRaw.set([]);
+      this.topServicesRaw.set([]);
+      this.errorMessage.set(error?.error?.error || 'No se pudo calcular la analítica. Intenta nuevamente.');
     } finally {
       this.loading.set(false);
     }
@@ -168,7 +173,7 @@ export class TopAnalyticsComponent implements OnInit {
       const clientId = sale.client_id || 'CF';
       const clientName = sale.client_nombre || 'Consumidor Final';
       const amount = Number(sale.total || 0);
-      const details = detailsBySale.get(sale.id) || [];
+      const details = (detailsBySale.get(sale.id) || []).filter(detail => detail.item_tipo === 'SERVICIO');
 
       if (!map.has(clientId)) {
         map.set(clientId, {
@@ -202,6 +207,7 @@ export class TopAnalyticsComponent implements OnInit {
       const saleClientKey = sale.client_id || sale.client_nombre || `sale-${sale.id}`;
 
       for (const detail of details) {
+        if (detail.item_tipo !== 'SERVICIO') continue;
         const serviceId = detail.item_id || detail.id || detail.nombre_producto;
         if (!map.has(serviceId)) {
           map.set(serviceId, {

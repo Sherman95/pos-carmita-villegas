@@ -1,6 +1,8 @@
+@use 'sass:color';
+
 // VARIABLES DE COLOR (Tu marca)
 $color-primary: #4b1e3a; // Vino Tinto
-$color-bg: #f4f6f8;      // Gris muy suave para el fondo
+$color-bg: #f5f6f8;
 
 // ==========================================
 // 1. CONFIGURACIÓN GENERAL
@@ -19,7 +21,7 @@ $color-bg: #f4f6f8;      // Gris muy suave para el fondo
 .hero-section {
   flex: 0 0 auto;
   // Degradado elegante del Vino Tinto
-  background: linear-gradient(135deg, $color-primary 0%, lighten($color-primary, 15%) 100%);
+  background: linear-gradient(135deg, $color-primary 0%, color.adjust($color-primary, $lightness: 15%) 100%);
   color: white;
   padding: 30px 20px 45px; // Espacio extra abajo para el buscador
   border-bottom-left-radius: 35px;
@@ -137,7 +139,7 @@ $color-bg: #f4f6f8;      // Gris muy suave para el fondo
     // 1. PUNTO DE VENTA (La Joya de la Corona)
     &.primary-action {
       grid-column: 1 / -1; // Ocupa todo el ancho
-      background: linear-gradient(135deg, $color-primary 0%, #7b1fa2 100%);
+      background: linear-gradient(135deg, $color-primary 0%, #8a3c6b 100%);
       color: white;
       height: auto;
       min-height: 90px;
@@ -173,7 +175,7 @@ $color-bg: #f4f6f8;      // Gris muy suave para el fondo
       }
       
       // Naranja (Caja)
-      &.accent { background: linear-gradient(135deg, #FF9800, #F57C00); }
+      &.accent { background: linear-gradient(135deg, #7a294f, #4b1e3a); }
       // Rojo (Gastos)
       &.error { background: linear-gradient(135deg, #ef5350, #d32f2f); }
     }
@@ -185,11 +187,11 @@ $color-bg: #f4f6f8;      // Gris muy suave para el fondo
       // Vino (Créditos)
       &.wine .icon-box { background: #f3e5f5; color: $color-primary; }
       // Azul (Historial)
-      &.info .icon-box { background: #e3f2fd; color: #1565c0; }
+      &.info .icon-box { background: #f6e8ef; color: #7a294f; }
       // Verde (Reportes)
-      &.success .icon-box { background: #e8f5e9; color: #2e7d32; }
+      &.success .icon-box { background: #f3dbe7; color: #4b1e3a; }
       // Naranja suave (Clientes)
-      &.warn .icon-box { background: #fff3e0; color: #ef6c00; }
+      &.warn .icon-box { background: #f9f1f5; color: #8a3c6b; }
     }
   }
 }

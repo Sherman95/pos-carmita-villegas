@@ -50,6 +50,11 @@
     </div>
   </div>
 
+  <div class="feedback error" *ngIf="errorMessage()" role="alert">
+    <mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span>
+    <button mat-button (click)="loadAnalytics()">Reintentar</button>
+  </div>
+
   <div class="kpis-row" *ngIf="!loading()">
     <div class="kpi-card">
       <span class="kpi-label">Ventas en rango</span>
@@ -99,13 +104,13 @@
             </thead>
             <tbody>
               <tr *ngFor="let row of topClients(); let i = index">
-                <td>{{ i + 1 }}</td>
-                <td>{{ row.clientName }}</td>
-                <td>{{ row.totalAmount | currency }}</td>
-                <td>{{ row.salesCount }}</td>
-                <td>{{ row.serviceLines }}</td>
-                <td>{{ row.serviceQuantity }}</td>
-                <td>{{ row.avgTicket | currency }}</td>
+                <td data-label="Posición"><span class="rank">{{ i + 1 }}</span></td>
+                <td data-label="Cliente" class="primary-cell">{{ row.clientName }}</td>
+                <td data-label="Total">{{ row.totalAmount | currency }}</td>
+                <td data-label="Compras">{{ row.salesCount }}</td>
+                <td data-label="Servicios">{{ row.serviceLines }}</td>
+                <td data-label="Cantidad">{{ row.serviceQuantity }}</td>
+                <td data-label="Ticket promedio">{{ row.avgTicket | currency }}</td>
               </tr>
             </tbody>
           </table>
@@ -140,13 +145,13 @@
             </thead>
             <tbody>
               <tr *ngFor="let row of topServices(); let i = index">
-                <td>{{ i + 1 }}</td>
-                <td>{{ row.serviceName }}</td>
-                <td>{{ row.totalAmount | currency }}</td>
-                <td>{{ row.ordersCount }}</td>
-                <td>{{ row.quantityTotal }}</td>
-                <td>{{ row.uniqueClients }}</td>
-                <td>{{ row.avgUnitValue | currency }}</td>
+                <td data-label="Posición"><span class="rank">{{ i + 1 }}</span></td>
+                <td data-label="Servicio" class="primary-cell">{{ row.serviceName }}</td>
+                <td data-label="Ingresos">{{ row.totalAmount | currency }}</td>
+                <td data-label="Veces pedido">{{ row.ordersCount }}</td>
+                <td data-label="Cantidad">{{ row.quantityTotal }}</td>
+                <td data-label="Clientes">{{ row.uniqueClients }}</td>
+                <td data-label="Valor promedio">{{ row.avgUnitValue | currency }}</td>
               </tr>
             </tbody>
           </table>

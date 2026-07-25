@@ -2,6 +2,7 @@
   padding: 16px;
   max-width: 1000px; /* En PC no se estira al infinito */
   margin: 0 auto;
+  color: #211923;
 }
 
 // 🟢 HEADER
@@ -16,6 +17,10 @@
     padding: 15px 25px;
     border-radius: 12px;
     border-left: 5px solid #d32f2f; // Rojo gasto
+    border-top: 1px solid rgba(75, 30, 58, 0.08);
+    border-right: 1px solid rgba(75, 30, 58, 0.08);
+    border-bottom: 1px solid rgba(75, 30, 58, 0.08);
+    box-shadow: 0 12px 30px rgba(46, 14, 34, 0.1);
     
     .label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .amount { font-size: 24px; font-weight: 800; color: #d32f2f; }
@@ -47,14 +52,14 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #f5f5f5; /* Color de fondo suave */
+  background: #f7f1f4;
   padding: 8px 12px;
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
   font-weight: 500;
   color: #555;
-  border-bottom: 1px solid #ddd;
+  border: 1px solid rgba(75, 30, 58, 0.1);
   margin-bottom: 8px;
   
   .day-total { font-weight: bold; color: #333; }
@@ -62,7 +67,7 @@
 
 .expense-row {
   background: white;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(75, 30, 58, 0.08);
   padding: 12px 0;
   display: grid;
   align-items: center;
@@ -85,8 +90,10 @@
     padding: 10px 15px;
     border-radius: 8px;
     margin-bottom: 5px;
+    border: 1px solid rgba(75, 30, 58, 0.07);
+    box-shadow: 0 4px 16px rgba(46, 14, 34, 0.05);
     
-    &:hover { background-color: #fafafa; } // Efecto hover solo en PC
+    &:hover { background-color: #fdf9fb; box-shadow: 0 8px 22px rgba(46, 14, 34, 0.08); }
     .col-method { display: block; grid-area: method; }
   }
 }

@@ -7,9 +7,8 @@ import {
     getSalesSummary, 
     getSalesByClient, 
     getSaleWithDetails, 
+    getSaleDetailsBatch,
     getSalesByItem, 
-    saveSaleReceipt, 
-    getSaleReceipt, 
     getReceiptsByClient,
     getDebtors,      // <--- NUEVO
     registerPayment  // <--- NUEVO
@@ -30,9 +29,8 @@ router.post('/payment', registerPayment); // Para abonar
 router.get('/by-client/:clientId', getSalesByClient);
 router.get('/by-item/:itemId', getSalesByItem);
 router.get('/receipt-by-client/:clientId', getReceiptsByClient);
-router.get('/:id/receipt', getSaleReceipt);
+router.post('/details/batch', getSaleDetailsBatch);
 router.get('/:id', getSaleWithDetails);
 router.post('/', createSale); 
-router.post('/:id/receipt', saveSaleReceipt);
 
 export default router;

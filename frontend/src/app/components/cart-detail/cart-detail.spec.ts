@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { MatDialogRef } from '@angular/material/dialog';
 
 import { CartDetailComponent } from './cart-detail';
 
@@ -8,7 +10,11 @@ describe('CartDetailComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CartDetailComponent]
+      imports: [CartDetailComponent],
+      providers: [
+        provideHttpClient(),
+        { provide: MatDialogRef, useValue: { close: () => undefined } }
+      ]
     })
     .compileComponents();
 

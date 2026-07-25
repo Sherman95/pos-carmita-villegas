@@ -1,4 +1,10 @@
 <div class="list-container fade-in">
+    @if (errorMessage()) {
+        <div class="feedback error" role="alert">
+            <mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span>
+            <button mat-icon-button aria-label="Cerrar mensaje" (click)="errorMessage.set(null)"><mat-icon>close</mat-icon></button>
+        </div>
+    }
     
     <mat-tab-group [(selectedIndex)]="innerTab" animationDuration="0ms">
         
@@ -50,17 +56,17 @@
                         <span class="value">{{ summaryGeneral().total | currency }}</span>
                     </div>
                     <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()">
+                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()">
                             <mat-icon>picture_as_pdf</mat-icon> PDF
                         </button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()">
+                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()">
                             <mat-icon>table_view</mat-icon> Excel
                         </button>
                     </div>
                 </div>
 
                 <div class="sales-grid">
-                    <div *ngFor="let sale of salesGeneral()" class="sale-card" (click)="toggleDetalles(sale.id)">
+                    <div *ngFor="let sale of salesGeneral()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
                         
                         <div class="card-header">
                             <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">
@@ -77,7 +83,7 @@
                         </div>
 
                         <div class="card-details" *ngIf="selectedSaleId() === sale.id" (click)="$event.stopPropagation()">
-                            <div *ngIf="loadingDetail()" class="loading-spinner">Cargando...</div>
+                            <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
                             
                             <table *ngIf="!loadingDetail() && saleDetails()[sale.id]" class="detail-table">
                                 <tr *ngFor="let d of saleDetails()[sale.id]">
@@ -89,6 +95,8 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="loading-panel" *ngIf="loadingGeneral()"><span class="spinner"></span><p>Cargando ventas…</p></div>
 
                 <div class="no-data" *ngIf="salesGeneral().length === 0 && !loadingGeneral()">
                     <mat-icon>event_busy</mat-icon>
@@ -148,13 +156,13 @@
                         <span class="value">{{ summaryClient().total | currency }}</span>
                     </div>
                     <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()">PDF</button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()">Excel</button>
+                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
                     </div>
                 </div>
 
                 <div class="sales-grid">
-                    <div *ngFor="let sale of salesClient()" class="sale-card" (click)="toggleDetalles(sale.id)">
+                    <div *ngFor="let sale of salesClient()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
                         <div class="card-header">
                             <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">{{ getInitials(sale.client_nombre) }}</div>
                             <div class="card-meta">
@@ -164,7 +172,8 @@
                             <div class="card-price"><span class="price">{{ sale.total | currency }}</span></div>
                         </div>
                         <div class="card-details" *ngIf="selectedSaleId() === sale.id">
-                             <table class="detail-table" *ngIf="saleDetails()[sale.id]">
+                             <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
+                             <table class="detail-table" *ngIf="loadingDetailId() !== sale.id && saleDetails()[sale.id]">
                                 <tr *ngFor="let d of saleDetails()[sale.id]">
                                     <td class="prod-name">{{ d.nombre_producto }}</td>
                                     <td class="prod-total">{{ d.subtotal | currency }}</td>
@@ -173,6 +182,9 @@
                         </div>
                     </div>
                 </div>
+                <div class="loading-panel" *ngIf="loadingClient()"><span class="spinner"></span><p>Cargando ventas del cliente…</p></div>
+                <div class="no-data" *ngIf="!loadingClient() && selectedClientId() && salesClient().length === 0"><mat-icon>person_search</mat-icon><p>Este cliente no tiene ventas en el periodo seleccionado.</p></div>
+                <div class="no-data compact" *ngIf="!selectedClientId()"><mat-icon>touch_app</mat-icon><p>Selecciona un cliente para consultar sus ventas.</p></div>
             </div>
         </mat-tab>
 
@@ -226,21 +238,31 @@
                         <span class="value">{{ summaryService().total | currency }}</span>
                     </div>
                     <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()">PDF</button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()">Excel</button>
+                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
                     </div>
                 </div>
                 <div class="sales-grid">
-                    <div *ngFor="let sale of salesServiceList()" class="sale-card">
+                    <div *ngFor="let sale of salesServiceList()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
                         <div class="card-header">
                             <div class="card-meta">
                                 <span class="name">{{ sale.client_nombre || 'Consumidor Final' }}</span>
                                 <span class="date">{{ formatearHora(sale.created_at) }}</span>
+                                <span class="service-meta">{{ selectedServiceName() }} · x{{ sale.cantidad || 0 }}</span>
                             </div>
-                            <div class="card-price"><span class="price">{{ sale.total | currency }}</span></div>
+                            <div class="card-price"><span class="price">{{ sale.total | currency }}</span><mat-icon>expand_more</mat-icon></div>
+                        </div>
+                        <div class="card-details" *ngIf="selectedSaleId() === sale.id" (click)="$event.stopPropagation()">
+                            <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
+                            <table class="detail-table" *ngIf="loadingDetailId() !== sale.id && saleDetails()[sale.id]">
+                                <tr *ngFor="let d of saleDetails()[sale.id]"><td class="prod-name">{{ d.nombre_producto }}</td><td class="prod-qty">x{{ d.cantidad }}</td><td class="prod-total">{{ d.subtotal | currency }}</td></tr>
+                            </table>
                         </div>
                     </div>
                 </div>
+                <div class="loading-panel" *ngIf="loadingService()"><span class="spinner"></span><p>Cargando ventas del servicio…</p></div>
+                <div class="no-data" *ngIf="!loadingService() && selectedServiceId() && salesServiceList().length === 0"><mat-icon>search_off</mat-icon><p>Este servicio no aparece en el periodo seleccionado.</p></div>
+                <div class="no-data compact" *ngIf="!selectedServiceId()"><mat-icon>touch_app</mat-icon><p>Selecciona un servicio para consultar su rendimiento.</p></div>
             </div>
         </mat-tab>
     </mat-tab-group>

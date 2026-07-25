@@ -1,26 +1,31 @@
-<div class="page-container">
-    
-    <div class="header-section">
-      <h2>📊 Centro de Reportes</h2>
-      <p>Resumen financiero y auditoría</p>
-    </div>
+<main class="page-container">
+    <header class="header-section">
+      <div class="header-copy">
+        <span class="eyebrow">Control del negocio</span>
+        <h1><mat-icon>monitoring</mat-icon> Reportes</h1>
+        <p>Consulta ingresos, gastos, ventas y rendimiento desde un solo lugar.</p>
+      </div>
+    </header>
 
     <div class="tabs-wrapper">
       <mat-tab-group animationDuration="0ms" [(selectedIndex)]="activeTabIndex">
           
-          <mat-tab label="Finanzas">
+          <mat-tab>
+              <ng-template mat-tab-label><mat-icon>account_balance_wallet</mat-icon><span>Finanzas</span></ng-template>
               <app-dashboard></app-dashboard>
           </mat-tab>
 
-          <mat-tab label="Historial Ventas">
+          <mat-tab>
+              <ng-template mat-tab-label><mat-icon>receipt_long</mat-icon><span>Ventas</span></ng-template>
               <app-sales-list></app-sales-list>
           </mat-tab>
 
-            <mat-tab label="Top Analítica">
+            <mat-tab>
+              <ng-template mat-tab-label><mat-icon>leaderboard</mat-icon><span>Analítica</span></ng-template>
               <app-top-analytics></app-top-analytics>
             </mat-tab>
 
       </mat-tab-group>
     </div>
 
-</div>
+</main>

@@ -1,7 +1,7 @@
 /* Contenedor Global */
 .sidenav-container {
   height: 100vh;
-  background-color: #f8f9fa;
+  background: var(--ui-bg, #f5f6f8);
 }
 
 /* Configuración básica del panel lateral */
@@ -10,6 +10,7 @@
   border-right: none;
   background: #ffffff;
   overflow-x: hidden; /* Evita scrolls horizontales raros */
+  box-shadow: 18px 0 45px rgba(46, 14, 34, 0.14);
 }
 
 .page-content {

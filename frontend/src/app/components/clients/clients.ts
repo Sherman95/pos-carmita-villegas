@@ -17,6 +17,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import Swal from 'sweetalert2';
+import { firstValueFrom } from 'rxjs';
 
 import { ClientsService, Client } from '../../services/clients.service';
 
@@ -42,6 +44,7 @@ export class ClientsComponent implements OnInit {
   private clientsService = inject(ClientsService);
   private dialog = inject(MatDialog);
   private dialogRef?: MatDialogRef<unknown>;
+  private deletingClientIds = new Set<string>();
 
   @ViewChild('clientFormDialog') formDialog!: TemplateRef<unknown>;
 
@@ -129,15 +132,57 @@ export class ClientsComponent implements OnInit {
     this.openDialog();
   }
 
-  deleteClient(id: string) {
-    if (!confirm('¿Eliminar este cliente?')) return;
+  async deleteClient(id: string) {
+    if (this.deletingClientIds.has(id)) return;
+    this.deletingClientIds.add(id);
 
-    this.clientsService.deleteClient(id).subscribe({
-      next: () => {
-        this.clients.set(this.clients().filter(c => c.id !== id));
-      },
-      error: err => console.error('Error eliminando cliente', err)
-    });
+    try {
+      const impact = await firstValueFrom(this.clientsService.getDeletionImpact(id));
+
+      if (impact.isFinalConsumer) {
+        await Swal.fire('Acción bloqueada', 'No se puede eliminar al Consumidor Final.', 'warning');
+        return;
+      }
+
+      if (impact.pendingDebtCount > 0) {
+        await Swal.fire({
+          title: 'Cliente con deuda pendiente',
+          text: `${impact.clientName} debe $${impact.pendingDebtAmount.toFixed(2)} en ${impact.pendingDebtCount} venta(s). Registra el pago antes de eliminarlo.`,
+          icon: 'warning',
+          confirmButtonText: 'Entendido'
+        });
+        return;
+      }
+
+      const confirmation = await Swal.fire({
+        title: '¿Eliminar cliente?',
+        text: impact.salesCount > 0
+          ? `Las ${impact.salesCount} venta(s) de ${impact.clientName} pasarán a Consumidor Final.`
+          : `${impact.clientName} no tiene ventas asociadas.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33'
+      });
+
+      if (!confirmation.isConfirmed) return;
+
+      const response = await firstValueFrom(this.clientsService.deleteClient(id));
+      this.clients.set(this.clients().filter(c => c.id !== id));
+      await Swal.fire({
+        title: 'Cliente eliminado',
+        text: response.reassignedSales > 0
+          ? `${response.reassignedSales} venta(s) pasaron a Consumidor Final.`
+          : 'El cliente no tenía ventas asociadas.',
+        icon: 'success'
+      });
+    } catch (err: any) {
+      const message = err?.error?.error || 'No se pudo verificar o eliminar el cliente.';
+      await Swal.fire('No se pudo eliminar', message, 'error');
+    } finally {
+      this.deletingClientIds.delete(id);
+    }
   }
 
   // =========================
