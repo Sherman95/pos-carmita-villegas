@@ -1,0 +1,46 @@
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.btn-delete {
+  margin-right: auto;
+}
+
+.dialog-actions-premium {
+  padding: 16px 24px;
+  border-top: 1px solid var(--ui-border);
+  gap: 8px;
+}
+
+::ng-deep .mat-mdc-dialog-actions .mat-mdc-button-base {
+  border-radius: var(--ui-radius-lg);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+::ng-deep .mat-mdc-dialog-actions .mat-mdc-flat-button {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+}
+
+::ng-deep .mat-mdc-dialog-actions .mat-mdc-flat-button:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+::ng-deep .mat-mdc-dialog-title {
+  color: var(--brand-base) !important;
+  font-weight: 700;
+  border-bottom: 1px solid var(--ui-border);
+  margin-bottom: 15px;
+}

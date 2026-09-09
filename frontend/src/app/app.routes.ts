@@ -13,5 +13,8 @@ export const routes: Routes = [
   { path: 'expenses', loadComponent: () => import('./components/expenses/expenses').then((m) => m.ExpensesComponent), canActivate: [authGuard] },
   { path: 'cash-control', loadComponent: () => import('./components/cash-control/cash-control').then((m) => m.CashControlComponent), canActivate: [authGuard] },
   { path: 'cash-history', loadComponent: () => import('./components/cash-history/cash-history').then((m) => m.CashHistoryComponent), canActivate: [authGuard] },
+  { path: 'citas', loadComponent: () => import('./components/appointments/appointments').then((m) => m.AppointmentsComponent), canActivate: [authGuard] },
+  { path: 'profesionales', loadComponent: () => import('./components/employees/employees').then((m) => m.EmployeesComponent), canActivate: [authGuard] },
+  { path: 'settings', loadComponent: () => import('./components/settings/settings').then((m) => m.SettingsComponent), canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
 ];

@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar Profesional' : 'Nueva Profesional' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nombre Completo</mat-label>
+      <input matInput formControlName="nombre" placeholder="Ej. Ana Pérez" required>
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">Requerido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Teléfono (Opcional)</mat-label>
+      <input matInput formControlName="telefono" placeholder="Ej. 0991234567">
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions-premium">
+  <button mat-button *ngIf="isEdit" color="warn" class="btn-delete" (click)="eliminar()">
+    <mat-icon>delete_forever</mat-icon> Eliminar
+  </button>
+  <span class="spacer"></span>
+  <button mat-stroked-button (click)="cancelar()">
+    <mat-icon>close</mat-icon> Cancelar
+  </button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid">
+    <mat-icon>save</mat-icon> {{ isEdit ? 'Actualizar' : 'Guardar' }}
+  </button>
+</mat-dialog-actions>

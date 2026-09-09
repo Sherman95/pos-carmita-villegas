@@ -1,0 +1,47 @@
+<div class="content-container animate-fade-in">
+  <div class="header-section">
+    <div class="header-content">
+      <h1 class="brand-text-light"><mat-icon>group</mat-icon> Personal / Profesionales</h1>
+      <p class="brand-text-light">Administra las empleadas que aparecerán en el calendario</p>
+    </div>
+    <button mat-raised-button color="accent" (click)="openDialog()">
+      <mat-icon>person_add</mat-icon> Nueva Profesional
+    </button>
+  </div>
+
+  <div class="table-container mat-elevation-z8">
+    <table mat-table [dataSource]="dataSource">
+      
+      <!-- Nombre Column -->
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef> Nombre </th>
+        <td mat-cell *matCellDef="let element"> {{element.nombre}} </td>
+      </ng-container>
+
+      <!-- Telefono Column -->
+      <ng-container matColumnDef="telefono">
+        <th mat-header-cell *matHeaderCellDef> Teléfono </th>
+        <td mat-cell *matCellDef="let element"> {{element.telefono || 'Sin registrar'}} </td>
+      </ng-container>
+
+      <!-- Acciones Column -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef> Acciones </th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-icon-button color="primary" (click)="openDialog(element)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="3" style="text-align: center; padding: 2rem;">
+          No hay profesionales registradas. Haz clic en "Nueva Profesional".
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

@@ -28,6 +28,11 @@
   --ui-shadow-md: 0 12px 30px rgba(31, 23, 34, 0.10);
   --ui-shadow-brand: 0 14px 34px rgba(75, 30, 58, 0.20);
 
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
   --mat-sys-primary: var(--brand-base);
   --mat-sys-on-primary: #ffffff;
   --mat-sys-primary-container: var(--brand-contrast);
@@ -123,6 +128,7 @@ body {
   border-radius: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0 !important;
+  min-height: 48px !important; /* Touch Target Accessibility */
 }
 
 .mat-mdc-icon-button {
@@ -213,8 +219,12 @@ input, textarea, select, button { font: inherit; }
 input::placeholder, textarea::placeholder { color: #98a1af; opacity: 1; }
 
 @media (max-width: 600px) {
-  .mat-mdc-dialog-container { padding: 10px !important; }
-  .mat-mdc-dialog-surface { border-radius: 18px !important; }
+  .mat-mdc-dialog-container { padding: 0 !important; }
+  .mat-mdc-dialog-surface { 
+    border-radius: 24px 24px 0 0 !important; 
+    min-height: 50vh !important;
+    margin-top: auto !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

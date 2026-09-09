@@ -14,26 +14,27 @@ try {
 const databaseUrl = process.env.DATABASE_URL;
 
 // LOG 1: Saber qué configuración estamos usando
+// LOG 1: Saber qué configuración estamos usando
 console.log(`[DB] 🔧 Iniciando configuración...`);
-console.log(`[DB] 🌍 DATABASE_URL detectada: ${databaseUrl ? 'SÍ (Modo Producción)' : 'NO (Modo Local)'}`);
+console.log(`[DB] 🌍 DATABASE_URL detectada: ${databaseUrl ? 'SÍ' : 'NO'}`);
 
 const pool = databaseUrl
     ? new Pool({
-          connectionString: databaseUrl,
-          ssl: { rejectUnauthorized: false },
-          // Opcional: limitar conexiones para evitar saturar Supabase en plan free
-          max: 20, 
-          idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 10000,
-      })
+        connectionString: databaseUrl,
+        // MAGIA: Solo activará el SSL si la URL NO dice "localhost"
+        ...(databaseUrl.includes('localhost') ? {} : { ssl: { rejectUnauthorized: false } }),
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+    })
     : new Pool({
-          host: process.env.DB_HOST || 'localhost',
-          port: Number(process.env.DB_PORT) || 5432,
-          user: process.env.DB_USER,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_NAME,
-          ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
-      });
+        host: process.env.DB_HOST || 'localhost',
+        port: Number(process.env.DB_PORT) || 5432,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
 
 // LOG 2: Cuando se crea una conexión nueva en el pool
 pool.on('connect', () => {

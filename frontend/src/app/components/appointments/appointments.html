@@ -1,0 +1,20 @@
+<div class="calendar-container mat-elevation-z2 dashboard-card">
+    <div class="header-section">
+      <div class="header-content">
+        <h1 class="brand-text-light"><mat-icon>calendar_month</mat-icon> Agenda de Citas</h1>
+        <p class="brand-text-light">Administra las citas y servicios por empleado</p>
+      </div>
+      <button mat-raised-button color="accent" (click)="openNewAppointment()">
+        <mat-icon>add</mat-icon> Nueva Cita
+      </button>
+    </div>
+  
+    <div class="calendar-wrapper" *ngIf="!loading">
+      <full-calendar [options]="calendarOptions"></full-calendar>
+    </div>
+  
+    <div class="loading-state" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando calendario...</p>
+    </div>
+  </div>

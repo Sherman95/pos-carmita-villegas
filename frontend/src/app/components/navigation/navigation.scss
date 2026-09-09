@@ -19,14 +19,14 @@
   .nav-item {
     flex: 1; // Ocupar espacio igual
     height: 100%;
-    min-width: auto; // Reset de Material
+    background: transparent; border: none; outline: none; min-width: auto;
     padding: 0;
     border-radius: 0;
     color: rgba(255, 255, 255, 0.6); // Color inactivo (transparente)
     transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     
     // Contenedor interno para alinear icono y texto
-    ::ng-deep .mat-mdc-button-touch-target { display: none; } // Fix Material touch area
+    /* removed touch target fix */ // Fix Material touch area
     
     display: flex;
     flex-direction: column;

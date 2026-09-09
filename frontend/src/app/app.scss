@@ -14,5 +14,6 @@
 }
 
 .page-content {
-  padding-bottom: 80px; 
+  padding-top: var(--safe-top);
+  padding-bottom: calc(80px + var(--safe-bottom)); 
 }

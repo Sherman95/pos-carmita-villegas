@@ -23,6 +23,11 @@
       <span matListItemTitle>Punto de Venta</span>
     </a>
 
+    <a mat-list-item routerLink="/citas" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>calendar_month</mat-icon>
+      <span matListItemTitle>Agenda / Citas</span>
+    </a>
+
     <a mat-list-item routerLink="/expenses" routerLinkActive="active-link" (click)="onClose()">
       <mat-icon matListItemIcon>payments</mat-icon>
       <span matListItemTitle>Gastos y Retiros</span>
@@ -63,13 +68,23 @@
       <span matListItemTitle>Historial Cierres</span>
     </a>
 
+    <a mat-list-item routerLink="/profesionales" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>group</mat-icon>
+      <span matListItemTitle>Personal / Profesionales</span>
+    </a>
+
     <mat-divider class="custom-divider"></mat-divider>
 
     <div class="section-title">Sistema</div>
 
     <a mat-list-item routerLink="/profile" routerLinkActive="active-link" (click)="onClose()">
+      <mat-icon matListItemIcon>person</mat-icon>
+      <span matListItemTitle>Perfil de Usuario</span>
+    </a>
+
+    <a mat-list-item routerLink="/settings" routerLinkActive="active-link" (click)="onClose()">
       <mat-icon matListItemIcon>settings</mat-icon>
-      <span matListItemTitle>Configuración</span>
+      <span matListItemTitle>Configuraciones</span>
     </a>
 
     <a mat-list-item (click)="logout()" class="logout-item">

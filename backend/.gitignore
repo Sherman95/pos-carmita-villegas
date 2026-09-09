@@ -17,6 +17,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.log
+google-credentials.json
 
 # SO / editor
 .DS_Store

@@ -1,0 +1,79 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-settings',
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule, MatSnackBarModule, FormsModule],
+  templateUrl: './settings.html',
+  styleUrls: ['./settings.scss']
+})
+export class SettingsComponent implements OnInit {
+  isGoogleConnected = false;
+  loading = true;
+  calendarId = '';
+
+  constructor(
+    private http: HttpClient,
+    private snackBar: MatSnackBar
+  ) {}
+
+  ngOnInit() {
+    this.checkGoogleStatus();
+  }
+
+  checkGoogleStatus() {
+    this.loading = true;
+    this.http.get<{isConnected: boolean, calendarId: string}>(`${environment.apiBaseUrl}/auth/google/status`).subscribe({
+      next: (res) => {
+        this.isGoogleConnected = res.isConnected;
+        this.calendarId = res.calendarId || '';
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error verificando estado de Google', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  saveCalendar() {
+    this.loading = true;
+    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/auth/google/calendar`, { calendarId: this.calendarId }).subscribe({
+      next: (res) => {
+        this.snackBar.open(res.message, 'Cerrar', { duration: 3000 });
+        this.isGoogleConnected = true;
+        this.loading = false;
+      },
+      error: (err) => {
+        const errorMsg = err.error?.error || 'Error desconocido';
+        this.snackBar.open(errorMsg, 'Cerrar', { duration: 5000, panelClass: ['error-snackbar'] });
+        this.loading = false;
+        this.isGoogleConnected = false;
+      }
+    });
+  }
+
+  disconnectCalendar() {
+    this.loading = true;
+    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/auth/google/calendar`, { calendarId: '' }).subscribe({
+      next: (res) => {
+        this.snackBar.open('Calendario desvinculado', 'Cerrar', { duration: 3000 });
+        this.isGoogleConnected = false;
+        this.calendarId = '';
+        this.loading = false;
+      },
+      error: (err) => {
+        this.snackBar.open('Error al desvincular', 'Cerrar', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+}

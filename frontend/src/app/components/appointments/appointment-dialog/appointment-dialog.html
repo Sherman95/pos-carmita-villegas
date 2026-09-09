@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar Cita' : 'Nueva Cita' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Cliente</mat-label>
+      <mat-select formControlName="client_id" required>
+        <mat-option *ngFor="let client of clients" [value]="client.id">
+          {{ client.nombre }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('client_id')?.hasError('required')">Requerido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Servicio</mat-label>
+      <mat-select formControlName="item_id" required>
+        <mat-option *ngFor="let srv of servicesList" [value]="srv.id">
+          {{ srv.nombre }} - ${{ srv.precio }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('item_id')?.hasError('required')">Requerido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Profesional</mat-label>
+      <mat-select formControlName="employee_id" required>
+        <mat-option *ngFor="let emp of employees" [value]="emp.id">
+          {{ emp.nombre }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Fecha/Hora Inicio</mat-label>
+        <input matInput type="datetime-local" formControlName="fecha_inicio" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Fecha/Hora Fin</mat-label>
+        <input matInput type="datetime-local" formControlName="fecha_fin" required>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="estado">
+        <mat-option value="PROGRAMADA">Programada</mat-option>
+        <mat-option value="COMPLETADA">Completada</mat-option>
+        <mat-option value="CANCELADA">Cancelada</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Notas (Opcional)</mat-label>
+      <textarea matInput formControlName="notas" rows="3" placeholder="Ej. Cliente solicitó X color..."></textarea>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions-premium">
+  <button mat-button *ngIf="isEdit" color="warn" class="btn-delete" (click)="eliminar()">
+    <mat-icon>delete_forever</mat-icon> Eliminar
+  </button>
+  <span class="spacer"></span>
+  <button mat-stroked-button (click)="cancelar()">
+    <mat-icon>close</mat-icon> Cancelar
+  </button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid">
+    <mat-icon>{{ isEdit ? 'save' : 'event_available' }}</mat-icon> 
+    {{ isEdit ? 'Actualizar' : 'Agendar Cita' }}
+  </button>
+</mat-dialog-actions>

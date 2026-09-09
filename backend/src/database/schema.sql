@@ -112,3 +112,10 @@ CREATE INDEX IF NOT EXISTS idx_sales_fecha ON sales (fecha);
 CREATE INDEX IF NOT EXISTS idx_sales_client_id ON sales (client_id);
 CREATE INDEX IF NOT EXISTS idx_sale_details_sale_id ON sale_details (sale_id);
 CREATE INDEX IF NOT EXISTS idx_sale_details_item_id ON sale_details (item_id);
+-- 6) business_config
+CREATE TABLE IF NOT EXISTS business_config (
+	id SERIAL PRIMARY KEY,
+	config_key VARCHAR(100) UNIQUE NOT NULL,
+	config_value TEXT,
+	updated_at TIMESTAMPTZ DEFAULT NOW()
+);
