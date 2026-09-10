@@ -26,12 +26,13 @@ export class SettingsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.checkGoogleStatus();
+    // Avoid NG0100 by executing in next tick if it's too fast
+    setTimeout(() => this.checkGoogleStatus(), 0);
   }
 
   checkGoogleStatus() {
     this.loading = true;
-    this.http.get<{isConnected: boolean, calendarId: string}>(`${environment.apiBaseUrl}/auth/google/status`).subscribe({
+    this.http.get<{isConnected: boolean, calendarId: string}>(`${environment.apiBaseUrl}/api/auth/google/status`).subscribe({
       next: (res) => {
         this.isGoogleConnected = res.isConnected;
         this.calendarId = res.calendarId || '';
@@ -46,7 +47,7 @@ export class SettingsComponent implements OnInit {
 
   saveCalendar() {
     this.loading = true;
-    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/auth/google/calendar`, { calendarId: this.calendarId }).subscribe({
+    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar`, { calendarId: this.calendarId }).subscribe({
       next: (res) => {
         this.snackBar.open(res.message, 'Cerrar', { duration: 3000 });
         this.isGoogleConnected = true;
@@ -63,7 +64,7 @@ export class SettingsComponent implements OnInit {
 
   disconnectCalendar() {
     this.loading = true;
-    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/auth/google/calendar`, { calendarId: '' }).subscribe({
+    this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar`, { calendarId: '' }).subscribe({
       next: (res) => {
         this.snackBar.open('Calendario desvinculado', 'Cerrar', { duration: 3000 });
         this.isGoogleConnected = false;
