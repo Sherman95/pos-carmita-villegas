@@ -26,7 +26,9 @@ export class EmployeesComponent implements OnInit {
 
   loadEmployees() {
     this.employeeService.getEmployees().subscribe(data => {
-      this.dataSource = data;
+      setTimeout(() => {
+        this.dataSource = data;
+      }, 0);
     });
   }
 
