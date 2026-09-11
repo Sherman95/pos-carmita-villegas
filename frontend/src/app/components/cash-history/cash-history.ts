@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed , ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -17,6 +17,7 @@ import { CashDetailSheetComponent } from './cash-detail-sheet/cash-detail-sheet'
 
 @Component({
   selector: 'app-cash-history',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-ES' }],
   imports: [

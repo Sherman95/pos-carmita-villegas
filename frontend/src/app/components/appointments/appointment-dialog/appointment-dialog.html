@@ -5,10 +5,10 @@
 
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
-    
+
     <!-- SECCIÓN: QUIÉN -->
     <span class="section-label">Quién</span>
-    
+
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Cliente</mat-label>
       <mat-icon matPrefix class="field-icon">person</mat-icon>
@@ -17,12 +17,18 @@
           <input matInput placeholder="Buscar cliente..." (input)="filterClients($event)" (keydown)="$event.stopPropagation()">
           <mat-icon class="search-icon">search</mat-icon>
         </div>
-        <mat-option *ngFor="let client of filteredClients" [value]="client.id">
-          {{ client.nombre }}
-        </mat-option>
-        <div *ngIf="filteredClients.length === 0" class="no-results">No se encontraron clientes</div>
+        @for (client of filteredClients; track client) {
+          <mat-option [value]="client.id">
+            {{ client.nombre }}
+          </mat-option>
+        }
+        @if (filteredClients.length === 0) {
+          <div class="no-results">No se encontraron clientes</div>
+        }
       </mat-select>
-      <mat-error *ngIf="form.get('client_id')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('client_id')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -33,12 +39,18 @@
           <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
           <mat-icon class="search-icon">search</mat-icon>
         </div>
-        <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.id">
-          {{ emp.nombre }}
-        </mat-option>
-        <div *ngIf="filteredEmployees.length === 0" class="no-results">No se encontraron profesionales</div>
+        @for (emp of filteredEmployees; track emp) {
+          <mat-option [value]="emp.id">
+            {{ emp.nombre }}
+          </mat-option>
+        }
+        @if (filteredEmployees.length === 0) {
+          <div class="no-results">No se encontraron profesionales</div>
+        }
       </mat-select>
-      <mat-error *ngIf="form.get('employee_id')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('employee_id')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <!-- SECCIÓN: QUÉ -->
@@ -52,12 +64,18 @@
           <input matInput placeholder="Buscar servicio..." (input)="filterServices($event)" (keydown)="$event.stopPropagation()">
           <mat-icon class="search-icon">search</mat-icon>
         </div>
-        <mat-option *ngFor="let srv of filteredServices" [value]="srv.id">
-          {{ srv.nombre }} - ${{ srv.precio }}
-        </mat-option>
-        <div *ngIf="filteredServices.length === 0" class="no-results">No se encontraron servicios</div>
+        @for (srv of filteredServices; track srv) {
+          <mat-option [value]="srv.id">
+            {{ srv.nombre }} - ${{ srv.precio }}
+          </mat-option>
+        }
+        @if (filteredServices.length === 0) {
+          <div class="no-results">No se encontraron servicios</div>
+        }
       </mat-select>
-      <mat-error *ngIf="form.get('item_id')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('item_id')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <!-- SECCIÓN: CUÁNDO -->
@@ -67,14 +85,18 @@
       <mat-label>Inicio</mat-label>
       <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
       <input matInput type="datetime-local" formControlName="fecha_inicio" required>
-      <mat-error *ngIf="form.get('fecha_inicio')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('fecha_inicio')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width date-field">
       <mat-label>Fin</mat-label>
       <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
       <input matInput type="datetime-local" formControlName="fecha_fin" required>
-      <mat-error *ngIf="form.get('fecha_fin')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('fecha_fin')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <!-- SECCIÓN: ESTADO -->
@@ -97,15 +119,17 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions-premium">
-  <button mat-button *ngIf="isEdit" color="warn" class="btn-delete" (click)="eliminar()">
-    <mat-icon>delete_forever</mat-icon> Eliminar
-  </button>
+  @if (isEdit) {
+    <button mat-button color="warn" class="btn-delete" (click)="eliminar()">
+      <mat-icon>delete_forever</mat-icon> Eliminar
+    </button>
+  }
   <span class="spacer"></span>
   <button mat-stroked-button (click)="cancelar()">
     <mat-icon>close</mat-icon> Cancelar
   </button>
   <button mat-flat-button color="primary" (click)="guardar()">
-    <mat-icon>{{ isEdit ? 'save' : 'event_available' }}</mat-icon> 
+    <mat-icon>{{ isEdit ? 'save' : 'event_available' }}</mat-icon>
     {{ isEdit ? 'Actualizar' : 'Agendar Cita' }}
   </button>
 </mat-dialog-actions>

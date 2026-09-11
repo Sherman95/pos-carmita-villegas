@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef , ChangeDetectionStrategy } from '@angular/core';
+
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,8 +10,9 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-settings',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule, MatSnackBarModule, FormsModule],
+  imports: [MatButtonModule, MatIconModule, MatCardModule, MatSnackBarModule, FormsModule],
   templateUrl: './settings.html',
   styleUrls: ['./settings.scss']
 })

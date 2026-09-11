@@ -1,5 +1,5 @@
-import { Component, Output, EventEmitter } from '@angular/core'; // 👈 1. Importamos Output
-import { CommonModule } from '@angular/common';
+import { Component, Output, EventEmitter , ChangeDetectionStrategy } from '@angular/core'; // 👈 1. Importamos Output
+
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,8 +8,9 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navigation',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, MatIconModule, MatButtonModule, MatRippleModule],
+  imports: [RouterLink, RouterLinkActive, MatIconModule, MatButtonModule, MatRippleModule],
   templateUrl: './navigation.html',
   styleUrl: './navigation.scss'
 })

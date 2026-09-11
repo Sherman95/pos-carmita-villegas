@@ -10,9 +10,9 @@ $color-bg: #f5f6f8;
 .home-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100%; /* Permitir que crezca con el contenido */
   background-color: $color-bg;
-  overflow: hidden;
+  /* overflow: hidden; Eliminado para permitir scroll natural */
 }
 
 // ==========================================
@@ -85,7 +85,7 @@ $color-bg: #f5f6f8;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
-  overflow-y: auto; // Permite scroll si la pantalla es muy pequeña
+  /* overflow-y: auto; Eliminado, el scroll lo hace la página entera */
   
   display: grid;
   grid-template-columns: repeat(2, 1fr); // 2 Columnas

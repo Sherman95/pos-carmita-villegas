@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild, computed, inject, signal , ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -31,6 +31,7 @@ interface Movimiento {
 
 @Component({
   selector: 'app-fiados',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule, 

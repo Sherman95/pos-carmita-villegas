@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal , ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -16,6 +16,7 @@ type DashboardPeriod = 'today' | 'month' | 'year' | 'custom';
 
 @Component({
   selector: 'app-dashboard',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, FormsModule, MatCardModule, MatButtonToggleModule, MatIconModule, MatButtonModule, BaseChartDirective],
   templateUrl: './dashboard.html',

@@ -4,12 +4,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 70px; // Altura cómoda
+  height: auto; // Cambiado a auto
+  min-height: 70px;
   background: linear-gradient(180deg, #4b1e3a 0%, #2e0e22 100%); // Tu color Vino Tinto
   display: flex;
   justify-content: space-around; // Distribuye los botones equitativamente
   align-items: center;
-  padding-bottom: env(safe-area-inset-bottom); // Para iPhones nuevos
+  padding-top: 5px;
+  padding-bottom: max(env(safe-area-inset-bottom), 15px); // Evita cortes de texto
   z-index: 9000; // ¡Encima de todo!
   box-shadow: 0 -8px 28px rgba(46, 14, 34, 0.24);
   border-top: 1px solid rgba(255,255,255,0.12);
@@ -18,7 +20,7 @@
   // ESTILO DE LOS BOTONES
   .nav-item {
     flex: 1; // Ocupar espacio igual
-    height: 100%;
+    height: 60px; // Fijo para contener bien el texto e icono
     background: transparent; border: none; outline: none; min-width: auto;
     padding: 0;
     border-radius: 0;

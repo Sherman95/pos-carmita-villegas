@@ -1,65 +1,73 @@
 <div class="login-shell">
-  
+
   <div class="decorative-bg">
     <div class="circle circle-1"></div>
     <div class="circle circle-2"></div>
   </div>
 
   <div class="card elevation-z8">
-    
+
     <div class="brand">
       <div class="logo-container">
-         <img class="logo" 
-           src="/assets/imghome.png" 
-           alt="Logo" 
-           [hidden]="!logoLoaded"
-            (error)="onLogoError()">
-       
-        <mat-icon class="fallback-icon" *ngIf="!logoLoaded">storefront</mat-icon>
-    </div>
-      
-      <div class="brand-text">
-        <h1>Bienvenido 👋</h1>
-        <p>Inicia sesión en tu punto de venta</p>
-      </div>
-    </div>
+        <img class="logo"
+          src="/assets/imghome.png"
+          alt="Logo"
+          [hidden]="!logoLoaded"
+          (error)="onLogoError()">
 
-    <form (ngSubmit)="submit()" autocomplete="off" class="login-form">
-      
-      <mat-form-field appearance="outline" class="full-width custom-field">
-        <mat-label>Usuario</mat-label>
-        <mat-icon matPrefix>person</mat-icon>
-        <input matInput name="username" [(ngModel)]="username" required placeholder="Ej. admin">
-      </mat-form-field>
+          @if (!logoLoaded) {
+            <mat-icon class="fallback-icon">storefront</mat-icon>
+          }
+        </div>
 
-      <mat-form-field appearance="outline" class="full-width custom-field">
-        <mat-label>Contraseña</mat-label>
-        <mat-icon matPrefix>lock</mat-icon>
-        <input matInput 
-               name="password" 
-               [type]="hidePassword ? 'password' : 'text'" 
-               [(ngModel)]="password" 
-               required
-               placeholder="••••••">
-        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
-          <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-        </button>
-      </mat-form-field>
-
-      <div class="error-box" *ngIf="error">
-        <mat-icon>error_outline</mat-icon>
-        <span>{{ error }}</span>
+        <div class="brand-text">
+          <h1>Bienvenido 👋</h1>
+          <p>Inicia sesión en tu punto de venta</p>
+        </div>
       </div>
 
-      <button mat-flat-button class="btn-login" type="submit" [disabled]="loading">
-        <span *ngIf="!loading">INGRESAR</span>
-        <div class="loader" *ngIf="loading"></div>
-      </button>
+      <form (ngSubmit)="submit()" autocomplete="off" class="login-form">
 
-    </form>
-    
-    <div class="footer-copy">
-      © 2026 Sistema POS
+        <mat-form-field appearance="outline" class="full-width custom-field">
+          <mat-label>Usuario</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput name="username" [(ngModel)]="username" required placeholder="Ej. admin">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width custom-field">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input matInput
+            name="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="password"
+            required
+            placeholder="••••••">
+            <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+              <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          @if (error) {
+            <div class="error-box">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ error }}</span>
+            </div>
+          }
+
+          <button mat-flat-button class="btn-login" type="submit" [disabled]="loading">
+            @if (!loading) {
+              <span>INGRESAR</span>
+            }
+            @if (loading) {
+              <div class="loader"></div>
+            }
+          </button>
+
+        </form>
+
+        <div class="footer-copy">
+          © 2026 Sistema POS
+        </div>
+      </div>
     </div>
-  </div>
-</div>

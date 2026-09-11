@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit , ChangeDetectionStrategy } from '@angular/core';
+
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FullCalendarModule } from '@fullcalendar/angular';
 // Removido import de tipos de @fullcalendar/core debido a TS2306
@@ -15,15 +15,15 @@ import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-appointments',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule, 
-    FullCalendarModule, 
-    MatDialogModule, 
-    MatButtonModule, 
-    MatIconModule, 
+    FullCalendarModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
     MatProgressSpinnerModule
-  ],
+],
   templateUrl: './appointments.html',
   styleUrls: ['./appointments.scss']
 })

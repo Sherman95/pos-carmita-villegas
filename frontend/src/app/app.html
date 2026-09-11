@@ -1,16 +1,22 @@
 <mat-sidenav-container class="sidenav-container">
 
-  <mat-sidenav #sidenav mode="over" class="app-sidenav" *ngIf="isAuthenticated">
-    <app-sidenav (closeMenu)="sidenav.close()"></app-sidenav>
-  </mat-sidenav>
+  @if (isAuthenticated) {
+    <mat-sidenav #sidenav mode="over" class="app-sidenav">
+      <app-sidenav (closeMenu)="sidenav.close()"></app-sidenav>
+    </mat-sidenav>
+  }
 
   <mat-sidenav-content>
     <div class="page-content">
       <router-outlet></router-outlet>
     </div>
 
-    <app-cart-footer *ngIf="isAuthenticated"></app-cart-footer>
-    <app-navigation *ngIf="isAuthenticated" (toggleMenu)="sidenav.toggle()"></app-navigation>
+    @if (isAuthenticated) {
+      <app-cart-footer></app-cart-footer>
+    }
+    @if (isAuthenticated) {
+      <app-navigation (toggleMenu)="sidenav.toggle()"></app-navigation>
+    }
   </mat-sidenav-content>
 
 </mat-sidenav-container>

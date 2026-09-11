@@ -38,12 +38,14 @@
         <span class="price">P.Unit</span>
         <span class="total">Total</span>
       </div>
-      <div class="table-body" *ngFor="let item of data.items">
-        <span class="qty">{{ item.cantidad }}</span>
-        <span class="desc">{{ item.nombre }}</span>
-        <span class="price">{{ item.precio | number:'1.2-2' }}</span>
-        <span class="total">{{ item.subtotal | number:'1.2-2' }}</span>
-      </div>
+      @for (item of data.items; track item) {
+        <div class="table-body">
+          <span class="qty">{{ item.cantidad }}</span>
+          <span class="desc">{{ item.nombre }}</span>
+          <span class="price">{{ item.precio | number:'1.2-2' }}</span>
+          <span class="total">{{ item.subtotal | number:'1.2-2' }}</span>
+        </div>
+      }
     </div>
 
     <div class="separator"></div>
@@ -69,7 +71,7 @@
         <span>{{ data.tipoPago || 'EFECTIVO' }}</span>
       </div>
 
-      <ng-container *ngIf="data.tipoPago === 'CREDITO'">
+      @if (data.tipoPago === 'CREDITO') {
         <div class="row">
           <span>Abono Inicial (Pagado):</span>
           <span>{{ (data.abono || 0) | number:'1.2-2' }}</span>
@@ -78,16 +80,18 @@
           <span>SALDO PENDIENTE (Deuda):</span>
           <span>{{ (data.total - (data.abono || 0)) | number:'1.2-2' }}</span>
         </div>
-      </ng-container>
-      </div>
+      }
+    </div>
 
     <div class="separator"></div>
 
     <div class="footer">
       <div>¡Gracias por su visita!</div>
-      <div *ngIf="data.tipoPago === 'CREDITO'" style="font-weight: bold; margin-top: 5px;">
-        * Por favor conserve este recibo para controlar su saldo *
-      </div>
+      @if (data.tipoPago === 'CREDITO') {
+        <div style="font-weight: bold; margin-top: 5px;">
+          * Por favor conserve este recibo para controlar su saldo *
+        </div>
+      }
       <div style="margin-top: 5px;">Documento sin valor tributario</div>
     </div>
   </div>

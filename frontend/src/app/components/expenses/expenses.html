@@ -1,11 +1,11 @@
 <div class="expenses-container">
-  
+
   <div class="header-section">
     <div class="total-card elevation-z2">
       <div class="label">Total Gastado</div>
       <div class="amount">{{ totalAmount | currency }}</div>
     </div>
-    
+
     <button mat-fab extended color="primary" (click)="openAddDialog()">
       <mat-icon>add</mat-icon> Nuevo Gasto
     </button>
@@ -25,50 +25,55 @@
   </div>
 
   <div class="timeline-container">
-    
-    <div *ngIf="loading" class="state-msg">Cargando gastos...</div>
-    <div *ngIf="!loading && groupedExpenses.length === 0" class="state-msg">
-      <mat-icon>savings</mat-icon> No hay gastos aquí.
-    </div>
 
-    <div *ngFor="let group of groupedExpenses" class="date-group">
-      
-      <div class="date-header">
-        <span class="the-date">{{ group.date | date:'EEEE d MMMM' }}</span>
-        <span class="day-total">Día: {{ group.total | currency }}</span>
+    @if (loading) {
+      <div class="state-msg">Cargando gastos...</div>
+    }
+    @if (!loading && groupedExpenses.length === 0) {
+      <div class="state-msg">
+        <mat-icon>savings</mat-icon> No hay gastos aquí.
       </div>
+    }
 
-      <div class="items-list">
-        <div *ngFor="let item of group.items" class="expense-row">
-          
-          <div class="col-icon">
-            <div class="icon-circle" [ngClass]="getColor(item.categoria)">
-              <mat-icon>{{ getIcon(item.categoria) }}</mat-icon>
+    @for (group of groupedExpenses; track group) {
+      <div class="date-group">
+        <div class="date-header">
+          <span class="the-date">{{ group.date | date:'EEEE d MMMM' }}</span>
+          <span class="day-total">Día: {{ group.total | currency }}</span>
+        </div>
+        <div class="items-list">
+          @for (item of group.items; track item) {
+            <div class="expense-row">
+              <div class="col-icon">
+                <div class="icon-circle" [ngClass]="getColor(item.categoria)">
+                  <mat-icon>{{ getIcon(item.categoria) }}</mat-icon>
+                </div>
+              </div>
+              <div class="col-info">
+                <div class="desc">{{ item.descripcion || 'Sin descripción' }}</div>
+                <div class="cat-badge" [ngClass]="getColor(item.categoria)">
+                  {{ item.categoria.replace('_', ' ') }}
+                </div>
+              </div>
+              <div class="col-method">
+                @if (item.metodo_pago === 'TRANSFERENCIA') {
+                  <span class="tag-bank">🏦 Banco</span>
+                }
+                @if (item.metodo_pago === 'EFECTIVO') {
+                  <span class="tag-cash">💵 Caja</span>
+                }
+              </div>
+              <div class="col-amount">
+                <span class="value">-{{ item.monto | currency }}</span>
+                <button mat-icon-button color="warn" (click)="deleteExpense(item.id)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div class="col-info">
-            <div class="desc">{{ item.descripcion || 'Sin descripción' }}</div>
-            <div class="cat-badge" [ngClass]="getColor(item.categoria)">
-              {{ item.categoria.replace('_', ' ') }}
-            </div>
-          </div>
-
-          <div class="col-method">
-            <span *ngIf="item.metodo_pago === 'TRANSFERENCIA'" class="tag-bank">🏦 Banco</span>
-            <span *ngIf="item.metodo_pago === 'EFECTIVO'" class="tag-cash">💵 Caja</span>
-          </div>
-
-          <div class="col-amount">
-            <span class="value">-{{ item.monto | currency }}</span>
-            <button mat-icon-button color="warn" (click)="deleteExpense(item.id)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-
+          }
         </div>
       </div>
-    </div>
+    }
 
   </div>
 </div>

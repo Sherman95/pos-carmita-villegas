@@ -1,5 +1,5 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject, OnInit , ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,9 +16,9 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-appointment-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -27,7 +27,7 @@ import Swal from 'sweetalert2';
     MatButtonModule,
     MatButtonToggleModule,
     MatIconModule
-  ],
+],
   templateUrl: './appointment-dialog.html',
   styleUrls: ['./appointment-dialog.scss']
 })

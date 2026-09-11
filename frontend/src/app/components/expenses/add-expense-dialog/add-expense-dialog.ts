@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component , ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,9 +13,9 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-add-expense-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -24,7 +24,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatButtonModule,
     MatIconModule,
     MatButtonToggleModule
-  ],
+],
   templateUrl: './add-expense-dialog.html', 
   styleUrls: ['./add-expense-dialog.scss']
 })

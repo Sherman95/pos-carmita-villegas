@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject , ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-cash-detail-sheet',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, MatIconModule, MatButtonModule, MatDividerModule],
   templateUrl: './cash-detail-sheet.html',

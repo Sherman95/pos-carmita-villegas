@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component , ChangeDetectionStrategy } from '@angular/core';
+
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -9,13 +9,15 @@ import { TopAnalyticsComponent } from './top-analytics/top-analytics';
 
 @Component({
   selector: 'app-reports',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule, MatTabsModule, MatIconModule,
+    MatTabsModule,
+    MatIconModule,
     DashboardComponent,
     SalesListComponent,
     TopAnalyticsComponent
-  ],
+],
   templateUrl: './reports.html',
   styleUrl: './reports.scss'
 })

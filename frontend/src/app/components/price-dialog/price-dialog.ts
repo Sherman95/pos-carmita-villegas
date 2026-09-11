@@ -1,6 +1,6 @@
 /* src/app/components/price-dialog/price-dialog.ts */
-import { Component, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject , ChangeDetectionStrategy } from '@angular/core';
+
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,16 +10,16 @@ import { MatIconModule } from '@angular/material/icon'; // <--- 1. IMPORTANTE: A
 
 @Component({
   selector: 'app-price-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule, 
-    MatDialogModule, 
-    MatFormFieldModule, 
-    MatInputModule, 
-    MatButtonModule, 
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
     FormsModule,
-    MatIconModule // <--- 2. IMPORTANTE: Agregado a la lista de imports
-  ],
+    MatIconModule
+],
   templateUrl: './price-dialog.html',
   styleUrl: './price-dialog.scss'
 })

@@ -9,12 +9,21 @@
       </button>
     </div>
   
-    <div class="calendar-wrapper" *ngIf="!loading">
-      <full-calendar [options]="calendarOptions"></full-calendar>
-    </div>
-  
-    <div class="loading-state" *ngIf="loading">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Cargando calendario...</p>
-    </div>
+    @defer (on viewport) {
+      @if (!loading) {
+        <div class="calendar-wrapper">
+          <full-calendar [options]="calendarOptions"></full-calendar>
+        </div>
+      } @else {
+        <div class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando calendario...</p>
+        </div>
+      }
+    } @placeholder {
+      <div class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Iniciando módulo de citas...</p>
+      </div>
+    }
   </div>

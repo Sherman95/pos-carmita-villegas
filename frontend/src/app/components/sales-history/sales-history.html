@@ -1,11 +1,11 @@
 <div class="page-container">
-  
+
   <header class="header-section">
     <div class="header-content">
       <h1>Historial y Cierre 📅</h1>
       <p>Revisa tus ventas diarias y reimprime recibos</p>
     </div>
-    
+
     <div class="summary-float elevation-z4">
       <span class="label">Vendido Hoy</span>
       <span class="amount">${{ totalHoy() | number:'1.2-2' }}</span>
@@ -20,20 +20,24 @@
 
     <mat-card class="filters-card elevation-z2">
       <div class="filters-grid">
-        
+
         <mat-form-field appearance="outline" class="client-select">
           <mat-label>Cliente</mat-label>
           <mat-select [(ngModel)]="filterClientId" panelClass="custom-history-select">
             <mat-option [value]="''">-- Todos los clientes --</mat-option>
-            <mat-option *ngFor="let c of clients()" [value]="c.id">
-              <div class="row-flex">
-                <div class="avatar-mini">{{ c.nombre.charAt(0).toUpperCase() }}</div>
-                <div class="text-col">
-                  <span class="name">{{ c.nombre }}</span>
-                  <span class="cedula" *ngIf="c.cedula">{{ c.cedula }}</span>
+            @for (c of clients(); track c) {
+              <mat-option [value]="c.id">
+                <div class="row-flex">
+                  <div class="avatar-mini">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+                  <div class="text-col">
+                    <span class="name">{{ c.nombre }}</span>
+                    @if (c.cedula) {
+                      <span class="cedula">{{ c.cedula }}</span>
+                    }
+                  </div>
                 </div>
-              </div>
-            </mat-option>
+              </mat-option>
+            }
           </mat-select>
         </mat-form-field>
 
@@ -78,64 +82,64 @@
       <mat-icon>history</mat-icon> Ventas Recientes
     </div>
 
-   <div class="sales-list-grid">
-  @if (groupedSales().length === 0) {
-    <div class="state-msg empty">No hay ventas registradas.</div>
-  } @else {
-    
-    @for (group of groupedSales(); track group.date) {
-      
-      <div class="date-separator">
-        <span class="line"></span>
-        <span class="text">{{ group.label }}</span> <span class="line"></span>
-      </div>
+    <div class="sales-list-grid">
+      @if (groupedSales().length === 0) {
+        <div class="state-msg empty">No hay ventas registradas.</div>
+      } @else {
 
-      @for (sale of group.sales; track sale.id) {
-        
-        <mat-card class="sale-card elevation-z1" (click)="toggleDetalles(sale.id)">
-            <div class="card-header">
-              <div class="time-badge">{{ formatearHora(sale.created_at) }}</div>
-              <div class="total-badge">${{ sale.total | number:'1.2-2' }}</div>
-            </div>
+        @for (group of groupedSales(); track group.date) {
 
-            <div class="card-body">
-              <div class="client-info">
-                <span class="client-name">{{ sale.client_nombre || 'Consumidor final' }}</span>
-                <span class="method">{{ sale.metodo_pago || 'Efectivo' }}</span>
+          <div class="date-separator">
+            <span class="line"></span>
+            <span class="text">{{ group.label }}</span> <span class="line"></span>
+          </div>
+
+          @for (sale of group.sales; track sale.id) {
+
+            <mat-card class="sale-card elevation-z1" (click)="toggleDetalles(sale.id)">
+              <div class="card-header">
+                <div class="time-badge">{{ formatearHora(sale.created_at) }}</div>
+                <div class="total-badge">${{ sale.total | number:'1.2-2' }}</div>
               </div>
-              
-              <div class="actions">
-                <button mat-icon-button color="primary" 
-                        (click)="$event.stopPropagation(); verRecibo(sale.id)" 
-                        [disabled]="openingTicketId() === sale.id"
-                        matTooltip="Imprimir Ticket">
-                  <mat-icon>print</mat-icon>
-                </button>
-              </div>
-            </div>
 
-            @if (selectedSaleId() === sale.id) {
-              <div class="details-box">
-                @if (loadingDetail()) {
-                  <p class="loading-text">Cargando...</p>
-                } @else {
-                  @if ((saleDetails()[sale.id] || []).length === 0) {
-                    <p class="empty-text">Sin detalles.</p>
+              <div class="card-body">
+                <div class="client-info">
+                  <span class="client-name">{{ sale.client_nombre || 'Consumidor final' }}</span>
+                  <span class="method">{{ sale.metodo_pago || 'Efectivo' }}</span>
+                </div>
+
+                <div class="actions">
+                  <button mat-icon-button color="primary"
+                    (click)="$event.stopPropagation(); verRecibo(sale.id)"
+                    [disabled]="openingTicketId() === sale.id"
+                    matTooltip="Imprimir Ticket">
+                    <mat-icon>print</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              @if (selectedSaleId() === sale.id) {
+                <div class="details-box">
+                  @if (loadingDetail()) {
+                    <p class="loading-text">Cargando...</p>
                   } @else {
-                    @for (d of saleDetails()[sale.id]; track d.id) {
-                      <div class="detail-row">
-                        <span class="prod">{{ d.nombre_producto }}</span>
-                        <span class="qty">x{{ d.cantidad }}</span>
-                        <span class="price">${{ d.subtotal | number:'1.2-2' }}</span>
-                      </div>
+                    @if ((saleDetails()[sale.id] || []).length === 0) {
+                      <p class="empty-text">Sin detalles.</p>
+                    } @else {
+                      @for (d of saleDetails()[sale.id]; track d.id) {
+                        <div class="detail-row">
+                          <span class="prod">{{ d.nombre_producto }}</span>
+                          <span class="qty">x{{ d.cantidad }}</span>
+                          <span class="price">${{ d.subtotal | number:'1.2-2' }}</span>
+                        </div>
+                      }
                     }
                   }
-                }
-              </div>
-            }
-        </mat-card>
+                </div>
+              }
+            </mat-card>
 
+          }
+        }
       }
-    }
-  }
-</div>
+    </div>

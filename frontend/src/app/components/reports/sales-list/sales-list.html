@@ -1,269 +1,322 @@
 <div class="list-container fade-in">
-    @if (errorMessage()) {
-        <div class="feedback error" role="alert">
-            <mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span>
-            <button mat-icon-button aria-label="Cerrar mensaje" (click)="errorMessage.set(null)"><mat-icon>close</mat-icon></button>
+  @if (errorMessage()) {
+    <div class="feedback error" role="alert">
+      <mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span>
+      <button mat-icon-button aria-label="Cerrar mensaje" (click)="errorMessage.set(null)"><mat-icon>close</mat-icon></button>
+    </div>
+  }
+
+  <mat-tab-group [(selectedIndex)]="innerTab" animationDuration="0ms">
+
+    <mat-tab label="General">
+      <div class="tab-content">
+
+        <div class="filters-panel">
+          <div class="inputs-row">
+            <mat-form-field appearance="outline" class="dense-input">
+              <mat-label>Periodo</mat-label>
+              <mat-select [(ngModel)]="periodGeneral">
+                <mat-option value="today">Hoy</mat-option>
+                <mat-option value="yesterday">Ayer</mat-option>
+                <mat-option value="last7">Últimos 7 días</mat-option>
+                <mat-option value="last15">Últimos 15 días</mat-option>
+                <mat-option value="last30">Últimos 30 días</mat-option>
+                <mat-option value="month">Este Mes</mat-option>
+                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                <mat-option value="year">Este Año</mat-option>
+                <mat-option value="prevYear">Año Pasado</mat-option>
+                <mat-option value="custom">Rango Personalizado</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if(periodGeneral() === 'custom') {
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Desde</mat-label>
+                <input matInput [matDatepicker]="fromGeneralPicker" [(ngModel)]="fromGeneral" readonly (click)="fromGeneralPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="fromGeneralPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromGeneralPicker></mat-datepicker>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Hasta</mat-label>
+                <input matInput [matDatepicker]="toGeneralPicker" [(ngModel)]="toGeneral" readonly (click)="toGeneralPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="toGeneralPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toGeneralPicker></mat-datepicker>
+              </mat-form-field>
+            }
+
+            <button mat-flat-button color="primary" class="search-btn" (click)="loadGeneral()">
+              <mat-icon>search</mat-icon> Buscar
+            </button>
+          </div>
         </div>
-    }
-    
-    <mat-tab-group [(selectedIndex)]="innerTab" animationDuration="0ms">
-        
-        <mat-tab label="General">
-            <div class="tab-content">
-                
-                <div class="filters-panel">
-                    <div class="inputs-row">
-                        <mat-form-field appearance="outline" class="dense-input">
-                            <mat-label>Periodo</mat-label>
-                            <mat-select [(ngModel)]="periodGeneral">
-                                <mat-option value="today">Hoy</mat-option>
-                                <mat-option value="yesterday">Ayer</mat-option>
-                                <mat-option value="last7">Últimos 7 días</mat-option>
-                                <mat-option value="last15">Últimos 15 días</mat-option>
-                                <mat-option value="last30">Últimos 30 días</mat-option>
-                                <mat-option value="month">Este Mes</mat-option>
-                                <mat-option value="prevMonth">Mes Pasado</mat-option>
-                                <mat-option value="year">Este Año</mat-option>
-                                <mat-option value="prevYear">Año Pasado</mat-option>
-                                <mat-option value="custom">Rango Personalizado</mat-option>
-                            </mat-select>
-                        </mat-form-field>
 
-                        @if(periodGeneral() === 'custom') {
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Desde</mat-label>
-                                <input matInput [matDatepicker]="fromGeneralPicker" [(ngModel)]="fromGeneral" readonly (click)="fromGeneralPicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="fromGeneralPicker"></mat-datepicker-toggle>
-                                <mat-datepicker #fromGeneralPicker></mat-datepicker>
-                            </mat-form-field>
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Hasta</mat-label>
-                                <input matInput [matDatepicker]="toGeneralPicker" [(ngModel)]="toGeneral" readonly (click)="toGeneralPicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="toGeneralPicker"></mat-datepicker-toggle>
-                                <mat-datepicker #toGeneralPicker></mat-datepicker>
-                            </mat-form-field>
-                        }
-
-                        <button mat-flat-button color="primary" class="search-btn" (click)="loadGeneral()">
-                            <mat-icon>search</mat-icon> Buscar
-                        </button>
-                    </div>
-                </div>
-
-                <div class="actions-bar" *ngIf="summaryGeneral().count > 0">
-                    <div class="total-info">
-                        <span class="label">{{ summaryGeneral().count }} ventas</span>
-                        <span class="value">{{ summaryGeneral().total | currency }}</span>
-                    </div>
-                    <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()">
-                            <mat-icon>picture_as_pdf</mat-icon> PDF
-                        </button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()">
-                            <mat-icon>table_view</mat-icon> Excel
-                        </button>
-                    </div>
-                </div>
-
-                <div class="sales-grid">
-                    <div *ngFor="let sale of salesGeneral()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
-                        
-                        <div class="card-header">
-                            <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">
-                                {{ getInitials(sale.client_nombre) }}
-                            </div>
-                            <div class="card-meta">
-                                <span class="name">{{ sale.client_nombre || 'Consumidor Final' }}</span>
-                                <span class="date">{{ formatearHora(sale.created_at) }}</span>
-                            </div>
-                            <div class="card-price">
-                                <span class="price">{{ sale.total | currency }}</span>
-                                <mat-icon>chevron_right</mat-icon>
-                            </div>
-                        </div>
-
-                        <div class="card-details" *ngIf="selectedSaleId() === sale.id" (click)="$event.stopPropagation()">
-                            <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
-                            
-                            <table *ngIf="!loadingDetail() && saleDetails()[sale.id]" class="detail-table">
-                                <tr *ngFor="let d of saleDetails()[sale.id]">
-                                    <td class="prod-name">{{ d.nombre_producto }}</td>
-                                    <td class="prod-qty">x{{ d.cantidad }}</td>
-                                    <td class="prod-total">{{ d.subtotal | currency }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="loading-panel" *ngIf="loadingGeneral()"><span class="spinner"></span><p>Cargando ventas…</p></div>
-
-                <div class="no-data" *ngIf="salesGeneral().length === 0 && !loadingGeneral()">
-                    <mat-icon>event_busy</mat-icon>
-                    <p>No hay ventas en este rango.</p>
-                </div>
+        @if (summaryGeneral().count > 0) {
+          <div class="actions-bar">
+            <div class="total-info">
+              <span class="label">{{ summaryGeneral().count }} ventas</span>
+              <span class="value">{{ summaryGeneral().total | currency }}</span>
             </div>
-        </mat-tab>
-
-        <mat-tab label="Por Cliente">
-            <div class="tab-content">
-                <div class="filters-panel">
-                    <div class="inputs-row">
-                        <mat-form-field appearance="outline" class="dense-input full-w-mobile">
-                            <mat-label>Seleccionar Cliente</mat-label>
-                            <mat-select [(ngModel)]="selectedClientId">
-                                <mat-option *ngFor="let c of clients()" [value]="c.id">{{ c.nombre }}</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                        <mat-form-field appearance="outline" class="dense-input">
-                            <mat-label>Periodo</mat-label>
-                            <mat-select [(ngModel)]="periodClient">
-                                <mat-option value="today">Hoy</mat-option>
-                                <mat-option value="yesterday">Ayer</mat-option>
-                                <mat-option value="last7">Últimos 7 días</mat-option>
-                                <mat-option value="last15">Últimos 15 días</mat-option>
-                                <mat-option value="last30">Últimos 30 días</mat-option>
-                                <mat-option value="month">Este Mes</mat-option>
-                                <mat-option value="prevMonth">Mes Pasado</mat-option>
-                                <mat-option value="year">Este Año</mat-option>
-                                <mat-option value="prevYear">Año Pasado</mat-option>
-                                <mat-option value="custom">Rango Personalizado</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-
-                        @if(periodClient() === 'custom') {
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Desde</mat-label>
-                                <input matInput [matDatepicker]="fromClientPicker" [(ngModel)]="fromClient" readonly (click)="fromClientPicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="fromClientPicker"></mat-datepicker-toggle>
-                                <mat-datepicker #fromClientPicker></mat-datepicker>
-                            </mat-form-field>
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Hasta</mat-label>
-                                <input matInput [matDatepicker]="toClientPicker" [(ngModel)]="toClient" readonly (click)="toClientPicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="toClientPicker"></mat-datepicker-toggle>
-                                <mat-datepicker #toClientPicker></mat-datepicker>
-                            </mat-form-field>
-                        }
-
-                        <button mat-flat-button color="primary" class="search-btn" (click)="loadByClient()"><mat-icon>search</mat-icon></button>
-                    </div>
-                </div>
-
-                <div class="actions-bar" *ngIf="summaryClient().count > 0">
-                    <div class="total-info">
-                        <span class="label">Total Cliente</span>
-                        <span class="value">{{ summaryClient().total | currency }}</span>
-                    </div>
-                    <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
-                    </div>
-                </div>
-
-                <div class="sales-grid">
-                    <div *ngFor="let sale of salesClient()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
-                        <div class="card-header">
-                            <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">{{ getInitials(sale.client_nombre) }}</div>
-                            <div class="card-meta">
-                                <span class="name">{{ sale.created_at | date:'mediumDate' }}</span>
-                                <span class="date">{{ sale.metodo_pago || 'Efectivo' }}</span>
-                            </div>
-                            <div class="card-price"><span class="price">{{ sale.total | currency }}</span></div>
-                        </div>
-                        <div class="card-details" *ngIf="selectedSaleId() === sale.id">
-                             <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
-                             <table class="detail-table" *ngIf="loadingDetailId() !== sale.id && saleDetails()[sale.id]">
-                                <tr *ngFor="let d of saleDetails()[sale.id]">
-                                    <td class="prod-name">{{ d.nombre_producto }}</td>
-                                    <td class="prod-total">{{ d.subtotal | currency }}</td>
-                                </tr>
-                             </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="loading-panel" *ngIf="loadingClient()"><span class="spinner"></span><p>Cargando ventas del cliente…</p></div>
-                <div class="no-data" *ngIf="!loadingClient() && selectedClientId() && salesClient().length === 0"><mat-icon>person_search</mat-icon><p>Este cliente no tiene ventas en el periodo seleccionado.</p></div>
-                <div class="no-data compact" *ngIf="!selectedClientId()"><mat-icon>touch_app</mat-icon><p>Selecciona un cliente para consultar sus ventas.</p></div>
+            <div class="buttons-group">
+              <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()">
+                <mat-icon>picture_as_pdf</mat-icon> PDF
+              </button>
+              <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()">
+                <mat-icon>table_view</mat-icon> Excel
+              </button>
             </div>
-        </mat-tab>
+          </div>
+        }
 
-        <mat-tab label="Por Servicio">
-            <div class="tab-content">
-                <div class="filters-panel">
-                    <div class="inputs-row">
-                        <mat-form-field appearance="outline" class="dense-input full-w-mobile">
-                            <mat-label>Servicio</mat-label>
-                            <mat-select [(ngModel)]="selectedServiceId">
-                                <mat-option *ngFor="let s of servicios()" [value]="s.id">{{ s.nombre }}</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                        <mat-form-field appearance="outline" class="dense-input">
-                            <mat-label>Periodo</mat-label>
-                            <mat-select [(ngModel)]="periodService">
-                                <mat-option value="today">Hoy</mat-option>
-                                <mat-option value="yesterday">Ayer</mat-option>
-                                <mat-option value="last7">Últimos 7 días</mat-option>
-                                <mat-option value="last15">Últimos 15 días</mat-option>
-                                <mat-option value="last30">Últimos 30 días</mat-option>
-                                <mat-option value="month">Este Mes</mat-option>
-                                <mat-option value="prevMonth">Mes Pasado</mat-option>
-                                <mat-option value="year">Este Año</mat-option>
-                                <mat-option value="prevYear">Año Pasado</mat-option>
-                                <mat-option value="custom">Rango Personalizado</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-
-                        @if(periodService() === 'custom') {
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Desde</mat-label>
-                                <input matInput [matDatepicker]="fromServicePicker" [(ngModel)]="fromService" readonly (click)="fromServicePicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="fromServicePicker"></mat-datepicker-toggle>
-                                <mat-datepicker #fromServicePicker></mat-datepicker>
-                            </mat-form-field>
-                            <mat-form-field appearance="outline" class="dense-input">
-                                <mat-label>Hasta</mat-label>
-                                <input matInput [matDatepicker]="toServicePicker" [(ngModel)]="toService" readonly (click)="toServicePicker.open()">
-                                <mat-datepicker-toggle matIconSuffix [for]="toServicePicker"></mat-datepicker-toggle>
-                                <mat-datepicker #toServicePicker></mat-datepicker>
-                            </mat-form-field>
-                        }
-
-                        <button mat-flat-button color="primary" class="search-btn" (click)="loadByService()"><mat-icon>search</mat-icon></button>
-                    </div>
+        <div class="sales-grid">
+          @for (sale of salesGeneral(); track sale) {
+            <div class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
+              <div class="card-header">
+                <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">
+                  {{ getInitials(sale.client_nombre) }}
                 </div>
-                <div class="actions-bar" *ngIf="summaryService().count > 0">
-                    <div class="total-info">
-                        <span class="label">Total Servicio</span>
-                        <span class="value">{{ summaryService().total | currency }}</span>
-                    </div>
-                    <div class="buttons-group">
-                        <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
-                        <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
-                    </div>
+                <div class="card-meta">
+                  <span class="name">{{ sale.client_nombre || 'Consumidor Final' }}</span>
+                  <span class="date">{{ formatearHora(sale.created_at) }}</span>
                 </div>
-                <div class="sales-grid">
-                    <div *ngFor="let sale of salesServiceList()" class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
-                        <div class="card-header">
-                            <div class="card-meta">
-                                <span class="name">{{ sale.client_nombre || 'Consumidor Final' }}</span>
-                                <span class="date">{{ formatearHora(sale.created_at) }}</span>
-                                <span class="service-meta">{{ selectedServiceName() }} · x{{ sale.cantidad || 0 }}</span>
-                            </div>
-                            <div class="card-price"><span class="price">{{ sale.total | currency }}</span><mat-icon>expand_more</mat-icon></div>
-                        </div>
-                        <div class="card-details" *ngIf="selectedSaleId() === sale.id" (click)="$event.stopPropagation()">
-                            <div *ngIf="loadingDetailId() === sale.id" class="loading-spinner"><span></span> Cargando detalle…</div>
-                            <table class="detail-table" *ngIf="loadingDetailId() !== sale.id && saleDetails()[sale.id]">
-                                <tr *ngFor="let d of saleDetails()[sale.id]"><td class="prod-name">{{ d.nombre_producto }}</td><td class="prod-qty">x{{ d.cantidad }}</td><td class="prod-total">{{ d.subtotal | currency }}</td></tr>
-                            </table>
-                        </div>
-                    </div>
+                <div class="card-price">
+                  <span class="price">{{ sale.total | currency }}</span>
+                  <mat-icon>chevron_right</mat-icon>
                 </div>
-                <div class="loading-panel" *ngIf="loadingService()"><span class="spinner"></span><p>Cargando ventas del servicio…</p></div>
-                <div class="no-data" *ngIf="!loadingService() && selectedServiceId() && salesServiceList().length === 0"><mat-icon>search_off</mat-icon><p>Este servicio no aparece en el periodo seleccionado.</p></div>
-                <div class="no-data compact" *ngIf="!selectedServiceId()"><mat-icon>touch_app</mat-icon><p>Selecciona un servicio para consultar su rendimiento.</p></div>
+              </div>
+              @if (selectedSaleId() === sale.id) {
+                <div class="card-details" (click)="$event.stopPropagation()">
+                  @if (loadingDetailId() === sale.id) {
+                    <div class="loading-spinner"><span></span> Cargando detalle…</div>
+                  }
+                  @if (!loadingDetail() && saleDetails()[sale.id]) {
+                    <table class="detail-table">
+                      @for (d of saleDetails()[sale.id]; track d) {
+                        <tr>
+                          <td class="prod-name">{{ d.nombre_producto }}</td>
+                          <td class="prod-qty">x{{ d.cantidad }}</td>
+                          <td class="prod-total">{{ d.subtotal | currency }}</td>
+                        </tr>
+                      }
+                    </table>
+                  }
+                </div>
+              }
             </div>
-        </mat-tab>
-    </mat-tab-group>
+          }
+        </div>
+
+        @if (loadingGeneral()) {
+          <div class="loading-panel"><span class="spinner"></span><p>Cargando ventas…</p></div>
+        }
+
+        @if (salesGeneral().length === 0 && !loadingGeneral()) {
+          <div class="no-data">
+            <mat-icon>event_busy</mat-icon>
+            <p>No hay ventas en este rango.</p>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Por Cliente">
+      <div class="tab-content">
+        <div class="filters-panel">
+          <div class="inputs-row">
+            <mat-form-field appearance="outline" class="dense-input full-w-mobile">
+              <mat-label>Seleccionar Cliente</mat-label>
+              <mat-select [(ngModel)]="selectedClientId">
+                @for (c of clients(); track c) {
+                  <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="dense-input">
+              <mat-label>Periodo</mat-label>
+              <mat-select [(ngModel)]="periodClient">
+                <mat-option value="today">Hoy</mat-option>
+                <mat-option value="yesterday">Ayer</mat-option>
+                <mat-option value="last7">Últimos 7 días</mat-option>
+                <mat-option value="last15">Últimos 15 días</mat-option>
+                <mat-option value="last30">Últimos 30 días</mat-option>
+                <mat-option value="month">Este Mes</mat-option>
+                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                <mat-option value="year">Este Año</mat-option>
+                <mat-option value="prevYear">Año Pasado</mat-option>
+                <mat-option value="custom">Rango Personalizado</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if(periodClient() === 'custom') {
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Desde</mat-label>
+                <input matInput [matDatepicker]="fromClientPicker" [(ngModel)]="fromClient" readonly (click)="fromClientPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="fromClientPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromClientPicker></mat-datepicker>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Hasta</mat-label>
+                <input matInput [matDatepicker]="toClientPicker" [(ngModel)]="toClient" readonly (click)="toClientPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="toClientPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toClientPicker></mat-datepicker>
+              </mat-form-field>
+            }
+
+            <button mat-flat-button color="primary" class="search-btn" (click)="loadByClient()"><mat-icon>search</mat-icon></button>
+          </div>
+        </div>
+
+        @if (summaryClient().count > 0) {
+          <div class="actions-bar">
+            <div class="total-info">
+              <span class="label">Total Cliente</span>
+              <span class="value">{{ summaryClient().total | currency }}</span>
+            </div>
+            <div class="buttons-group">
+              <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+              <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
+            </div>
+          </div>
+        }
+
+        <div class="sales-grid">
+          @for (sale of salesClient(); track sale) {
+            <div class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
+              <div class="card-header">
+                <div class="avatar" [style.background-color]="getAvatarColor(sale.client_nombre)">{{ getInitials(sale.client_nombre) }}</div>
+                <div class="card-meta">
+                  <span class="name">{{ sale.created_at | date:'mediumDate' }}</span>
+                  <span class="date">{{ sale.metodo_pago || 'Efectivo' }}</span>
+                </div>
+                <div class="card-price"><span class="price">{{ sale.total | currency }}</span></div>
+              </div>
+              @if (selectedSaleId() === sale.id) {
+                <div class="card-details">
+                  @if (loadingDetailId() === sale.id) {
+                    <div class="loading-spinner"><span></span> Cargando detalle…</div>
+                  }
+                  @if (loadingDetailId() !== sale.id && saleDetails()[sale.id]) {
+                    <table class="detail-table">
+                      @for (d of saleDetails()[sale.id]; track d) {
+                        <tr>
+                          <td class="prod-name">{{ d.nombre_producto }}</td>
+                          <td class="prod-total">{{ d.subtotal | currency }}</td>
+                        </tr>
+                      }
+                    </table>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if (loadingClient()) {
+          <div class="loading-panel"><span class="spinner"></span><p>Cargando ventas del cliente…</p></div>
+        }
+        @if (!loadingClient() && selectedClientId() && salesClient().length === 0) {
+          <div class="no-data"><mat-icon>person_search</mat-icon><p>Este cliente no tiene ventas en el periodo seleccionado.</p></div>
+        }
+        @if (!selectedClientId()) {
+          <div class="no-data compact"><mat-icon>touch_app</mat-icon><p>Selecciona un cliente para consultar sus ventas.</p></div>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Por Servicio">
+      <div class="tab-content">
+        <div class="filters-panel">
+          <div class="inputs-row">
+            <mat-form-field appearance="outline" class="dense-input full-w-mobile">
+              <mat-label>Servicio</mat-label>
+              <mat-select [(ngModel)]="selectedServiceId">
+                @for (s of servicios(); track s) {
+                  <mat-option [value]="s.id">{{ s.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="dense-input">
+              <mat-label>Periodo</mat-label>
+              <mat-select [(ngModel)]="periodService">
+                <mat-option value="today">Hoy</mat-option>
+                <mat-option value="yesterday">Ayer</mat-option>
+                <mat-option value="last7">Últimos 7 días</mat-option>
+                <mat-option value="last15">Últimos 15 días</mat-option>
+                <mat-option value="last30">Últimos 30 días</mat-option>
+                <mat-option value="month">Este Mes</mat-option>
+                <mat-option value="prevMonth">Mes Pasado</mat-option>
+                <mat-option value="year">Este Año</mat-option>
+                <mat-option value="prevYear">Año Pasado</mat-option>
+                <mat-option value="custom">Rango Personalizado</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if(periodService() === 'custom') {
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Desde</mat-label>
+                <input matInput [matDatepicker]="fromServicePicker" [(ngModel)]="fromService" readonly (click)="fromServicePicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="fromServicePicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromServicePicker></mat-datepicker>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dense-input">
+                <mat-label>Hasta</mat-label>
+                <input matInput [matDatepicker]="toServicePicker" [(ngModel)]="toService" readonly (click)="toServicePicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="toServicePicker"></mat-datepicker-toggle>
+                <mat-datepicker #toServicePicker></mat-datepicker>
+              </mat-form-field>
+            }
+
+            <button mat-flat-button color="primary" class="search-btn" (click)="loadByService()"><mat-icon>search</mat-icon></button>
+          </div>
+        </div>
+        @if (summaryService().count > 0) {
+          <div class="actions-bar">
+            <div class="total-info">
+              <span class="label">Total Servicio</span>
+              <span class="value">{{ summaryService().total | currency }}</span>
+            </div>
+            <div class="buttons-group">
+              <button mat-stroked-button (click)="exportPDF()" [disabled]="exporting()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+              <button mat-flat-button class="btn-excel" (click)="exportExcel()" [disabled]="exporting()"><mat-icon>table_view</mat-icon> Excel</button>
+            </div>
+          </div>
+        }
+        <div class="sales-grid">
+          @for (sale of salesServiceList(); track sale) {
+            <div class="sale-card" role="button" tabindex="0" [attr.aria-expanded]="selectedSaleId() === sale.id" (click)="toggleDetalles(sale.id)" (keydown.enter)="toggleDetalles(sale.id)">
+              <div class="card-header">
+                <div class="card-meta">
+                  <span class="name">{{ sale.client_nombre || 'Consumidor Final' }}</span>
+                  <span class="date">{{ formatearHora(sale.created_at) }}</span>
+                  <span class="service-meta">{{ selectedServiceName() }} · x{{ sale.cantidad || 0 }}</span>
+                </div>
+                <div class="card-price"><span class="price">{{ sale.total | currency }}</span><mat-icon>expand_more</mat-icon></div>
+              </div>
+              @if (selectedSaleId() === sale.id) {
+                <div class="card-details" (click)="$event.stopPropagation()">
+                  @if (loadingDetailId() === sale.id) {
+                    <div class="loading-spinner"><span></span> Cargando detalle…</div>
+                  }
+                  @if (loadingDetailId() !== sale.id && saleDetails()[sale.id]) {
+                    <table class="detail-table">
+                      @for (d of saleDetails()[sale.id]; track d) {
+                        <tr><td class="prod-name">{{ d.nombre_producto }}</td><td class="prod-qty">x{{ d.cantidad }}</td><td class="prod-total">{{ d.subtotal | currency }}</td></tr>
+                      }
+                    </table>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if (loadingService()) {
+          <div class="loading-panel"><span class="spinner"></span><p>Cargando ventas del servicio…</p></div>
+        }
+        @if (!loadingService() && selectedServiceId() && salesServiceList().length === 0) {
+          <div class="no-data"><mat-icon>search_off</mat-icon><p>Este servicio no aparece en el periodo seleccionado.</p></div>
+        }
+        @if (!selectedServiceId()) {
+          <div class="no-data compact"><mat-icon>touch_app</mat-icon><p>Selecciona un servicio para consultar su rendimiento.</p></div>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>

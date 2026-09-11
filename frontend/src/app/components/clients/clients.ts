@@ -6,8 +6,8 @@ import {
   computed,
   inject,
   signal
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 
 import { MatCardModule } from '@angular/material/card';
@@ -24,9 +24,9 @@ import { ClientsService, Client } from '../../services/clients.service';
 
 @Component({
   selector: 'app-clients',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     MatCardModule,
     MatFormFieldModule,
@@ -35,7 +35,7 @@ import { ClientsService, Client } from '../../services/clients.service';
     MatDialogModule,
     MatIconModule,
     MatTooltipModule
-  ],
+],
   templateUrl: './clients.html',
   styleUrl: './clients.scss'
 })

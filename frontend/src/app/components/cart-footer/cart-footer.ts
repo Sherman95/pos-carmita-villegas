@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject , ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,7 @@ import { CartDetailComponent } from '../cart-detail/cart-detail'; // <--- Import
 
 @Component({
   selector: 'app-cart-footer',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule],
   templateUrl: './cart-footer.html',

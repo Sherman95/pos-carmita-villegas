@@ -2,11 +2,13 @@
 
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
-    
+
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Nombre Completo</mat-label>
       <input matInput formControlName="nombre" placeholder="Ej. Ana Pérez" required>
-      <mat-error *ngIf="form.get('nombre')?.hasError('required')">Requerido</mat-error>
+      @if (form.get('nombre')?.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -18,9 +20,11 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions-premium">
-  <button mat-button *ngIf="isEdit" color="warn" class="btn-delete" (click)="eliminar()">
-    <mat-icon>delete_forever</mat-icon> Eliminar
-  </button>
+  @if (isEdit) {
+    <button mat-button color="warn" class="btn-delete" (click)="eliminar()">
+      <mat-icon>delete_forever</mat-icon> Eliminar
+    </button>
+  }
   <span class="spacer"></span>
   <button mat-stroked-button (click)="cancelar()">
     <mat-icon>close</mat-icon> Cancelar

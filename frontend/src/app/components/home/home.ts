@@ -1,5 +1,5 @@
-import { Component, OnInit, signal, computed, ViewChild, ElementRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, computed, ViewChild, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router'; 
 import { MatIconModule } from '@angular/material/icon';
@@ -17,8 +17,8 @@ import { CashService } from '../../services/cash';
 @Component({
   selector: 'app-home',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatIconModule,
@@ -27,7 +27,7 @@ import { CashService } from '../../services/cash';
     MatAutocompleteModule,
     MatInputModule,
     MatFormFieldModule
-  ],
+],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })

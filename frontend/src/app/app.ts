@@ -1,6 +1,6 @@
 import { Component, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 
 // Componentes
 import { CartFooterComponent } from './components/cart-footer/cart-footer';
@@ -14,13 +14,12 @@ import { AuthService } from './services/auth.service';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule,
     RouterOutlet,
     NavigationComponent,
     CartFooterComponent,
-    SidenavComponent, // <--- LO USAMOS
+    SidenavComponent,
     MatSidenavModule
-  ],
+],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

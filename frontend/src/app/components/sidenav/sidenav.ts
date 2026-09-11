@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output , ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,14 +9,14 @@ import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-sidenav',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
-    RouterModule, // Importante para que routerLink funcione
+    RouterModule,
     MatListModule,
     MatIconModule,
     MatDividerModule
-  ],
+],
   templateUrl: './sidenav.html',
   styleUrls: ['./sidenav.scss']
 })
