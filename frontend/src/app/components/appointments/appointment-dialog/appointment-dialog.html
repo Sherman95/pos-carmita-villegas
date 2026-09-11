@@ -69,7 +69,7 @@
   <button mat-stroked-button (click)="cancelar()">
     <mat-icon>close</mat-icon> Cancelar
   </button>
-  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid">
+  <button mat-flat-button color="primary" (click)="guardar()">
     <mat-icon>{{ isEdit ? 'save' : 'event_available' }}</mat-icon> 
     {{ isEdit ? 'Actualizar' : 'Agendar Cita' }}
   </button>

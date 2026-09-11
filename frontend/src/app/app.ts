@@ -8,6 +8,7 @@ import { NavigationComponent } from './components/navigation/navigation';
 import { SidenavComponent } from './components/sidenav/sidenav'; // <--- IMPORTAMOS EL NUEVO
 
 import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -25,4 +26,10 @@ import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 })
 export class App {
   @ViewChild('sidenav') sidenav!: MatSidenav;
+
+  constructor(private authService: AuthService) {}
+
+  get isAuthenticated(): boolean {
+    return this.authService.currentUser() !== null;
+  }
 }

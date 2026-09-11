@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +18,7 @@ export class EmployeesComponent implements OnInit {
   displayedColumns: string[] = ['nombre', 'telefono', 'acciones'];
   dataSource: Employee[] = [];
 
-  constructor(private employeeService: EmployeeService, private dialog: MatDialog) {}
+  constructor(private employeeService: EmployeeService, private dialog: MatDialog, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadEmployees();
@@ -26,9 +26,8 @@ export class EmployeesComponent implements OnInit {
 
   loadEmployees() {
     this.employeeService.getEmployees().subscribe(data => {
-      setTimeout(() => {
-        this.dataSource = data;
-      }, 0);
+      this.dataSource = data;
+      this.cdr.detectChanges();
     });
   }
 

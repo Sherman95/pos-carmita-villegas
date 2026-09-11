@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { EmployeeService } from '../../../services/employee.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-employee-dialog',
@@ -46,7 +47,24 @@ export class EmployeeDialogComponent {
   }
 
   guardar(): void {
-    if (this.form.invalid) return;
+    const injectTopLayer = () => {
+      const swalContainer = Swal.getContainer();
+      if (swalContainer && !swalContainer.hasAttribute('popover')) {
+        swalContainer.setAttribute('popover', 'manual');
+        try { swalContainer.showPopover(); } catch (e) {}
+      }
+    };
+
+    if (this.form.invalid) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Datos Incompletos',
+        text: 'Por favor, ingresa al menos el nombre de la profesional.',
+        confirmButtonColor: 'var(--brand-base)',
+        didOpen: injectTopLayer
+      });
+      return;
+    }
 
     if (this.isEdit) {
       this.employeeService.updateEmployee(this.data.employee.id, this.form.value).subscribe(() => {
@@ -59,8 +77,24 @@ export class EmployeeDialogComponent {
     }
   }
 
-  eliminar(): void {
-    if (confirm('¿Estás seguro de eliminar a esta profesional?')) {
+  async eliminar() {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar profesional?',
+      text: 'Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      didOpen: () => {
+        const swalContainer = Swal.getContainer();
+        if (swalContainer && !swalContainer.hasAttribute('popover')) {
+          swalContainer.setAttribute('popover', 'manual');
+          try { swalContainer.showPopover(); } catch (e) {}
+        }
+      }
+    });
+    if (result.isConfirmed) {
       this.employeeService.deleteEmployee(this.data.employee.id).subscribe(() => {
         this.dialogRef.close(true);
       });

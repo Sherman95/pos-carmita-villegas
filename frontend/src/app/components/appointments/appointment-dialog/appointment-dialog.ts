@@ -11,6 +11,7 @@ import { AppointmentService } from '../../../services/appointment.service';
 import { EmployeeService, Employee } from '../../../services/employee.service';
 import { ClientsService } from '../../../services/clients.service';
 import { ItemsService } from '../../../services/items.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-appointment-dialog',
@@ -91,28 +92,98 @@ export class AppointmentDialogComponent implements OnInit {
   }
 
   guardar(): void {
-    if (this.form.invalid) return;
+    const injectTopLayer = () => {
+      const swalContainer = Swal.getContainer();
+      if (swalContainer && !swalContainer.hasAttribute('popover')) {
+        swalContainer.setAttribute('popover', 'manual');
+        try { swalContainer.showPopover(); } catch (e) {}
+      }
+    };
+
+    if (this.form.invalid) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan datos',
+        text: 'Por favor completa todos los campos requeridos.',
+        confirmButtonColor: 'var(--brand-base)',
+        didOpen: injectTopLayer
+      });
+      return;
+    }
 
     const payload = {
       ...this.form.value,
-      // Convertir a ISO puro para el backend PostgreSQL
       fecha_inicio: new Date(this.form.value.fecha_inicio).toISOString(),
       fecha_fin: new Date(this.form.value.fecha_fin).toISOString()
     };
 
     if (this.isEdit) {
-      this.appointmentService.updateAppointment(this.data.appointment.id, payload).subscribe(() => {
-        this.dialogRef.close(true);
+      this.appointmentService.updateAppointment(this.data.appointment.id, payload).subscribe({
+        next: () => this.dialogRef.close(true),
+        error: async (err) => {
+          if (err.status === 409) {
+            const result = await Swal.fire({
+              icon: 'warning',
+              title: 'Conflicto de Horario',
+              text: err.error.conflict || 'Ya existe una cita en este horario.',
+              showCancelButton: true,
+              confirmButtonText: 'Agendar de todos modos',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#ff9800',
+              didOpen: injectTopLayer
+            });
+            if (result.isConfirmed) {
+              this.appointmentService.updateAppointment(this.data.appointment.id, payload, true).subscribe(() => this.dialogRef.close(true));
+            }
+          } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al actualizar la cita.', didOpen: injectTopLayer });
+          }
+        }
       });
     } else {
-      this.appointmentService.createAppointment(payload).subscribe(() => {
-        this.dialogRef.close(true);
+      this.appointmentService.createAppointment(payload).subscribe({
+        next: () => this.dialogRef.close(true),
+        error: async (err) => {
+          if (err.status === 409) {
+            const result = await Swal.fire({
+              icon: 'warning',
+              title: 'Conflicto de Horario',
+              text: err.error.conflict || 'Ya existe una cita en este horario.',
+              showCancelButton: true,
+              confirmButtonText: 'Agendar de todos modos',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#ff9800',
+              didOpen: injectTopLayer
+            });
+            if (result.isConfirmed) {
+              this.appointmentService.createAppointment(payload, true).subscribe(() => this.dialogRef.close(true));
+            }
+          } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al crear la cita.', didOpen: injectTopLayer });
+          }
+        }
       });
     }
   }
 
-  eliminar(): void {
-    if (confirm('¿Estás seguro de eliminar esta cita?')) {
+  async eliminar() {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar cita?',
+      text: 'Esta acción se reflejará en el calendario y no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      didOpen: () => {
+        const swalContainer = Swal.getContainer();
+        if (swalContainer && !swalContainer.hasAttribute('popover')) {
+          swalContainer.setAttribute('popover', 'manual');
+          try { swalContainer.showPopover(); } catch (e) {}
+        }
+      }
+    });
+    if (result.isConfirmed) {
       this.appointmentService.deleteAppointment(this.data.appointment.id).subscribe(() => {
         this.dialogRef.close(true);
       });

@@ -35,12 +35,14 @@ export class AppointmentService {
     return this.http.get<Appointment>(`${this.apiUrl}/${id}`);
   }
 
-  createAppointment(appointment: Partial<Appointment>): Observable<Appointment> {
-    return this.http.post<Appointment>(this.apiUrl, appointment);
+  createAppointment(appointment: Partial<Appointment>, force: boolean = false): Observable<Appointment> {
+    const url = force ? `${this.apiUrl}?force=true` : this.apiUrl;
+    return this.http.post<Appointment>(url, appointment);
   }
 
-  updateAppointment(id: string, appointment: Partial<Appointment>): Observable<Appointment> {
-    return this.http.put<Appointment>(`${this.apiUrl}/${id}`, appointment);
+  updateAppointment(id: string, appointment: Partial<Appointment>, force: boolean = false): Observable<Appointment> {
+    const url = force ? `${this.apiUrl}/${id}?force=true` : `${this.apiUrl}/${id}`;
+    return this.http.put<Appointment>(url, appointment);
   }
 
   deleteAppointment(id: string): Observable<{ message: string }> {

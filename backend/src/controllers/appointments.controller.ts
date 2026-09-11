@@ -83,7 +83,31 @@ export const createAppointment = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
 
+    const force = req.query.force === 'true';
+
     try {
+        // 0. Detectar conflictos de horario
+        if (!force) {
+            const conflictQuery = `
+                SELECT a.*, c.nombre as client_nombre, i.nombre as item_nombre
+                FROM appointments a
+                JOIN clients c ON a.client_id = c.id
+                JOIN items i ON a.item_id = i.id
+                WHERE a.employee_id = $1
+                  AND a.fecha_inicio < $3
+                  AND a.fecha_fin > $2
+            `;
+            const { rows: conflicts } = await pool.query(conflictQuery, [employee_id, fecha_inicio, fecha_fin]);
+            
+            if (conflicts.length > 0) {
+                const c = conflicts[0];
+                return res.status(409).json({ 
+                    error: 'Conflicto de horario', 
+                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${new Date(c.fecha_inicio).toLocaleTimeString()} a ${new Date(c.fecha_fin).toLocaleTimeString()}.`
+                });
+            }
+        }
+
         // 1. Obtener nombres para el título del evento
         const { rows: details } = await pool.query(
             `SELECT 
@@ -144,6 +168,31 @@ export const updateAppointment = async (req: Request, res: Response) => {
     const { client_id, item_id, employee_id, fecha_inicio, fecha_fin, estado, notas } = req.body;
 
     try {
+        const force = req.query.force === 'true';
+
+        // 0. Detectar conflictos de horario
+        if (!force) {
+            const conflictQuery = `
+                SELECT a.*, c.nombre as client_nombre, i.nombre as item_nombre
+                FROM appointments a
+                JOIN clients c ON a.client_id = c.id
+                JOIN items i ON a.item_id = i.id
+                WHERE a.employee_id = $1
+                  AND a.id != $2
+                  AND a.fecha_inicio < $4
+                  AND a.fecha_fin > $3
+            `;
+            const { rows: conflicts } = await pool.query(conflictQuery, [employee_id, id, fecha_inicio, fecha_fin]);
+            
+            if (conflicts.length > 0) {
+                const c = conflicts[0];
+                return res.status(409).json({ 
+                    error: 'Conflicto de horario', 
+                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${new Date(c.fecha_inicio).toLocaleTimeString()} a ${new Date(c.fecha_fin).toLocaleTimeString()}.`
+                });
+            }
+        }
+
         // 1. Obtener la cita actual para saber su google_event_id
         const { rows: currentRows } = await pool.query('SELECT google_event_id FROM appointments WHERE id = $1', [id]);
         if (currentRows.length === 0) return res.status(404).json({ error: 'Cita no encontrada' });

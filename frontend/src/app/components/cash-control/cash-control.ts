@@ -10,6 +10,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { CashService } from '../../services/cash'; 
 import { ClosingDetails } from '../../models/cash.model';
 import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-cash-control',
@@ -90,11 +91,11 @@ export class CashControlComponent implements OnInit {
     this.loading = true;
     this.cashService.openRegister(this.initialAmount, userId).subscribe({
       next: () => {
-        alert('✅ ¡Caja Abierta! A vender se ha dicho.');
+        Swal.fire({ icon: 'success', title: 'Caja Abierta', text: '¡A vender se ha dicho!', confirmButtonColor: 'var(--brand-base)' });
         this.checkStatus(); // Recargar estado
       },
       error: (err) => {
-        alert(err.error?.error || 'Error al abrir');
+        Swal.fire({ icon: 'error', title: 'Error', text: err.error?.error || 'Error al abrir la caja' });
         this.loading = false;
         this.cd.detectChanges(); // 👈 Por seguridad
       }
@@ -102,16 +103,26 @@ export class CashControlComponent implements OnInit {
   }
 
   // 4. ACCIÓN: CERRAR CAJA 🔐
-  closeBox() {
+  async closeBox() {
     if (!this.closingData) return;
 
     const diff = this.realAmount - this.closingData.monto_esperado;
-    let confirmMsg = `El sistema espera $${this.closingData.monto_esperado}\nTú contaste $${this.realAmount}\n\nDiferencia: $${diff}`;
+    let htmlMsg = `El sistema espera: <b>$${this.closingData.monto_esperado}</b><br>Tú contaste: <b>$${this.realAmount}</b><br><br>Diferencia: <b>$${diff}</b>`;
     
-    if (diff < 0) confirmMsg += '\n⚠️ ¡FALTA DINERO!';
-    if (diff > 0) confirmMsg += '\n🤑 ¡SOBRA DINERO!';
+    if (diff < 0) htmlMsg += '<br><br><span style="color: red; font-weight: bold;">⚠️ ¡FALTA DINERO!</span>';
+    if (diff > 0) htmlMsg += '<br><br><span style="color: green; font-weight: bold;">🤑 ¡SOBRA DINERO!</span>';
     
-    if (!confirm(confirmMsg + '\n\n¿Seguro deseas cerrar el turno?')) return;
+    const confirmResult = await Swal.fire({
+      title: '¿Seguro deseas cerrar el turno?',
+      html: htmlMsg,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar caja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33'
+    });
+
+    if (!confirmResult.isConfirmed) return;
 
     this.loading = true;
     
@@ -125,12 +136,12 @@ export class CashControlComponent implements OnInit {
 
     this.cashService.closeRegister(this.closingData.session_id, payload).subscribe({
       next: () => {
-        alert('🔒 Caja cerrada correctamente. ¡Buen trabajo hoy!');
+        Swal.fire({ icon: 'success', title: 'Caja Cerrada', text: 'Caja cerrada correctamente. ¡Buen trabajo hoy!', confirmButtonColor: 'var(--brand-base)' });
         this.checkStatus(); // Volver al inicio
       },
       error: (err) => {
         console.error(err);
-        alert('Error al cerrar caja');
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cerrar la caja' });
         this.loading = false;
         this.cd.detectChanges(); // 👈 Por seguridad
       }

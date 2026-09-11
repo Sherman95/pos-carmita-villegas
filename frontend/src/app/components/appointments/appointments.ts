@@ -11,6 +11,7 @@ import { AppointmentDialogComponent } from './appointment-dialog/appointment-dia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-appointments',
@@ -51,7 +52,8 @@ export class AppointmentsComponent implements OnInit {
   constructor(
     private appointmentService: AppointmentService,
     private employeeService: EmployeeService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -78,6 +80,7 @@ export class AppointmentsComponent implements OnInit {
         this.calendarOptions.resources = resources;
         this.calendarOptions.events = events;
         this.loading = false;
+        this.cdr.detectChanges();
       });
     });
   }

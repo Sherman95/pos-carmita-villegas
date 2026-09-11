@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -22,7 +22,8 @@ export class SettingsComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -37,10 +38,12 @@ export class SettingsComponent implements OnInit {
         this.isGoogleConnected = res.isConnected;
         this.calendarId = res.calendarId || '';
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error verificando estado de Google', err);
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -52,12 +55,14 @@ export class SettingsComponent implements OnInit {
         this.snackBar.open(res.message, 'Cerrar', { duration: 3000 });
         this.isGoogleConnected = true;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         const errorMsg = err.error?.error || 'Error desconocido';
         this.snackBar.open(errorMsg, 'Cerrar', { duration: 5000, panelClass: ['error-snackbar'] });
         this.loading = false;
         this.isGoogleConnected = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -70,10 +75,12 @@ export class SettingsComponent implements OnInit {
         this.isGoogleConnected = false;
         this.calendarId = '';
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.snackBar.open('Error al desvincular', 'Cerrar', { duration: 3000 });
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

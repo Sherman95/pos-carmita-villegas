@@ -403,3 +403,8 @@ div.cdk-overlay-pane:has(.custom-scroll-panel) {
     /* Aseguramos que el ancho sea correcto en móviles */
     min-width: 100vw !important; 
 }
+
+/* SweetAlert2 por encima de modales de Material */
+.swal2-container {
+  z-index: 100000 !important;
+}

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -32,7 +32,7 @@ export class LoginComponent {
   // Variable para controlar si la imagen del logo cargó bien
   logoLoaded = true;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   // Función que se activa si la imagen da error (404, etc)
   onLogoError() {
@@ -56,11 +56,13 @@ export class LoginComponent {
         // Redirigir al home
         this.router.navigateByUrl('/');
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.loading = false;
         // Mensaje de error más amigable
         this.error = err?.error?.error || 'Credenciales incorrectas. Verifica tus datos.';
+        this.cdr.detectChanges();
       }
     });
   }

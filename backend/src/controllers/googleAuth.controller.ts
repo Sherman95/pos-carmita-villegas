@@ -37,12 +37,12 @@ export const updateCalendarId = async (req: Request, res: Response) => {
 
         const auth = new google.auth.GoogleAuth({
             keyFile: keyFile,
-            scopes: ['https://www.googleapis.com/auth/calendar.events'],
+            scopes: ['https://www.googleapis.com/auth/calendar'],
         });
         const calendar = google.calendar({ version: 'v3', auth });
         
-        // Intentar leer el calendario para ver si tenemos permisos
-        await calendar.calendars.get({ calendarId });
+        // Intentar leer eventos del calendario para ver si tenemos permisos reales
+        await calendar.events.list({ calendarId, maxResults: 1 });
 
         // Si funciona, lo guardamos
         await pool.query(
@@ -55,6 +55,6 @@ export const updateCalendarId = async (req: Request, res: Response) => {
         res.status(200).json({ success: true, message: 'Calendario vinculado exitosamente' });
     } catch (error: any) {
         console.error('Error vinculando calendario:', error.message);
-        res.status(400).json({ error: 'No se pudo vincular el calendario. Asegúrate de haberlo compartido con el correo de servicio.' });
+        res.status(400).json({ error: 'Error de Google: ' + error.message });
     }
 };
