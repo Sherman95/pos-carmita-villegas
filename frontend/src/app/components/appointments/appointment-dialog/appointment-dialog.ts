@@ -34,8 +34,13 @@ export class AppointmentDialogComponent implements OnInit {
   isEdit = false;
   
   clients: any[] = [];
+  filteredClients: any[] = [];
+  
   servicesList: any[] = [];
+  filteredServices: any[] = [];
+  
   employees: Employee[] = [];
+  filteredEmployees: Employee[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -79,12 +84,34 @@ export class AppointmentDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.clientsService.getClients().subscribe(res => this.clients = res);
+    this.clientsService.getClients().subscribe(res => {
+      this.clients = res;
+      this.filteredClients = res;
+    });
     this.itemsService.getItems().subscribe(res => {
       // Filtrar solo los items que son de tipo SERVICIO
       this.servicesList = res.filter((i: any) => i.tipo === 'SERVICIO');
+      this.filteredServices = this.servicesList;
     });
-    this.employeeService.getEmployees().subscribe(res => this.employees = res);
+    this.employeeService.getEmployees().subscribe(res => {
+      this.employees = res;
+      this.filteredEmployees = res;
+    });
+  }
+
+  filterClients(event: Event) {
+    const term = (event.target as HTMLInputElement).value.toLowerCase();
+    this.filteredClients = this.clients.filter(c => c.nombre.toLowerCase().includes(term));
+  }
+
+  filterServices(event: Event) {
+    const term = (event.target as HTMLInputElement).value.toLowerCase();
+    this.filteredServices = this.servicesList.filter(s => s.nombre.toLowerCase().includes(term));
+  }
+
+  filterEmployees(event: Event) {
+    const term = (event.target as HTMLInputElement).value.toLowerCase();
+    this.filteredEmployees = this.employees.filter(e => e.nombre.toLowerCase().includes(term));
   }
 
   cancelar(): void {

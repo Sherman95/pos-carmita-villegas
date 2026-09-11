@@ -408,3 +408,38 @@ div.cdk-overlay-pane:has(.custom-scroll-panel) {
 .swal2-container {
   z-index: 100000 !important;
 }
+
+/* =========================================================
+   SOPORTE PARA DISPOSITIVOS MÓVILES Y SAFE AREAS (NOTCH, ETC)
+   ========================================================= */
+
+/* Aplicar padding seguro para iOS y Android con recortes (Notch, Dynamic Island) */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Formularios de Modal (Dialogos) Optimizados para Celular */
+@media (max-width: 768px) {
+  /* En lugar de forzar 100vh, dejamos que el modal abra con su propio tamaño pero más ancho */
+  .cdk-overlay-pane {
+    max-width: 95vw !important;
+  }
+  .mat-mdc-dialog-panel {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important; /* Límite máximo, no altura forzada */
+    border-radius: 16px !important; /* Bordes muy redondeados modernos */
+    margin: auto !important;
+  }
+  
+  .mat-mdc-dialog-surface {
+    border-radius: 16px !important;
+  }
+
+  .mat-mdc-dialog-content {
+    max-height: calc(90vh - 120px) !important;
+  }
+}

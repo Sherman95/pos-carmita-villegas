@@ -44,7 +44,9 @@ export class AppointmentsComponent implements OnInit {
     dateClick: this.handleDateClick.bind(this),
     eventClick: this.handleEventClick.bind(this),
     locale: 'es',
-    schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives'
+    schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+    height: '100%',
+    expandRows: true
   };
 
   loading = true;

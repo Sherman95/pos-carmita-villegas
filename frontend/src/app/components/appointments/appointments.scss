@@ -27,7 +27,21 @@
     flex-shrink: 0;
   }
 } 
-.calendar-wrapper { flex: 1; padding: 1.5rem; background: var(--ui-surface); border-top: 1px solid var(--ui-border); } 
+.calendar-wrapper { 
+  flex: 1; 
+  padding: 1.5rem; 
+  background: var(--ui-surface); 
+  border-top: 1px solid var(--ui-border); 
+  display: flex;
+  flex-direction: column;
+  min-height: 500px; /* Ensure minimum space in landscape */
+} 
+full-calendar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Crucial for inner flex children to scroll */
+} 
 .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 400px; color: var(--ui-text-muted); p { margin-top: 1rem; } } 
 ::ng-deep .fc-theme-standard td, ::ng-deep .fc-theme-standard th { border-color: var(--ui-border); } 
 ::ng-deep .fc .fc-toolbar-title { color: var(--brand-text); font-weight: 700; } 
@@ -35,19 +49,60 @@
 ::ng-deep .fc-event { border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s ease; padding: 2px 4px; &:hover { transform: translateY(-1px); box-shadow: var(--ui-shadow-sm); } } 
 
 @media (max-width: 768px) { 
-  .calendar-container { margin: 0; border-radius: 0; min-height: calc(100vh - 140px); border-left: none; border-right: none; } 
+  .calendar-container { 
+    margin: 0; 
+    border-radius: 0; 
+    min-height: calc(100vh - 60px); /* Fill screen optimally */
+    border-left: none; 
+    border-right: none; 
+    border-bottom: none;
+  } 
   .header-section { 
     flex-direction: column; 
     align-items: stretch; 
     gap: 1rem; 
-    padding: 1.5rem 1rem; 
+    padding: 1rem; 
     
     button {
       width: 100%;
     }
   } 
   .header-content h1 { font-size: 1.4rem; } 
-  .calendar-wrapper { padding: 0.5rem; } 
-  ::ng-deep .fc .fc-toolbar { flex-direction: column; gap: 12px; } 
-  ::ng-deep .fc .fc-toolbar-title { font-size: 1.2em !important; }
+  .calendar-wrapper { 
+    padding: 0; /* Quitamos el padding para aprovechar todo el ancho */
+  } 
+  
+  /* Reducir escala general del calendario un 30% más */
+  ::ng-deep .fc {
+    font-size: 0.65rem; /* Letra super compacta */
+  }
+
+  /* Scroll horizontal SOLAMENTE en la grilla de turnos, NO en el toolbar superior */
+  ::ng-deep .fc .fc-view-harness {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  ::ng-deep .fc .fc-view {
+    min-width: 380px; /* Reducido drásticamente para que 3 columnas quepan en un celular casi sin scroll */
+  }
+
+  /* Ajustes del Toolbar (Botones) para celular */
+  ::ng-deep .fc .fc-header-toolbar { 
+    flex-wrap: wrap; 
+    gap: 4px; 
+    padding: 0.2rem; 
+    justify-content: center !important;
+  } 
+  ::ng-deep .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  ::ng-deep .fc .fc-toolbar-title { font-size: 0.9rem !important; }
+  
+  /* Reducir botón padding para que ocupen menos */
+  ::ng-deep .fc .fc-button {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.65rem;
+  }
 }

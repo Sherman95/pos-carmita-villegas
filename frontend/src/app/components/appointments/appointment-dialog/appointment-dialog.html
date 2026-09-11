@@ -6,9 +6,14 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Cliente</mat-label>
       <mat-select formControlName="client_id" required>
-        <mat-option *ngFor="let client of clients" [value]="client.id">
+        <div class="select-search-container">
+          <input matInput placeholder="Buscar cliente..." (input)="filterClients($event)" (keydown)="$event.stopPropagation()">
+          <mat-icon class="search-icon">search</mat-icon>
+        </div>
+        <mat-option *ngFor="let client of filteredClients" [value]="client.id">
           {{ client.nombre }}
         </mat-option>
+        <div *ngIf="filteredClients.length === 0" class="no-results">No se encontraron clientes</div>
       </mat-select>
       <mat-error *ngIf="form.get('client_id')?.hasError('required')">Requerido</mat-error>
     </mat-form-field>
@@ -16,9 +21,14 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Servicio</mat-label>
       <mat-select formControlName="item_id" required>
-        <mat-option *ngFor="let srv of servicesList" [value]="srv.id">
+        <div class="select-search-container">
+          <input matInput placeholder="Buscar servicio..." (input)="filterServices($event)" (keydown)="$event.stopPropagation()">
+          <mat-icon class="search-icon">search</mat-icon>
+        </div>
+        <mat-option *ngFor="let srv of filteredServices" [value]="srv.id">
           {{ srv.nombre }} - ${{ srv.precio }}
         </mat-option>
+        <div *ngIf="filteredServices.length === 0" class="no-results">No se encontraron servicios</div>
       </mat-select>
       <mat-error *ngIf="form.get('item_id')?.hasError('required')">Requerido</mat-error>
     </mat-form-field>
@@ -26,9 +36,14 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Profesional</mat-label>
       <mat-select formControlName="employee_id" required>
-        <mat-option *ngFor="let emp of employees" [value]="emp.id">
+        <div class="select-search-container">
+          <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
+          <mat-icon class="search-icon">search</mat-icon>
+        </div>
+        <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.id">
           {{ emp.nombre }}
         </mat-option>
+        <div *ngIf="filteredEmployees.length === 0" class="no-results">No se encontraron profesionales</div>
       </mat-select>
     </mat-form-field>
 
