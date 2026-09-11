@@ -122,6 +122,10 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/catalog']); 
   }
 
+  irAAgenda() {
+    this.router.navigate(['/citas']);
+  }
+
   irAHistorial() {
     this.router.navigate(['/history']);
   }

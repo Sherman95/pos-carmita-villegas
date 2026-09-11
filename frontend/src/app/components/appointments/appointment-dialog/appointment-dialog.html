@@ -1,10 +1,17 @@
-<h2 mat-dialog-title>{{ isEdit ? 'Editar Cita' : 'Nueva Cita' }}</h2>
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ isEdit ? 'Editar Cita' : 'Nueva Cita' }}</h2>
+  <p class="dialog-subtitle">Completa los datos para agendar</p>
+</div>
 
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
     
+    <!-- SECCIÓN: QUIÉN -->
+    <span class="section-label">Quién</span>
+    
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Cliente</mat-label>
+      <mat-icon matPrefix class="field-icon">person</mat-icon>
       <mat-select formControlName="client_id" required>
         <div class="select-search-container">
           <input matInput placeholder="Buscar cliente..." (input)="filterClients($event)" (keydown)="$event.stopPropagation()">
@@ -19,7 +26,27 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Profesional</mat-label>
+      <mat-icon matPrefix class="field-icon">badge</mat-icon>
+      <mat-select formControlName="employee_id" required>
+        <div class="select-search-container">
+          <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
+          <mat-icon class="search-icon">search</mat-icon>
+        </div>
+        <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.id">
+          {{ emp.nombre }}
+        </mat-option>
+        <div *ngIf="filteredEmployees.length === 0" class="no-results">No se encontraron profesionales</div>
+      </mat-select>
+      <mat-error *ngIf="form.get('employee_id')?.hasError('required')">Requerido</mat-error>
+    </mat-form-field>
+
+    <!-- SECCIÓN: QUÉ -->
+    <span class="section-label">Servicio</span>
+
+    <mat-form-field appearance="outline" class="full-width">
       <mat-label>Servicio</mat-label>
+      <mat-icon matPrefix class="field-icon">spa</mat-icon>
       <mat-select formControlName="item_id" required>
         <div class="select-search-container">
           <input matInput placeholder="Buscar servicio..." (input)="filterServices($event)" (keydown)="$event.stopPropagation()">
@@ -33,44 +60,37 @@
       <mat-error *ngIf="form.get('item_id')?.hasError('required')">Requerido</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Profesional</mat-label>
-      <mat-select formControlName="employee_id" required>
-        <div class="select-search-container">
-          <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
-          <mat-icon class="search-icon">search</mat-icon>
-        </div>
-        <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.id">
-          {{ emp.nombre }}
-        </mat-option>
-        <div *ngIf="filteredEmployees.length === 0" class="no-results">No se encontraron profesionales</div>
-      </mat-select>
+    <!-- SECCIÓN: CUÁNDO -->
+    <span class="section-label">Cuándo</span>
+
+    <mat-form-field appearance="outline" class="full-width date-field">
+      <mat-label>Inicio</mat-label>
+      <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
+      <input matInput type="datetime-local" formControlName="fecha_inicio" required>
+      <mat-error *ngIf="form.get('fecha_inicio')?.hasError('required')">Requerido</mat-error>
     </mat-form-field>
 
-    <div class="row">
-      <mat-form-field appearance="outline" class="half-width">
-        <mat-label>Fecha/Hora Inicio</mat-label>
-        <input matInput type="datetime-local" formControlName="fecha_inicio" required>
-      </mat-form-field>
+    <mat-form-field appearance="outline" class="full-width date-field">
+      <mat-label>Fin</mat-label>
+      <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
+      <input matInput type="datetime-local" formControlName="fecha_fin" required>
+      <mat-error *ngIf="form.get('fecha_fin')?.hasError('required')">Requerido</mat-error>
+    </mat-form-field>
 
-      <mat-form-field appearance="outline" class="half-width">
-        <mat-label>Fecha/Hora Fin</mat-label>
-        <input matInput type="datetime-local" formControlName="fecha_fin" required>
-      </mat-form-field>
+    <!-- SECCIÓN: ESTADO -->
+    <span class="section-label">Estado</span>
+    <div class="state-toggle-container">
+      <mat-button-toggle-group formControlName="estado" aria-label="Estado de la Cita" class="custom-toggle-group">
+        <mat-button-toggle value="PROGRAMADA">Programada</mat-button-toggle>
+        <mat-button-toggle value="COMPLETADA">Completada</mat-button-toggle>
+        <mat-button-toggle value="CANCELADA">Cancelada</mat-button-toggle>
+      </mat-button-toggle-group>
     </div>
 
+    <!-- SECCIÓN: NOTAS -->
+    <span class="section-label">Notas (Opcional)</span>
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Estado</mat-label>
-      <mat-select formControlName="estado">
-        <mat-option value="PROGRAMADA">Programada</mat-option>
-        <mat-option value="COMPLETADA">Completada</mat-option>
-        <mat-option value="CANCELADA">Cancelada</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Notas (Opcional)</mat-label>
-      <textarea matInput formControlName="notas" rows="3" placeholder="Ej. Cliente solicitó X color..."></textarea>
+      <textarea matInput formControlName="notas" rows="3" placeholder="Agrega cualquier detalle relevante"></textarea>
     </mat-form-field>
 
   </form>

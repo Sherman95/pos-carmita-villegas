@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { AppointmentService } from '../../../services/appointment.service';
 import { EmployeeService, Employee } from '../../../services/employee.service';
@@ -24,6 +25,7 @@ import Swal from 'sweetalert2';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule
   ],
   templateUrl: './appointment-dialog.html',

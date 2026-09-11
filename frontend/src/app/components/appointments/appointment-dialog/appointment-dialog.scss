@@ -1,28 +1,66 @@
-.dialog-form {
+.dialog-header {
+  margin-bottom: 24px;
+}
+
+::ng-deep .mat-mdc-dialog-title {
+  color: var(--brand-base) !important;
+  font-weight: 700;
+  font-size: 1.5rem;
+  padding: 16px 24px 4px 24px !important;
+  margin-bottom: 0;
+  border-bottom: none !important;
+}
+
+.dialog-subtitle {
+  padding: 0 24px;
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--ui-border);
+  padding-bottom: 16px;
+}
+
+/* Etiquetas de sección (Quién, Qué, etc.) */
+.section-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
+  margin: 16px 0 8px 0;
+  padding-left: 4px;
+}
+
+/* Iconos dentro de los form fields */
+.field-icon {
+  margin-right: 12px;
+  color: var(--ui-text-muted);
   display: flex;
-  flex-direction: column;
-  padding-top: 5px;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Hacer que los campos de Angular Material ocupen menos espacio vertical sin aplastarse */
 ::ng-deep .mat-mdc-form-field {
-  margin-bottom: 4px; /* Un poco de margen para respirar, no negativo */
-  font-size: 0.9rem; /* Reducir el tamaño de la letra general del campo */
+  margin-bottom: 8px; /* Un poco de margen para respirar */
+  font-size: 0.95rem; /* Un poco más grande para legibilidad */
 }
 ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-  height: 16px !important; /* Espacio para errores más compacto */
+  height: 18px !important; 
 }
 ::ng-deep .mat-mdc-text-field-wrapper {
-  padding: 0 12px !important;
+  padding: 0 16px !important;
 }
 ::ng-deep .mat-mdc-form-field-infix {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-  min-height: 44px !important; /* Altura total del input más pequeña */
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  min-height: 48px !important; /* Altura cómoda para tocar con el dedo */
 }
 
 .full-width {
   width: 100%;
+}
+
+.date-field {
+  width: 100%; /* Ahora ocupan el 100% como lo solicitó el usuario para móviles */
 }
 
 .row {
@@ -65,14 +103,7 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
-::ng-deep .mat-mdc-dialog-title {
-  color: var(--brand-base) !important;
-  font-weight: 700;
-  font-size: 1.25rem;
-  padding: 16px 24px 12px 24px !important;
-  border-bottom: 1px solid var(--ui-border);
-  margin-bottom: 10px;
-}
+
 
 /* Buscador integrado en mat-select */
 ::ng-deep .select-search-container {
@@ -85,6 +116,29 @@
   background: white;
   border-bottom: 1px solid var(--ui-border);
   margin-bottom: 4px;
+}
+
+/* Estilos para los botones de estado tipo píldora */
+.state-toggle-container {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+::ng-deep .custom-toggle-group {
+  width: 100%;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+::ng-deep .custom-toggle-group .mat-button-toggle {
+  flex: 1;
+}
+
+::ng-deep .custom-toggle-group .mat-button-toggle-checked {
+  background-color: var(--brand-soft) !important;
+  color: var(--brand-base) !important;
+  font-weight: 700;
 }
 
 ::ng-deep .select-search-container input {

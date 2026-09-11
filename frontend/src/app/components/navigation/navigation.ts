@@ -19,7 +19,7 @@ export class NavigationComponent {
   @Output() toggleMenu = new EventEmitter<void>();
 
   navItems = [
-    { path: '/home', label: 'Inicio', icon: 'home' },
+    { path: '/', label: 'Inicio', icon: 'home' },
     { path: '/catalog', label: 'Catálogo', icon: 'storefront' },
     { path: '/reports', label: 'Reportes', icon: 'insights' }, // Opcional, si tienes poco espacio
     { path: '/clients', label: 'Clientes', icon: 'people' },
