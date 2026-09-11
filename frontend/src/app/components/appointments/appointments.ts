@@ -33,8 +33,6 @@ export class AppointmentsComponent implements OnInit {
     initialView: 'resourceTimeGridDay',
     resources: [],
     events: [],
-    slotMinTime: '08:00:00',
-    slotMaxTime: '20:00:00',
     allDaySlot: false,
     headerToolbar: {
       left: 'prev,next today',
