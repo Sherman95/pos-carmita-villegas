@@ -99,15 +99,17 @@
       }
     </mat-form-field>
 
-    <!-- SECCIÓN: ESTADO -->
-    <span class="section-label">Estado</span>
-    <div class="state-toggle-container">
-      <mat-button-toggle-group formControlName="estado" aria-label="Estado de la Cita" class="custom-toggle-group">
-        <mat-button-toggle value="PROGRAMADA">Programada</mat-button-toggle>
-        <mat-button-toggle value="COMPLETADA">Completada</mat-button-toggle>
-        <mat-button-toggle value="CANCELADA">Cancelada</mat-button-toggle>
-      </mat-button-toggle-group>
-    </div>
+    @if (isEdit) {
+      <!-- SECCIÓN: ESTADO -->
+      <span class="section-label">Estado</span>
+      <div class="state-toggle-container">
+        <mat-button-toggle-group formControlName="estado" aria-label="Estado de la Cita" class="custom-toggle-group">
+          <mat-button-toggle value="PROGRAMADA">Programada</mat-button-toggle>
+          <mat-button-toggle value="COMPLETADA">Completada</mat-button-toggle>
+          <mat-button-toggle value="CANCELADA">Cancelada</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+    }
 
     <!-- SECCIÓN: NOTAS -->
     <span class="section-label">Notas (Opcional)</span>

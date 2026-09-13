@@ -101,9 +101,10 @@ export const createAppointment = async (req: Request, res: Response) => {
             
             if (conflicts.length > 0) {
                 const c = conflicts[0];
+                const formatTime = (d: string) => new Date(d).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 return res.status(409).json({ 
                     error: 'Conflicto de horario', 
-                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${new Date(c.fecha_inicio).toLocaleTimeString()} a ${new Date(c.fecha_fin).toLocaleTimeString()}.`
+                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${formatTime(c.fecha_inicio)} a ${formatTime(c.fecha_fin)}.`
                 });
             }
         }
@@ -186,9 +187,10 @@ export const updateAppointment = async (req: Request, res: Response) => {
             
             if (conflicts.length > 0) {
                 const c = conflicts[0];
+                const formatTime = (d: string) => new Date(d).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 return res.status(409).json({ 
                     error: 'Conflicto de horario', 
-                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${new Date(c.fecha_inicio).toLocaleTimeString()} a ${new Date(c.fecha_fin).toLocaleTimeString()}.`
+                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${formatTime(c.fecha_inicio)} a ${formatTime(c.fecha_fin)}.`
                 });
             }
         }
