@@ -4,16 +4,16 @@ import { environment } from '../../../environments/environment';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { EmployeeService, Employee } from '../../services/employee.service';
 import { MatSelectModule } from '@angular/material/select';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatCardModule, MatSnackBarModule, FormsModule, MatSelectModule],
+  imports: [MatButtonModule, MatIconModule, MatCardModule, FormsModule, MatSelectModule],
   templateUrl: './settings.html',
   styleUrls: ['./settings.scss']
 })
@@ -28,7 +28,6 @@ export class SettingsComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     private employeeService: EmployeeService
   ) {}
@@ -67,7 +66,13 @@ export class SettingsComponent implements OnInit {
 
     this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar`, payload).subscribe({
       next: (res) => {
-        this.snackBar.open(res.message, 'Cerrar', { duration: 3000 });
+        Swal.fire({
+          icon: 'success',
+          title: '¡Vinculado!',
+          text: res.message,
+          timer: 2500,
+          showConfirmButton: false
+        });
         this.newCalendarId = '';
         this.newEmployeeId = null;
         this.newDescription = '';
@@ -75,7 +80,11 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         const errorMsg = err.error?.error || 'Error desconocido';
-        this.snackBar.open(errorMsg, 'Cerrar', { duration: 5000, panelClass: ['error-snackbar'] });
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: errorMsg
+        });
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -83,31 +92,61 @@ export class SettingsComponent implements OnInit {
   }
 
   deleteCalendar(id: number) {
-    if (!confirm('¿Estás seguro de eliminar esta vinculación? Las citas ya sincronizadas no se borrarán de Google.')) return;
-    this.loading = true;
-    this.http.delete<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar/${id}`).subscribe({
-      next: (res) => {
-        this.snackBar.open('Calendario desvinculado', 'Cerrar', { duration: 3000 });
-        this.loadCalendars();
-      },
-      error: (err) => {
-        this.snackBar.open('Error al desvincular', 'Cerrar', { duration: 3000 });
-        this.loading = false;
-        this.cdr.detectChanges();
+    Swal.fire({
+      title: '¿Eliminar vinculación?',
+      text: 'Las citas ya sincronizadas no se borrarán de Google.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.loading = true;
+        this.http.delete<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar/${id}`).subscribe({
+          next: (res) => {
+            Swal.fire({ icon: 'success', title: 'Desvinculado', timer: 2000, showConfirmButton: false });
+            this.loadCalendars();
+          },
+          error: (err) => {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo desvincular' });
+            this.loading = false;
+            this.cdr.detectChanges();
+          }
+        });
       }
     });
   }
 
   syncCalendar(id: number) {
     this.loading = true;
+    
+    Swal.fire({
+      title: 'Sincronizando...',
+      text: 'Enviando citas a Google Calendar. Esto puede tardar unos segundos.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar/${id}/sync`, {}).subscribe({
       next: (res) => {
-        this.snackBar.open(res.message, 'Cerrar', { duration: 5000 });
+        Swal.fire({
+          icon: 'success',
+          title: '¡Listo!',
+          text: res.message
+        });
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.snackBar.open('Error al sincronizar citas', 'Cerrar', { duration: 3000 });
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de Sincronización',
+          text: 'Hubo un problema enviando las citas'
+        });
         this.loading = false;
         this.cdr.detectChanges();
       }
