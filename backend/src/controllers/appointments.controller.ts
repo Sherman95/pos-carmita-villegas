@@ -3,43 +3,6 @@ import pool from '../database/db';
 import { google } from 'googleapis';
 import path from 'path';
 
-const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
-);
-
-// Función auxiliar para obtener el cliente configurado
-const getGoogleCalendarClient = async () => {
-    const { rows } = await pool.query(`SELECT config_key, config_value FROM business_config WHERE config_key IN ('google_refresh_token', 'google_calendar_id')`);
-    
-    let refreshToken = null;
-    let calendarId = 'primary';
-
-    rows.forEach(row => {
-        if (row.config_key === 'google_refresh_token') refreshToken = row.config_value;
-        if (row.config_key === 'google_calendar_id') calendarId = row.config_value;
-    });
-
-    // Buscar el archivo en varias posibles rutas
-    const possiblePaths = [
-        process.env.GOOGLE_CREDENTIALS_PATH,
-        path.join(__dirname, '../../google-credentials.json'),
-        '/etc/secrets/google-credentials.json'
-    ];
-    
-    const keyFile = possiblePaths.find(p => p && require('fs').existsSync(p));
-
-    if (!keyFile) return null;
-
-    const auth = new google.auth.GoogleAuth({
-        keyFile: keyFile,
-        scopes: ['https://www.googleapis.com/auth/calendar.events'],
-    });
-
-    const calendar = google.calendar({ version: 'v3', auth });
-    
-    return { calendar, calendarId };
-};
 
 export const getAppointments = async (_req: Request, res: Response) => {
     try {
@@ -131,30 +94,40 @@ export const createAppointment = async (req: Request, res: Response) => {
 
         // 3. Crear evento en Google Calendar
         try {
+            const { getGoogleCalendarClient } = require('./googleAuth.controller');
             const googleConfig = await getGoogleCalendarClient();
             if (googleConfig) {
-                const response = await googleConfig.calendar.events.insert({
-                    calendarId: googleConfig.calendarId,
-                    requestBody: {
-                        summary: `[${emp_name}] ${item_name} - ${client_name}`,
-                        description: notas || '',
-                        start: { dateTime: new Date(fecha_inicio).toISOString() },
-                        end: { dateTime: new Date(fecha_fin).toISOString() }
-                    }
-                });
+                // Buscar qué calendarios aplican para esta cita (los generales o los de este empleado)
+                const { rows: cals } = await pool.query(
+                    'SELECT id, calendar_id FROM google_calendars WHERE employee_id IS NULL OR employee_id = $1',
+                    [employee_id]
+                );
 
-                if (response.data.id) {
-                    // 4. Actualizar cita con google_event_id
-                    const updateRes = await pool.query(
-                        'UPDATE appointments SET google_event_id = $1 WHERE id = $2 RETURNING *',
-                        [response.data.id, newAppointment.id]
-                    );
-                    newAppointment = updateRes.rows[0];
+                for (const cal of cals) {
+                    try {
+                        const response = await googleConfig.calendar.events.insert({
+                            calendarId: cal.calendar_id,
+                            requestBody: {
+                                summary: `[${emp_name}] ${item_name} - ${client_name}`,
+                                description: notas || '',
+                                start: { dateTime: new Date(fecha_inicio).toISOString() },
+                                end: { dateTime: new Date(fecha_fin).toISOString() }
+                            }
+                        });
+
+                        if (response.data.id) {
+                            await pool.query(
+                                'INSERT INTO appointment_google_events (appointment_id, google_calendar_id, google_event_id) VALUES ($1, $2, $3)',
+                                [newAppointment.id, cal.id, response.data.id]
+                            );
+                        }
+                    } catch (e) {
+                        console.error(`Error al crear evento en calendario ${cal.calendar_id}:`, e);
+                    }
                 }
             }
         } catch (gcError) {
-            console.error('Error al crear evento en Google Calendar:', gcError);
-            // NOTA: No hacemos throw aquí para no bloquear la creación de la cita en BD si falla Google.
+            console.error('Error al inicializar Google Calendar:', gcError);
         }
 
         res.status(201).json(newAppointment);
@@ -213,34 +186,49 @@ export const updateAppointment = async (req: Request, res: Response) => {
         if (rowCount === 0) return res.status(404).json({ error: 'Cita no encontrada al actualizar' });
 
         // 3. Actualizar en Google Calendar si existe el evento
-        if (googleEventId) {
-            try {
-                const googleConfig = await getGoogleCalendarClient();
-                if (googleConfig) {
-                    // Obtener nombres para el título
+        try {
+            const { getGoogleCalendarClient } = require('./googleAuth.controller');
+            const googleConfig = await getGoogleCalendarClient();
+            if (googleConfig) {
+                // Get all synced events for this appointment
+                const { rows: syncRows } = await pool.query(
+                    \`SELECT e.google_event_id, c.calendar_id 
+                     FROM appointment_google_events e 
+                     JOIN google_calendars c ON e.google_calendar_id = c.id 
+                     WHERE e.appointment_id = $1\`,
+                    [id]
+                );
+
+                if (syncRows.length > 0) {
                     const { rows: details } = await pool.query(
-                        `SELECT 
+                        \`SELECT 
                             (SELECT nombre FROM employees WHERE id = $1) as emp_name,
                             (SELECT nombre FROM items WHERE id = $2) as item_name,
-                            (SELECT nombre FROM clients WHERE id = $3) as client_name`,
+                            (SELECT nombre FROM clients WHERE id = $3) as client_name\`,
                         [employee_id, item_id, client_id]
                     );
                     const { emp_name, item_name, client_name } = details[0];
 
-                    await googleConfig.calendar.events.patch({
-                        calendarId: googleConfig.calendarId,
-                        eventId: googleEventId,
-                        requestBody: {
-                            summary: `[${emp_name}] ${item_name} - ${client_name}`,
-                            description: notas || '',
-                            start: { dateTime: new Date(fecha_inicio).toISOString() },
-                            end: { dateTime: new Date(fecha_fin).toISOString() }
+                    for (const sync of syncRows) {
+                        try {
+                            await googleConfig.calendar.events.patch({
+                                calendarId: sync.calendar_id,
+                                eventId: sync.google_event_id,
+                                requestBody: {
+                                    summary: \`[\${emp_name}] \${item_name} - \${client_name}\`,
+                                    description: notas || '',
+                                    start: { dateTime: new Date(fecha_inicio).toISOString() },
+                                    end: { dateTime: new Date(fecha_fin).toISOString() }
+                                }
+                            });
+                        } catch (e) {
+                            console.error(\`Error al actualizar evento en \${sync.calendar_id}:\`, e);
                         }
-                    });
+                    }
                 }
-            } catch (gcError) {
-                console.error('Error al actualizar evento en Google Calendar:', gcError);
             }
+        } catch (gcError) {
+            console.error('Error al inicializar Google Calendar en actualización:', gcError);
         }
 
         res.status(200).json(rows[0]);
@@ -264,19 +252,32 @@ export const deleteAppointment = async (req: Request, res: Response) => {
         const { rowCount } = await pool.query('DELETE FROM appointments WHERE id = $1', [id]);
         if (rowCount === 0) return res.status(404).json({ error: 'Cita no encontrada al eliminar' });
 
-        // 3. Eliminar de Google Calendar si existe
-        if (googleEventId) {
-            try {
-                const googleConfig = await getGoogleCalendarClient();
-                if (googleConfig) {
-                    await googleConfig.calendar.events.delete({
-                        calendarId: googleConfig.calendarId,
-                        eventId: googleEventId
-                    });
+        // 3. Eliminar de Google Calendar si existen eventos
+        try {
+            const { getGoogleCalendarClient } = require('./googleAuth.controller');
+            const googleConfig = await getGoogleCalendarClient();
+            if (googleConfig) {
+                const { rows: syncRows } = await pool.query(
+                    \`SELECT e.google_event_id, c.calendar_id 
+                     FROM appointment_google_events e 
+                     JOIN google_calendars c ON e.google_calendar_id = c.id 
+                     WHERE e.appointment_id = $1\`,
+                    [id]
+                );
+
+                for (const sync of syncRows) {
+                    try {
+                        await googleConfig.calendar.events.delete({
+                            calendarId: sync.calendar_id,
+                            eventId: sync.google_event_id
+                        });
+                    } catch (e) {
+                        console.error(\`Error al eliminar evento en \${sync.calendar_id}:\`, e);
+                    }
                 }
-            } catch (gcError) {
-                console.error('Error al eliminar evento en Google Calendar:', gcError);
             }
+        } catch (gcError) {
+            console.error('Error al inicializar Google Calendar en eliminación:', gcError);
         }
         
         res.status(200).json({ message: 'Cita eliminada correctamente' });
