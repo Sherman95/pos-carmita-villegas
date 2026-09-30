@@ -68,6 +68,24 @@ export const addCalendar = async (req: Request, res: Response) => {
 export const deleteCalendar = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const { rows: calRows } = await pool.query('SELECT * FROM google_calendars WHERE id = $1', [id]);
+        if (calRows.length > 0) {
+            const calendarRecord = calRows[0];
+            const googleConfig = await getGoogleCalendarClient();
+            if (googleConfig) {
+                const { rows: syncRows } = await pool.query('SELECT google_event_id FROM appointment_google_events WHERE google_calendar_id = $1', [id]);
+                for (const sync of syncRows) {
+                    try {
+                        await googleConfig.calendar.events.delete({
+                            calendarId: calendarRecord.calendar_id,
+                            eventId: sync.google_event_id
+                        });
+                    } catch (e) {
+                        console.error(`Error borrando evento ${sync.google_event_id} en Google Calendar:`, e);
+                    }
+                }
+            }
+        }
         await pool.query('DELETE FROM google_calendars WHERE id = $1', [id]);
         res.status(200).json({ success: true, message: 'Calendario eliminado' });
     } catch (error: any) {

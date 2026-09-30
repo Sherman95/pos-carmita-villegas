@@ -94,7 +94,7 @@ export class SettingsComponent implements OnInit {
   deleteCalendar(id: number) {
     Swal.fire({
       title: '¿Eliminar vinculación?',
-      text: 'Las citas ya sincronizadas no se borrarán de Google.',
+      text: 'Esto eliminará de Google Calendar todas las citas sincronizadas con esta vinculación.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
