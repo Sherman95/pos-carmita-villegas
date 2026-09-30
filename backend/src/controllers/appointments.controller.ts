@@ -192,19 +192,19 @@ export const updateAppointment = async (req: Request, res: Response) => {
             if (googleConfig) {
                 // Get all synced events for this appointment
                 const { rows: syncRows } = await pool.query(
-                    \`SELECT e.google_event_id, c.calendar_id 
+                    `SELECT e.google_event_id, c.calendar_id 
                      FROM appointment_google_events e 
                      JOIN google_calendars c ON e.google_calendar_id = c.id 
-                     WHERE e.appointment_id = $1\`,
+                     WHERE e.appointment_id = $1`,
                     [id]
                 );
 
                 if (syncRows.length > 0) {
                     const { rows: details } = await pool.query(
-                        \`SELECT 
+                        `SELECT 
                             (SELECT nombre FROM employees WHERE id = $1) as emp_name,
                             (SELECT nombre FROM items WHERE id = $2) as item_name,
-                            (SELECT nombre FROM clients WHERE id = $3) as client_name\`,
+                            (SELECT nombre FROM clients WHERE id = $3) as client_name`,
                         [employee_id, item_id, client_id]
                     );
                     const { emp_name, item_name, client_name } = details[0];
@@ -215,14 +215,14 @@ export const updateAppointment = async (req: Request, res: Response) => {
                                 calendarId: sync.calendar_id,
                                 eventId: sync.google_event_id,
                                 requestBody: {
-                                    summary: \`[\${emp_name}] \${item_name} - \${client_name}\`,
+                                    summary: `[${emp_name}] ${item_name} - ${client_name}`,
                                     description: notas || '',
                                     start: { dateTime: new Date(fecha_inicio).toISOString() },
                                     end: { dateTime: new Date(fecha_fin).toISOString() }
                                 }
                             });
                         } catch (e) {
-                            console.error(\`Error al actualizar evento en \${sync.calendar_id}:\`, e);
+                            console.error(`Error al actualizar evento en ${sync.calendar_id}:`, e);
                         }
                     }
                 }
@@ -258,10 +258,10 @@ export const deleteAppointment = async (req: Request, res: Response) => {
             const googleConfig = await getGoogleCalendarClient();
             if (googleConfig) {
                 const { rows: syncRows } = await pool.query(
-                    \`SELECT e.google_event_id, c.calendar_id 
+                    `SELECT e.google_event_id, c.calendar_id 
                      FROM appointment_google_events e 
                      JOIN google_calendars c ON e.google_calendar_id = c.id 
-                     WHERE e.appointment_id = $1\`,
+                     WHERE e.appointment_id = $1`,
                     [id]
                 );
 
@@ -272,7 +272,7 @@ export const deleteAppointment = async (req: Request, res: Response) => {
                             eventId: sync.google_event_id
                         });
                     } catch (e) {
-                        console.error(\`Error al eliminar evento en \${sync.calendar_id}:\`, e);
+                        console.error(`Error al eliminar evento en ${sync.calendar_id}:`, e);
                     }
                 }
             }
