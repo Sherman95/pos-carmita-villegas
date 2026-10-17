@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../database/db';
+import { JWT_ISSUER, POS_JWT_AUDIENCE } from '../middlewares/auth.middleware';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -80,7 +81,7 @@ export const updateUserAccess = async (req: Request, res: Response) => {
     };
     const nextRole = role ?? target.role;
     const nextActive = active ?? target.active;
-    const isPrimaryAdmin = target.username.trim() === 'admin';
+    const isPrimaryAdmin = target.username.trim().toLowerCase() === 'admin';
 
     if (isPrimaryAdmin && (nextRole !== 'admin' || !nextActive)) {
       await client.query('ROLLBACK');
@@ -197,9 +198,11 @@ export const login = async (req: Request, res: Response) => {
 
     console.log('2️⃣  Contraseña correcta. Generando Token...');
 
-    const token = jwt.sign({ sub: user.id, role: user.role, username: user.username }, JWT_SECRET, {
-      expiresIn: '8h'
-    });
+    const token = jwt.sign(
+      { sub: user.id, role: user.role, username: user.username, identity_type: 'pos_staff' },
+      JWT_SECRET,
+      { expiresIn: '8h', algorithm: 'HS256', issuer: JWT_ISSUER, audience: POS_JWT_AUDIENCE }
+    );
 
     // 🔥 CAMBIO 2: Enviamos todos los datos al Frontend
     const responseData = {
@@ -253,18 +256,26 @@ export const updateProfile = async (req: Request | any, res: Response) => {
   }
 
   try {
+    const current = await pool.query('SELECT username FROM users WHERE id = $1 AND active = true LIMIT 1', [id]);
+    if (!current.rows.length) {
+      return res.status(401).json({ error: 'La cuenta está inactiva o ya no existe' });
+    }
+    if (username !== undefined && String(username).trim() !== current.rows[0].username) {
+      return res.status(403).json({ error: 'El nombre de usuario no puede modificarse desde el perfil' });
+    }
+
     // 🔥 CAMBIO 4: SQL Dinámico para guardar todo
     const query = `
       UPDATE users
       SET
         tax_rate = COALESCE($1, tax_rate),
-        username = COALESCE($2, username),
-        business_name = COALESCE($3, business_name),
-        business_ruc = COALESCE($4, business_ruc),
-        business_address = COALESCE($5, business_address),
-        business_phone = COALESCE($6, business_phone),
+        username = username,
+        business_name = COALESCE($2, business_name),
+        business_ruc = COALESCE($3, business_ruc),
+        business_address = COALESCE($4, business_address),
+        business_phone = COALESCE($5, business_phone),
         updated_at = NOW()
-      WHERE id = $7
+      WHERE id = $6
       RETURNING
         id, username, role, tax_rate,
         business_name, business_ruc, business_address, business_phone
@@ -272,12 +283,11 @@ export const updateProfile = async (req: Request | any, res: Response) => {
 
     const values = [
         tax_rate,           // $1
-        username,           // $2
-        business_name,      // $3
-        business_ruc,       // $4
-        business_address,   // $5
-        business_phone,     // $6
-        id                  // $7
+        business_name,      // $2
+        business_ruc,       // $3
+        business_address,   // $4
+        business_phone,     // $5
+        id                  // $6
     ];
 
     const result = await pool.query(query, values);

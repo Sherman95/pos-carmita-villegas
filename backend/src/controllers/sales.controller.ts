@@ -1,5 +1,15 @@
 import { Request, Response } from 'express';
 import pool from '../database/db';
+import {
+    applyPayment,
+    FinancialError,
+    fromCents,
+    parseReceiptMethod,
+    requireOpenRegister,
+    requireUuid,
+    toCents
+} from '../services/financialIntegrity.service';
+import { getBusinessDateRange, getBusinessNow, localMinutesToInstant } from '../utils/businessTime';
 
 const getWeekRange = (date: Date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -19,149 +29,118 @@ const getWeekRange = (date: Date) => {
 // =================================================================================
 export const createSale = async (req: Request, res: Response) => {
     const client = await pool.connect();
-
+    const requestedOperationId = req.body?.operation_id;
     try {
-        // 👇👇👇 1. BLOQUE DE SEGURIDAD (NUEVO) 👇👇👇
-        // Verificamos si existe una caja abierta antes de hacer nada.
-        const cajaCheck = await client.query(
-            "SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1"
-        );
-
-        if (cajaCheck.rows.length === 0) {
-            // Si no hay caja, detenemos todo aquí mismo.
-            // El 'finally' al final se encargará de liberar el cliente.
-            return res.status(403).json({ 
-                error: '⛔ LA CAJA ESTÁ CERRADA. Debes abrir turno para poder vender.' 
-            });
+        const { total, items, tipo_pago, client_id, tax_rate, abono_inicial, operation_id } = req.body;
+        const operationId = requireUuid(operation_id, 'operation_id');
+        if (!Array.isArray(items) || items.length === 0 || items.length > 500) {
+            throw new FinancialError(400, 'La venta debe contener entre 1 y 500 detalles');
         }
-        // 👆👆👆 FIN DEL BLOQUE DE SEGURIDAD 👆👆👆
-
-
-        const { total, items, tipo_pago, client_id, tax_rate, abono_inicial } = req.body;
-    
-        let clientNombre: string | null = null;
-        let clientCedula: string | null = null;
-        
-        // Búsqueda de datos del cliente
-        if (client_id) {
-            // Validamos que el ID tenga formato UUID para evitar errores de sintaxis SQL
-            const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(client_id);
-            
-            if (isUUID) {
-                const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [client_id]);
-                if (rows.length > 0) {
-                    clientNombre = rows[0].nombre;
-                    clientCedula = rows[0].cedula || null;
-                }
-            } else {
-                 console.warn('ID de cliente no válido, se registrará sin cliente:', client_id);
+        const method = String(tipo_pago || 'EFECTIVO').trim().toUpperCase();
+        if (!['EFECTIVO', 'TRANSFERENCIA', 'CREDITO'].includes(method)) {
+            throw new FinancialError(400, 'Tipo de pago no soportado');
+        }
+        const taxRate = Number(tax_rate || 0);
+        if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 1) {
+            throw new FinancialError(400, 'Tasa de impuesto invalida');
+        }
+        let detailSubtotalCents = 0;
+        const normalizedItems = items.map((item: any, index: number) => {
+            const itemId = requireUuid(item.item?.id || item.item_id || item.id, `item ${index + 1}`);
+            const quantity = Number(item.cantidad);
+            const unitCents = toCents(item.precioVenta ?? item.precio_unitario, `precio item ${index + 1}`);
+            const subtotalCents = toCents(item.subtotal, `subtotal item ${index + 1}`);
+            if (!Number.isInteger(quantity) || quantity <= 0) throw new FinancialError(400, 'Las cantidades deben ser enteros positivos');
+            if (unitCents < 0 || subtotalCents !== unitCents * quantity) {
+                throw new FinancialError(400, `El subtotal del item ${index + 1} no coincide`);
             }
+            detailSubtotalCents += subtotalCents;
+            return {
+                id: itemId,
+                name: String(item.item?.nombre || item.nombre_producto || item.nombre || '').trim() || 'Item',
+                quantity,
+                unit: fromCents(unitCents),
+                subtotal: fromCents(subtotalCents)
+            };
+        });
+        const totalCents = toCents(total, 'total');
+        const expectedTotalCents = Math.round(detailSubtotalCents * (1 + taxRate));
+        if (totalCents <= 0 || totalCents !== expectedTotalCents) {
+            throw new FinancialError(400, 'El total no coincide con los detalles e impuestos de la venta');
         }
-
-        // ============================================================
-        // 🧠 LÓGICA DE DINERO REAL
-        // ============================================================
-        let estadoPago = 'PAGADO';
-        let saldoPendiente = 0;
-        
-        const metodo = tipo_pago || 'EFECTIVO';
-        const abono = Number(abono_inicial) || 0; 
-        let dineroRealEntrante = 0; 
-
-        if (metodo === 'CREDITO') {
-            estadoPago = 'PENDIENTE';
-            saldoPendiente = Number(total) - abono;
-            dineroRealEntrante = abono; 
-        } else {
-            dineroRealEntrante = Number(total);
+        const initialPaymentCents = method === 'CREDITO' ? toCents(abono_inicial ?? 0, 'abono_inicial') : totalCents;
+        if (initialPaymentCents < 0 || initialPaymentCents > totalCents) {
+            throw new FinancialError(400, 'El abono inicial no puede ser negativo ni superar el total');
         }
-        // ============================================================
 
         await client.query('BEGIN');
+        const duplicate = await client.query('SELECT id, client_nombre, total, tipo_pago FROM sales WHERE operation_id = $1 LIMIT 1', [operationId]);
+        if (duplicate.rows[0]) {
+            if (toCents(duplicate.rows[0].total) !== totalCents || String(duplicate.rows[0].tipo_pago).toUpperCase() !== method) {
+                throw new FinancialError(409, 'La clave de operacion ya fue utilizada con otra venta');
+            }
+            await client.query('COMMIT');
+            return res.status(200).json({ message: 'Venta ya registrada', saleId: duplicate.rows[0].id, client_nombre: duplicate.rows[0].client_nombre, idempotent: true });
+        }
+        await requireOpenRegister(client);
 
-        // 2. INSERTAR CABECERA
+        let clientNombre: string | null = null;
+        let clientCedula: string | null = null;
+        let validClientId: string | null = null;
+        if (client_id) {
+            validClientId = requireUuid(client_id, 'client_id');
+            const { rows } = await client.query('SELECT nombre, cedula FROM clients WHERE id = $1', [validClientId]);
+            if (!rows[0]) throw new FinancialError(400, 'Cliente no encontrado');
+            clientNombre = rows[0].nombre;
+            clientCedula = rows[0].cedula || null;
+        }
+        if (method === 'CREDITO' && (!validClientId || validClientId === '51ba64a6-8b6a-4a4b-a70e-1f4042c1f32d')) {
+            throw new FinancialError(400, 'Las ventas a credito requieren un cliente identificado');
+        }
+        const balanceCents = totalCents - initialPaymentCents;
+        const paymentStatus = balanceCents === 0 ? 'PAGADO' : initialPaymentCents > 0 ? 'PARCIAL' : 'PENDIENTE';
         const saleQuery = `
             INSERT INTO sales (
-                total, 
-                tipo_pago,    
-                metodo_pago,  
-                client_id, 
-                client_nombre, 
-                client_cedula, 
-                tax_rate,
-                estado_pago,      
-                saldo_pendiente,
-                monto_pagado 
+                total, tipo_pago, metodo_pago, client_id, client_nombre, client_cedula,
+                tax_rate, estado_pago, saldo_pendiente, monto_pagado, total_pagado, operation_id
             ) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11)
             RETURNING id
         `;
-
-        const validClientId = (client_id && client_id.length > 10) ? client_id : null;
-
         const saleValues = [
-            total,              // $1
-            metodo,             // $2 (tipo_pago)
-            metodo,             // $3 (metodo_pago)
-            validClientId,      // $4
-            clientNombre,       // $5
-            clientCedula,       // $6
-            tax_rate || 0,      // $7
-            estadoPago,         // $8
-            saldoPendiente,     // $9
-            dineroRealEntrante  // $10
+            fromCents(totalCents), method, method, validClientId, clientNombre, clientCedula,
+            taxRate, paymentStatus, fromCents(balanceCents), fromCents(initialPaymentCents), operationId
         ];
-
         const saleResult = await client.query(saleQuery, saleValues);
         const saleId = saleResult.rows[0].id;
-
-        // 3. INSERTAR DETALLES
         const itemQuery = `
             INSERT INTO sale_details (sale_id, item_id, nombre_producto, cantidad, precio_unitario, subtotal)
             VALUES ($1, $2, $3, $4, $5, $6)
         `;
-
-        for (const item of items) {
-            const prodId = item.item ? item.item.id : (item.item_id || item.id);
-            const prodNombre = item.item ? item.item.nombre : (item.nombre_producto || item.nombre);
-
-            await client.query(itemQuery, [
-                saleId, 
-                prodId, 
-                prodNombre, 
-                item.cantidad, 
-                item.precioVenta, 
-                item.subtotal
-            ]);
+        for (const item of normalizedItems) {
+            await client.query(itemQuery, [saleId, item.id, item.name, item.quantity, item.unit, item.subtotal]);
         }
-
-        // 4. REGISTRAR ABONO EN HISTORIAL
-        if (metodo === 'CREDITO' && abono > 0) {
+        if (initialPaymentCents > 0) {
+            const receiptMethod = method === 'CREDITO' ? 'EFECTIVO' : parseReceiptMethod(method);
             await client.query(`
                 INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-                VALUES ($1, $2, 'EFECTIVO', 'Abono Inicial')
-            `, [saleId, abono]);
+                VALUES ($1, $2, $3, $4)
+            `, [saleId, fromCents(initialPaymentCents), receiptMethod, method === 'CREDITO' ? 'Abono Inicial' : 'Pago al contado']);
         }
-        
-        if (metodo !== 'CREDITO') {
-             await client.query(`
-                INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-                VALUES ($1, $2, $3, 'Pago al contado')
-            `, [saleId, total, metodo]);
-        }
-
         await client.query('COMMIT');
-        
-        res.status(201).json({ 
-            message: 'Venta registrada', 
-            saleId, 
-            client_nombre: clientNombre 
-        });
-
+        res.status(201).json({ message: 'Venta registrada', saleId, client_nombre: clientNombre, idempotent: false });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('❌ ERROR REAL DEL BACKEND:', error);
-        res.status(500).json({ error: 'Error al procesar la venta. Revisa la consola del servidor.' });
+        if (error instanceof FinancialError) return res.status(error.status).json({ error: error.message });
+        if ((error as any)?.code === '23505') {
+            const existing = await pool.query('SELECT id, client_nombre, total, tipo_pago FROM sales WHERE operation_id = $1 LIMIT 1', [requestedOperationId]);
+            if (existing.rows[0] && toCents(existing.rows[0].total) === toCents(req.body?.total) && String(existing.rows[0].tipo_pago).toUpperCase() === String(req.body?.tipo_pago || 'EFECTIVO').toUpperCase()) {
+                return res.status(200).json({ message: 'Venta ya registrada', saleId: existing.rows[0].id, client_nombre: existing.rows[0].client_nombre, idempotent: true });
+            }
+            return res.status(409).json({ error: 'La operacion ya fue registrada con otros datos' });
+        }
+        res.status(500).json({ error: 'Error al procesar la venta' });
     } finally {
         client.release();
     }
@@ -195,6 +174,9 @@ export const getSalesByRange = async (req: Request, res: Response) => {
     }
 
     try {
+        const range = from.includes('T') || to.includes('T')
+            ? { start: from, end: to }
+            : getBusinessDateRange(from, to);
         const { rows } = await pool.query(
             `SELECT 
                 s.id, s.total, s.metodo_pago, s.client_id,
@@ -204,9 +186,9 @@ export const getSalesByRange = async (req: Request, res: Response) => {
                 s.tax_rate
              FROM sales s
              LEFT JOIN clients c ON s.client_id = c.id
-             WHERE s.created_at >= $1::timestamptz AND s.created_at <= $2::timestamptz
+             WHERE s.created_at >= $1::timestamptz AND s.created_at < $2::timestamptz
              ORDER BY s.created_at DESC`,
-            [from, to]
+            [range.start, range.end]
         );
         res.status(200).json(rows);
     } catch (error) {
@@ -230,7 +212,7 @@ export const getSalesSummary = async (req: Request, res: Response) => {
             const nextYear = m === 12 ? y + 1 : y;
             end = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
         } else if (period === 'week') {
-            const { start: s, end: e } = getWeekRange(new Date());
+            const { start: s, end: e } = getWeekRange(new Date(`${getBusinessNow().date}T00:00:00Z`));
             start = s;
             end = e;
         } else if (period === 'year') {
@@ -242,19 +224,22 @@ export const getSalesSummary = async (req: Request, res: Response) => {
                 start = from;
                 end = to;
             } else {
-                start = from;
-                const toDate = new Date(to);
-                toDate.setDate(toDate.getDate() + 1);
-                end = toDate.toISOString().slice(0, 10);
+                const range = getBusinessDateRange(from, to);
+                start = range.start;
+                end = range.end;
             }
         } else {
             return res.status(400).json({ error: 'Proporciona period=month|year o from/to' });
         }
 
+        if (!start.includes('T')) {
+            start = localMinutesToInstant(start, 0);
+            end = localMinutesToInstant(end, 0);
+        }
         const { rows } = await pool.query(
             `SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total
              FROM sales
-             WHERE created_at >= $1::timestamptz AND created_at <= $2::timestamptz`,
+             WHERE created_at >= $1::timestamptz AND created_at < $2::timestamptz`,
             [start, end]
         );
 
@@ -274,8 +259,9 @@ export const getSalesByClient = async (req: Request, res: Response) => {
         const params: any[] = [clientId];
 
         if (from && to) {
-            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz';
-            params.push(from, to);
+            const range = getBusinessDateRange(from, to);
+            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at < $3::timestamptz';
+            params.push(range.start, range.end);
         } else if (period === 'week') {
             dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
         } else if (period === 'month') {
@@ -324,8 +310,9 @@ export const getSalesByItem = async (req: Request, res: Response) => {
         const params: any[] = [itemId];
 
         if (from && to) {
-            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz';
-            params.push(from, to);
+            const range = getBusinessDateRange(from, to);
+            dateFilter = 'AND s.created_at >= $2::timestamptz AND s.created_at < $3::timestamptz';
+            params.push(range.start, range.end);
         } else if (period === 'week') {
             dateFilter = "AND s.created_at >= NOW() - INTERVAL '7 days'";
         } else if (period === 'month') {
@@ -462,8 +449,9 @@ export const getReceiptsByClient = async (req: Request, res: Response) => {
         const params: any[] = [clientId];
         let dateClause = '';
         if (from && to) {
-            params.push(from, to);
-            dateClause = "AND s.created_at >= $2::date AND s.created_at < ($3::date + INTERVAL '1 day')";
+            const range = getBusinessDateRange(from, to);
+            params.push(range.start, range.end);
+            dateClause = "AND s.created_at >= $2::timestamptz AND s.created_at < $3::timestamptz";
         }
 
         const { rows } = await pool.query(
@@ -496,7 +484,7 @@ export const getDebtors = async (_req: Request, res: Response) => {
                 c.id as client_id, c.nombre, c.cedula, c.telefono
             FROM sales s
             JOIN clients c ON s.client_id = c.id
-            WHERE s.estado_pago = 'PENDIENTE'
+            WHERE s.estado_pago IN ('PENDIENTE', 'PARCIAL')
             AND s.saldo_pendiente > 0.01 
             ORDER BY s.created_at DESC
         `);
@@ -535,41 +523,33 @@ export const getDebtors = async (_req: Request, res: Response) => {
 
 
 export const registerPayment = async (req: Request, res: Response) => {
-    const { saleId, monto, metodo_pago } = req.body; 
-
+    const { saleId, monto, metodo_pago, operation_id } = req.body;
+    const client = await pool.connect();
     try {
-        // 👇 1. SEGURIDAD: VERIFICAR CAJA ABIERTA (Esto faltaba)
-        const cajaCheck = await pool.query(
-            "SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1"
-        );
-
-        if (cajaCheck.rows.length === 0) {
-            return res.status(403).json({ 
-                error: '⛔ LA CAJA ESTÁ CERRADA. Abre turno para recibir abonos.' 
-            });
-        }
-        // 👆 FIN SEGURIDAD
-
-        if (!saleId || !monto) {
-            return res.status(400).json({ error: 'Faltan datos' });
-        }
-
-        const metodo = metodo_pago || 'EFECTIVO'; 
-
-        // Registrar Abono
-        await pool.query(`
-            INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-            VALUES ($1, $2, $3, 'Abono de Deuda')
-        `, [saleId, monto, metodo]);
-
-        // OJO: Aquí deberías tener también la lógica para restar el saldo de la venta (sales.saldo_pendiente),
-        // pero asumo que eso lo manejas con un Trigger en la base de datos o en otra consulta. 
-        // Si no tienes trigger, avísame para agregarlo aquí mismo.
-
-        res.status(200).json({ message: 'Abono registrado correctamente' });
-
+        await client.query('BEGIN');
+        await requireOpenRegister(client);
+        const result = await applyPayment(client, { saleId, amount: monto, method: metodo_pago, operationId: operation_id });
+        await client.query('COMMIT');
+        res.status(200).json({ message: result.idempotent ? 'Abono ya registrado' : 'Abono registrado correctamente', ...result });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error registrando abono:', error);
+        if (error instanceof FinancialError) return res.status(error.status).json({ error: error.message });
+        if ((error as any)?.code === '23505') {
+            const existing = await pool.query(
+                `SELECT sale_id, monto, metodo_pago FROM payment_history WHERE operation_id = $1 LIMIT 1`,
+                [operation_id]
+            );
+            if (existing.rows[0]
+                && String(existing.rows[0].sale_id) === String(saleId)
+                && toCents(existing.rows[0].monto) === toCents(monto)
+                && parseReceiptMethod(existing.rows[0].metodo_pago) === parseReceiptMethod(metodo_pago)) {
+                return res.status(200).json({ message: 'Abono ya registrado', idempotent: true, saleId });
+            }
+            return res.status(409).json({ error: 'La operacion ya fue utilizada con otros datos' });
+        }
         res.status(500).json({ error: 'Error al registrar el pago' });
+    } finally {
+        client.release();
     }
 };

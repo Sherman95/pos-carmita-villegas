@@ -2,42 +2,38 @@ import { Request, Response } from 'express';
 // ⚠️ IMPORTANTE: Verifica que esta ruta a tu base de datos sea correcta.
 // Si tu archivo se llama db.ts o database.ts, ajusta la ruta si es necesario.
 import pool from '../database/db';
+import { FinancialError, fromCents, parseReceiptMethod, requireOpenRegister, toCents } from '../services/financialIntegrity.service';
+import { getBusinessDateRange } from '../utils/businessTime';
 
 export const createExpense = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
-        // 👇 1. SEGURIDAD: VERIFICAR CAJA ABIERTA
-        const cajaCheck = await pool.query(
-            "SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1"
-        );
-
-        if (cajaCheck.rows.length === 0) {
-            return res.status(403).json({
-                error: '⛔ LA CAJA ESTÁ CERRADA. Abre turno para registrar gastos.'
-            });
-        }
-        // 👆 FIN SEGURIDAD
-
         const { descripcion, monto, categoria, metodo_pago } = req.body;
+        const cleanDescription = String(descripcion || '').trim();
+        const cleanCategory = String(categoria || '').trim();
+        const amountCents = toCents(monto, 'monto');
+        if (!cleanDescription) throw new FinancialError(400, 'La descripcion es obligatoria');
+        if (!cleanCategory) throw new FinancialError(400, 'La categoria es obligatoria');
+        if (amountCents <= 0) throw new FinancialError(400, 'El monto debe ser mayor que cero');
+        if (!req.userId) throw new FinancialError(401, 'Usuario no autenticado');
+        const method = parseReceiptMethod(metodo_pago);
 
-        // Validación básica
-        if (!descripcion || !monto) {
-            return res.status(400).json({ error: 'Descripción y monto son obligatorios' });
-        }
-
-        // Si no envían método, asumimos EFECTIVO por defecto
-        const metodo = metodo_pago || 'EFECTIVO';
-
-        // Insertar Gasto
-        const result = await pool.query(
-            'INSERT INTO expenses (descripcion, monto, categoria, metodo_pago, fecha) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-            [descripcion, monto, categoria, metodo]
+        await client.query('BEGIN');
+        await requireOpenRegister(client);
+        const result = await client.query(
+            `INSERT INTO expenses (descripcion, monto, categoria, metodo_pago, fecha, usuario_id)
+             VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING *`,
+            [cleanDescription, fromCents(amountCents), cleanCategory, method, req.userId]
         );
-
+        await client.query('COMMIT');
         res.status(201).json(result.rows[0]);
-
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error(error);
+        if (error instanceof FinancialError) return res.status(error.status).json({ error: error.message });
         res.status(500).json({ error: 'Error al registrar el gasto' });
+    } finally {
+        client.release();
     }
 };
 
@@ -51,13 +47,15 @@ export const getExpenses = async (req: Request, res: Response) => {
         const params: any[] = [];
         let count = 1;
 
-        // Filtro de fechas
+        if ((from && !to) || (!from && to)) {
+            return res.status(400).json({ error: 'from y to deben enviarse juntos' });
+        }
         if (from && to) {
-            query += ` AND fecha >= $${count}::timestamptz AND fecha <= $${count+1}::timestamptz`;
-            // Ajuste para cubrir todo el día final
-            const toDate = new Date(to);
-            toDate.setHours(23, 59, 59, 999);
-            params.push(from, toDate.toISOString());
+            let range;
+            try { range = getBusinessDateRange(from, to); }
+            catch { throw new FinancialError(400, 'Rango de fechas invalido'); }
+            query += ` AND fecha >= $${count}::timestamptz AND fecha < $${count+1}::timestamptz`;
+            params.push(range.start, range.end);
             count += 2;
         }
 
@@ -78,6 +76,7 @@ export const getExpenses = async (req: Request, res: Response) => {
         res.json({ expenses: rows, total });
     } catch (error) {
         console.error(error);
+        if (error instanceof FinancialError) return res.status(error.status).json({ error: error.message });
         res.status(500).json({ error: 'Error al obtener gastos' });
     }
 };

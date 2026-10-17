@@ -72,8 +72,7 @@ export class SidroRequestsComponent implements OnInit {
 
   get isAdmin(): boolean {
     const user = this.authService.currentUser();
-    return user?.role?.trim().toLowerCase() === 'admin' ||
-      user?.username?.trim().toLowerCase() === 'admin';
+    return user?.role?.trim().toLowerCase() === 'admin';
   }
 
   get professionals(): string[] {

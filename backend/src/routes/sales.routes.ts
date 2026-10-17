@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 // 👇 IMPORTA LAS NUEVAS FUNCIONES AQUÍ
 import {
     createSale,
@@ -16,7 +16,7 @@ import {
 } from '../controllers/sales.controller';
 
 const router = Router();
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 // ... tus rutas existentes ...
 router.get('/', getSales);

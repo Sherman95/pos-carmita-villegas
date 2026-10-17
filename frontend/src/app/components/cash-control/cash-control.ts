@@ -87,10 +87,8 @@ export class CashControlComponent implements OnInit {
 
   // 3. ACCIÓN: ABRIR CAJA 🔓
   openBox() {
-    const userId = '00000000-0000-0000-0000-000000000000'; // ID temporal
-
     this.loading = true;
-    this.cashService.openRegister(this.initialAmount, userId).subscribe({
+    this.cashService.openRegister(this.initialAmount).subscribe({
       next: () => {
         Swal.fire({ icon: 'success', title: 'Caja Abierta', text: '¡A vender se ha dicho!', confirmButtonColor: 'var(--brand-base)' });
         this.checkStatus(); // Recargar estado
@@ -129,10 +127,7 @@ export class CashControlComponent implements OnInit {
     
     const payload = {
       monto_real: this.realAmount,
-      observaciones: this.observaciones,
-      total_ventas: this.closingData.total_ventas,
-      total_gastos: this.closingData.total_gastos,
-      monto_esperado: this.closingData.monto_esperado
+      observaciones: this.observaciones
     };
 
     this.cashService.closeRegister(this.closingData.session_id, payload).subscribe({
@@ -142,7 +137,7 @@ export class CashControlComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cerrar la caja' });
+        Swal.fire({ icon: 'error', title: 'Error', text: err.error?.error || 'Error al cerrar la caja' });
         this.loading = false;
         this.cd.detectChanges(); // 👈 Por seguridad
       }

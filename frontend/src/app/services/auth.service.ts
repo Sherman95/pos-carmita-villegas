@@ -54,9 +54,7 @@ export class AuthService {
   isAdmin(): boolean {
     const user = this.currentUser();
     const role = user?.role?.trim().toLowerCase();
-    const username = user?.username?.trim().toLowerCase();
-
-    return role === 'admin' || username === 'admin';
+    return role === 'admin';
   }
 
   // ✅ MÉTODO CORREGIDO: Ahora SÍ construye y envía la cabecera con el Token

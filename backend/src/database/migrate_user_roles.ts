@@ -9,7 +9,7 @@ export async function ensurePrimaryAdminRole(): Promise<void> {
     const result = await pool.query(
       `UPDATE users
        SET role = 'admin', updated_at = NOW()
-       WHERE username = 'admin' AND role <> 'admin'`
+       WHERE lower(username) = 'admin' AND role <> 'admin'`
     );
 
     if (result.rowCount) {

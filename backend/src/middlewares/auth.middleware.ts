@@ -1,103 +1,129 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import pool from '../database/db';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+export const JWT_ISSUER = 'pos-carmita-villegas';
+export const POS_JWT_AUDIENCE = 'pos';
+export const SIDRO_JWT_AUDIENCE = 'sidro';
+
+export type AuthIdentity = 'pos_staff' | 'sidro_client';
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   throw new Error('JWT_SECRET es obligatorio y debe tener al menos 32 caracteres');
 }
 
-// Extendemos la definición de Request para TypeScript
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
       userRole?: string;
-      user?: any;
+      authIdentity?: AuthIdentity;
+      user?: Record<string, unknown>;
     }
   }
 }
 
+const normalizedAudience = (audience: string | string[] | undefined): string | undefined =>
+  Array.isArray(audience) ? audience[0] : audience;
+
+const identityFromClaims = (claims: JwtPayload): AuthIdentity | null => {
+  const audience = normalizedAudience(claims.aud);
+  const claimedIdentity = claims.identity_type;
+
+  if (audience !== undefined && audience !== POS_JWT_AUDIENCE && audience !== SIDRO_JWT_AUDIENCE) {
+    return null;
+  }
+  if (claimedIdentity !== undefined && claimedIdentity !== 'pos_staff' && claimedIdentity !== 'sidro_client') {
+    return null;
+  }
+  if (audience === POS_JWT_AUDIENCE) {
+    return claimedIdentity === undefined || claimedIdentity === 'pos_staff' ? 'pos_staff' : null;
+  }
+  if (audience === SIDRO_JWT_AUDIENCE) {
+    return claimedIdentity === undefined || claimedIdentity === 'sidro_client' ? 'sidro_client' : null;
+  }
+  if (claimedIdentity === 'pos_staff' || claimedIdentity === 'sidro_client') {
+    return claimedIdentity;
+  }
+
+  // Compatibilidad temporal con tokens emitidos antes de introducir aud/identity_type.
+  return claims.role === 'sidro_client' ? 'sidro_client' : 'pos_staff';
+};
+
+const bearerToken = (req: Request): string | null => {
+  let value = req.headers.authorization || req.headers['x-access-token'];
+  if (Array.isArray(value)) value = value[0];
+  if (!value) return null;
+  if (value.startsWith('Bearer ')) return value.slice(7).trim() || null;
+  return value.trim() || null;
+};
+
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-  console.log('🔒 [Middleware] Verificando Token...');
-
-  // 1. Buscamos el token en varios lugares por si acaso
-  let token = req.headers['authorization'] || req.headers['x-access-token'];
-
-  // 2. Si es un array (caso raro), tomamos el primero
-  if (Array.isArray(token)) token = token[0];
-
+  const token = bearerToken(req);
   if (!token) {
-    console.log('❌ Acceso denegado: No hay token');
-    return res.status(403).json({ error: 'No se proporcionó token' });
+    return res.status(401).json({ error: 'No se proporcionó token' });
   }
 
-  // 3. Limpieza: Si dice "Bearer ", se lo quitamos para dejar solo el código
-  if (token.startsWith('Bearer ')) {
-    token = token.slice(7, token.length);
-  }
-
-  let decoded: any;
-
+  let decoded: JwtPayload;
   try {
-    decoded = jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    console.log('Token inválido:', error);
+    const verified = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+    if (typeof verified === 'string') throw new Error('JWT payload inválido');
+    decoded = verified;
+  } catch {
     return res.status(401).json({ error: 'Token inválido o expirado' });
   }
 
-  const userId = decoded.sub || decoded.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
+  const userId = String(decoded.sub || decoded.id || '').trim();
+  const identity = identityFromClaims(decoded);
+  if (!userId || !identity) {
+    return res.status(401).json({ error: 'Token inválido o de identidad incorrecta' });
   }
 
   try {
-    if (decoded.role === 'sidro_client') {
+    if (identity === 'sidro_client') {
       const { rows } = await pool.query(
         'SELECT id, is_active, token_version FROM sidro_client_accounts WHERE id = $1 LIMIT 1',
         [userId]
       );
-      const sidroAccount = rows[0];
-
-      if (!sidroAccount?.is_active) {
+      const account = rows[0];
+      if (!account?.is_active) {
         return res.status(401).json({ error: 'La cuenta SIDRO está inactiva o ya no existe' });
       }
-
-      if (Number(decoded.token_version ?? 0) !== Number(sidroAccount.token_version ?? 0)) {
+      if (Number(decoded.token_version ?? 0) !== Number(account.token_version ?? 0)) {
         return res.status(401).json({ error: 'La sesión expiró. Inicia sesión nuevamente' });
       }
 
-      req.userId = userId;
+      req.userId = String(account.id);
       req.userRole = 'sidro_client';
-      req.user = {
-        ...decoded,
-        id: userId,
-        role: 'sidro_client'
-      };
-
+      req.authIdentity = 'sidro_client';
+      req.user = { ...decoded, id: String(account.id), sub: String(account.id), role: 'sidro_client' };
       return next();
     }
 
     const { rows } = await pool.query(
-      'SELECT username, role, active FROM users WHERE id = $1 LIMIT 1',
+      'SELECT id, username, role, active FROM users WHERE id = $1 LIMIT 1',
       [userId]
     );
     const currentUser = rows[0];
-
     if (!currentUser?.active) {
       return res.status(401).json({ error: 'La cuenta está inactiva o ya no existe' });
     }
+    if (currentUser.role !== 'admin' && currentUser.role !== 'user') {
+      return res.status(403).json({ error: 'La cuenta no tiene un rol POS válido' });
+    }
 
-    req.userId = userId;
+    req.userId = String(currentUser.id);
     req.userRole = currentUser.role;
+    req.authIdentity = 'pos_staff';
     req.user = {
       ...decoded,
-      sub: userId,
+      id: String(currentUser.id),
+      sub: String(currentUser.id),
       username: currentUser.username,
       role: currentUser.role
     };
-
     return next();
   } catch (error) {
     console.error('Error verificando el estado del usuario:', error);
@@ -105,8 +131,22 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const requireStaff = (req: Request, res: Response, next: NextFunction) => {
+  if (req.authIdentity !== 'pos_staff') {
+    return res.status(403).json({ error: 'Acceso exclusivo para personal del POS' });
+  }
+  return next();
+};
+
+export const requireSidroClient = (req: Request, res: Response, next: NextFunction) => {
+  if (req.authIdentity !== 'sidro_client') {
+    return res.status(403).json({ error: 'Acceso exclusivo para cuentas SIDRO' });
+  }
+  return next();
+};
+
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.userRole?.trim().toLowerCase() !== 'admin') {
+  if (req.authIdentity !== 'pos_staff' || req.userRole?.trim().toLowerCase() !== 'admin') {
     return res.status(403).json({ error: 'Acceso denegado: se requiere rol de administrador' });
   }
   return next();

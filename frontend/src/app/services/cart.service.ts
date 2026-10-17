@@ -86,7 +86,8 @@ export class CartService {
     clientId: string, 
     tipoPago: string, 
     taxRate: number, 
-    abonoInicial: number = 0
+    abonoInicial: number = 0,
+    operationId: string
   ) {
     
     // ⛔ REGLA DE ORO: BLOQUEO DE CRÉDITO ANÓNIMO
@@ -96,13 +97,14 @@ export class CartService {
 
     const payload = {
       items: this.items(),
-      total: this.total(),
+      total: Number((this.total() * (1 + taxRate)).toFixed(2)),
       client_id: clientId,
       tax_rate: taxRate,
       
       // 👇 CAMPOS IMPORTANTES QUE AHORA EL BACKEND ESPERA
       tipo_pago: tipoPago,      
-      abono_inicial: abonoInicial 
+      abono_inicial: abonoInicial,
+      operation_id: operationId
     };
 
     console.log('📦 ENVIANDO VENTA:', payload); 

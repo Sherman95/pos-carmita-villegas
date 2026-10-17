@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import pool from '../database/db';
 import { AvailabilityEngine } from '../services/availability.engine';
 import { SidroRequestAppointmentsService } from '../services/sidroRequestAppointments.service';
+import { minutesToTime, normalizeDateOnly, timeToMinutes } from '../utils/businessTime';
 
 const isUuid = (value: unknown): value is string =>
     typeof value === 'string' &&
@@ -78,9 +79,7 @@ export const createRequest = async (req: Request, res: Response) => {
         }
 
         const totalDuration = servicePlan.reduce((sum, service) => sum + service.total_minutes, 0);
-        const endDate = new Date(`1970-01-01T${requestedSlot}:00`);
-        endDate.setMinutes(endDate.getMinutes() + totalDuration);
-        const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+        const endTime = minutesToTime(timeToMinutes(requestedSlot) + totalDuration);
 
         const result = await client.query(
             `INSERT INTO sidro_appointment_requests
@@ -284,23 +283,22 @@ export const acceptProposal = async (req: Request, res: Response) => {
         client = await pool.connect();
         await client.query('BEGIN');
         const check = await client.query(
-            'SELECT * FROM sidro_appointment_requests WHERE id = $1 FOR UPDATE',
-            [id]
+            `SELECT * FROM sidro_appointment_requests
+             WHERE id = $1 AND sidro_account_id = $2
+             FOR UPDATE`,
+            [id, sidroAccountId]
         );
-        if (check.rows.length === 0) throw new Error('Solicitud no encontrada');
-        const request = check.rows[0];
-
-        if (request.sidro_account_id !== sidroAccountId) {
+        if (check.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(403).json({ error: 'No autorizado' });
         }
+        const request = check.rows[0];
         if (request.status !== 'PROPUESTA') {
             await client.query('ROLLBACK');
             return res.status(409).json({ error: 'La solicitud no es una propuesta' });
         }
 
-        const localDate = new Date(request.proposed_date);
-        const dateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+        const dateStr = normalizeDateOnly(request.proposed_date);
         const segments = await SidroRequestAppointmentsService.getSegments(client, request);
         const slots = await AvailabilityEngine.getAvailableSlotsForServices(
             segments.map((segment) => segment.service_id),
@@ -374,10 +372,11 @@ export const rejectProposal = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const check = await pool.query(
-            'SELECT sidro_account_id FROM sidro_appointment_requests WHERE id = $1',
-            [id]
+            `SELECT id FROM sidro_appointment_requests
+             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'`,
+            [id, sidroAccountId]
         );
-        if (check.rows.length === 0 || check.rows[0].sidro_account_id !== sidroAccountId) {
+        if (check.rows.length === 0) {
             return res.status(403).json({ error: 'No autorizado' });
         }
         await pool.query(
@@ -386,8 +385,8 @@ export const rejectProposal = async (req: Request, res: Response) => {
                  proposed_date = NULL,
                  proposed_start_time = NULL,
                  proposed_end_time = NULL
-             WHERE id = $1`,
-            [id]
+             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'`,
+            [id, sidroAccountId]
         );
         return res.json({ message: 'Propuesta rechazada y cancelada' });
     } catch (error) {

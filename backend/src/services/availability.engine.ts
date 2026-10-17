@@ -1,8 +1,9 @@
 import pool from '../database/db';
+import { dayOfWeekForBusinessDate, getBusinessNow, timeToMinutes, minutesToTime } from '../utils/businessTime';
 
 interface TimeInterval {
-    start: Date;
-    end: Date;
+    start: number;
+    end: number;
 }
 
 export interface SidroServicePlanItem {
@@ -79,8 +80,7 @@ export class AvailabilityEngine {
         employeeId: string,
         dateStr: string
     ) {
-        const dateObj = new Date(dateStr + 'T00:00:00');
-        const dayOfWeek = dateObj.getDay();
+        const dayOfWeek = dayOfWeekForBusinessDate(dateStr);
         const servicePlan = await this.getServicePlan(serviceIds, employeeId);
         const totalDuration = servicePlan.reduce((sum, service) => sum + service.total_minutes, 0);
 
@@ -101,11 +101,18 @@ export class AvailabilityEngine {
         if (blocksRes.rows.some((block) => !block.start_time || !block.end_time)) return [];
 
         const posApptRes = await pool.query(
-            `SELECT fecha_inicio::time AS start_time, fecha_fin::time AS end_time
-             FROM appointments
-             WHERE employee_id = $1
-               AND fecha_inicio::date = $2
-               AND estado != 'CANCELADA'`,
+            `WITH bounds AS (
+                SELECT $2::date::timestamp AT TIME ZONE 'America/Guayaquil' AS day_start,
+                       ($2::date + 1)::timestamp AT TIME ZONE 'America/Guayaquil' AS day_end
+             )
+             SELECT FLOOR(EXTRACT(EPOCH FROM (GREATEST(a.fecha_inicio, bounds.day_start) - bounds.day_start)) / 60)::int AS start_minute,
+                    CEIL(EXTRACT(EPOCH FROM (LEAST(a.fecha_fin, bounds.day_end) - bounds.day_start)) / 60)::int AS end_minute
+             FROM appointments a
+             CROSS JOIN bounds
+             WHERE a.employee_id = $1
+               AND a.fecha_inicio < bounds.day_end
+               AND a.fecha_fin > bounds.day_start
+               AND COALESCE(a.estado, 'PROGRAMADA') <> 'CANCELADA'`,
             [employeeId, dateStr]
         );
 
@@ -113,57 +120,41 @@ export class AvailabilityEngine {
             `SELECT start_time, end_time FROM sidro_appointment_requests
              WHERE employee_id = $1
                AND request_date = $2
-               AND status IN ('CONFIRMADA', 'APROBADA_PENDIENTE_VINCULACION')`,
+               AND status = 'APROBADA_PENDIENTE_VINCULACION'`,
             [employeeId, dateStr]
         );
 
         const occupiedIntervals: TimeInterval[] = [];
-        const parseTime = (timeStr: string) => new Date(`${dateStr}T${timeStr}`);
 
         for (const block of blocksRes.rows) {
-            occupiedIntervals.push({ start: parseTime(block.start_time), end: parseTime(block.end_time) });
+            occupiedIntervals.push({ start: timeToMinutes(block.start_time), end: timeToMinutes(block.end_time) });
         }
         for (const appointment of posApptRes.rows) {
-            occupiedIntervals.push({ start: parseTime(appointment.start_time), end: parseTime(appointment.end_time) });
+            occupiedIntervals.push({ start: Number(appointment.start_minute), end: Number(appointment.end_minute) });
         }
         for (const request of reqRes.rows) {
-            occupiedIntervals.push({ start: parseTime(request.start_time), end: parseTime(request.end_time) });
+            occupiedIntervals.push({ start: timeToMinutes(request.start_time), end: timeToMinutes(request.end_time) });
         }
 
-        const doesOverlap = (start: Date, end: Date) =>
+        const doesOverlap = (start: number, end: number) =>
             occupiedIntervals.some((occupied) => start < occupied.end && end > occupied.start);
 
-        const nowInGuayaquilStr = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/Guayaquil',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        }).format(new Date());
-        const [datePart, timePart] = nowInGuayaquilStr.split(', ');
-        const [month, day, year] = datePart.split('/');
-        const nowInGuayaquil = new Date(`${year}-${month}-${day}T${timePart}`);
+        const businessNow = getBusinessNow();
+        if (dateStr < businessNow.date) return [];
 
         const availableSlots: string[] = [];
         for (const schedule of schedRes.rows) {
-            const shiftStart = parseTime(schedule.start_time);
-            const shiftEnd = parseTime(schedule.end_time);
-            const currentSlotStart = new Date(shiftStart.getTime());
+            const shiftStart = timeToMinutes(schedule.start_time);
+            const shiftEnd = timeToMinutes(schedule.end_time);
 
-            while (true) {
-                const currentSlotEnd = new Date(currentSlotStart.getTime() + totalDuration * 60000);
+            for (let currentSlotStart = shiftStart; ; currentSlotStart += 30) {
+                const currentSlotEnd = currentSlotStart + totalDuration;
                 if (currentSlotEnd > shiftEnd) break;
 
-                if (currentSlotStart > nowInGuayaquil && !doesOverlap(currentSlotStart, currentSlotEnd)) {
-                    const hours = String(currentSlotStart.getHours()).padStart(2, '0');
-                    const minutes = String(currentSlotStart.getMinutes()).padStart(2, '0');
-                    availableSlots.push(`${hours}:${minutes}`);
+                const isFuture = dateStr > businessNow.date || currentSlotStart > businessNow.minute;
+                if (isFuture && !doesOverlap(currentSlotStart, currentSlotEnd)) {
+                    availableSlots.push(minutesToTime(currentSlotStart));
                 }
-
-                currentSlotStart.setMinutes(currentSlotStart.getMinutes() + 30);
             }
         }
 

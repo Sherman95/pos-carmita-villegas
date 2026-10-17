@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyToken, requireAdmin } from '../middlewares/auth.middleware';
+import { verifyToken, requireAdmin, requireStaff } from '../middlewares/auth.middleware';
 import {
     createExpense,
     getExpenses,
@@ -11,7 +11,7 @@ import {
 } from '../controllers/expenses.controller';
 
 const router = Router();
-router.use(verifyToken, requireAdmin);
+router.use(verifyToken, requireStaff, requireAdmin);
 
 // ==========================================
 // RUTAS DE CATEGORÍAS (CRUD)

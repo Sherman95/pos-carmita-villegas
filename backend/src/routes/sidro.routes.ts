@@ -17,7 +17,7 @@ import {
   getServicesProfessionals,
   rejectProposal
 } from '../controllers/sidroAppointments.controller';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireSidroClient, verifyToken } from '../middlewares/auth.middleware';
 import {
   authRateLimiter,
   authIpRateLimiter,
@@ -38,12 +38,13 @@ router.get('/public/professionals', getServicesProfessionals);
 router.get('/public/services/:id/professionals', getServiceProfessionals);
 
 // Protegidas
-router.get('/profile', verifyToken, getProfile);
-router.put('/profile/recovery-email', verifyToken, authRateLimiter, updateRecoveryEmail);
-router.post('/requests', verifyToken, createRequest);
-router.get('/requests', verifyToken, getMyRequests);
-router.post('/requests/:id/accept-proposal', verifyToken, acceptProposal);
-router.post('/requests/:id/reject-proposal', verifyToken, rejectProposal);
-router.get('/availability', verifyToken, getAvailability);
+router.use(verifyToken, requireSidroClient);
+router.get('/profile', getProfile);
+router.put('/profile/recovery-email', authRateLimiter, updateRecoveryEmail);
+router.post('/requests', createRequest);
+router.get('/requests', getMyRequests);
+router.post('/requests/:id/accept-proposal', acceptProposal);
+router.post('/requests/:id/reject-proposal', rejectProposal);
+router.get('/availability', getAvailability);
 
 export default router;

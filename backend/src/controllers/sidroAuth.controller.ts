@@ -4,10 +4,11 @@ import * as argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { createHash, randomBytes } from 'node:crypto';
 import { BrevoService } from '../services/brevo.service';
+import { JWT_ISSUER, SIDRO_JWT_AUDIENCE } from '../middlewares/auth.middleware';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
-const PASSWORD_RESET_RESPONSE = 'Si encontramos una cuenta con correo de recuperación, recibirás un enlace en los próximos minutos.';
+const PASSWORD_RESET_RESPONSE = 'Si el correo corresponde a una cuenta SIDRO activa, recibirás un enlace en los próximos minutos.';
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   throw new Error('JWT_SECRET es obligatorio y debe tener al menos 32 caracteres');
@@ -45,35 +46,48 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { telefono, password } = req.body;
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+
+  if (!email || email.length > 160 || !/^\S+@\S+\.\S+$/.test(email) || !password) {
+    return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
+  }
 
   try {
     const result = await pool.query(
       `SELECT a.id, a.password_hash, a.is_active, a.token_version, l.client_id
        FROM sidro_client_accounts a
        LEFT JOIN sidro_account_links l ON a.id = l.sidro_account_id AND l.is_active = true
-       WHERE a.telefono = $1`,
-      [telefono]
+       WHERE lower(a.email) = $1
+       LIMIT 1`,
+      [email]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
     const account = result.rows[0];
     if (!account.is_active) {
-      return res.status(403).json({ error: 'Cuenta desactivada' });
+      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
     const valid = await argon2.verify(account.password_hash, password);
     if (!valid) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
     const token = jwt.sign(
-      { id: account.id, role: 'sidro_client', client_id: account.client_id, token_version: account.token_version },
+      {
+        sub: account.id,
+        id: account.id,
+        role: 'sidro_client',
+        identity_type: 'sidro_client',
+        client_id: account.client_id,
+        token_version: account.token_version
+      },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '7d', algorithm: 'HS256', issuer: JWT_ISSUER, audience: SIDRO_JWT_AUDIENCE }
     );
 
     res.json({ token });

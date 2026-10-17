@@ -115,7 +115,7 @@
     </div>
     <div class="dialog-actions">
       <button mat-button mat-dialog-close>Cancelar</button>
-      <button mat-flat-button color="primary" class="action-btn" (click)="guardarAbono()" [disabled]="!montoAbono || montoAbono <= 0">
+      <button mat-flat-button color="primary" class="action-btn" (click)="guardarAbono()" [disabled]="!montoAbono || montoAbono <= 0 || paymentInProgress()">
         CONFIRMAR PAGO
       </button>
     </div>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 
 // 👇 ASEGÚRATE DE IMPORTAR 'getClosingReport' AQUÍ
 import {
@@ -9,10 +9,10 @@ import {
     closeRegister,
     getCashHistory,
     getClosingReport // <--- ¡IMPORTANTE!
-} from '../controllers/cash.controller';
+} from '../controllers/cashIntegrity.controller';
 
 const router = Router();
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 // Rutas
 router.get('/status', getStatus);

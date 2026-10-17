@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../controllers/employees.controller';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas de empleados protegidas por token
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 router.get('/', getEmployees);
 router.post('/', createEmployee);

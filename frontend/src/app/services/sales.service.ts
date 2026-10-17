@@ -68,13 +68,14 @@ export class SalesService {
   }
 
 
-  registrarAbono(saleId: string, monto: number, metodo: string = 'EFECTIVO') {
+  registrarAbono(saleId: string, monto: number, metodo: string, operationId: string) {
     // Usamos firstValueFrom directamenete (sin 'this.')
     return firstValueFrom(
       this.http.post(`${this.apiUrl}/payment`, { 
         saleId, 
         monto,
-        metodo_pago: metodo 
+        metodo_pago: metodo,
+        operation_id: operationId
       })
     );
   }

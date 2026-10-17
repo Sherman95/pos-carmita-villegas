@@ -18,10 +18,9 @@ export class CashService {
   }
 
   // 2. Abrir caja
-  openRegister(montoInicial: number, usuarioId: string): Observable<any> {
+  openRegister(montoInicial: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/open`, { 
-      monto_inicial: montoInicial,
-      usuario_id: usuarioId 
+      monto_inicial: montoInicial
     });
   }
 

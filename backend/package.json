@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "nodemon --exec \"ts-node --transpile-only src/index.ts\"",
     "build": "tsc",
+    "test:security": "npm run build && node --test tests/security.phase1.test.cjs",
+    "test:appointments": "npm run build && node --test tests/appointments.phase2.test.cjs",
+    "test:financial": "npm run build && node --test tests/financial.phase3.test.cjs",
+    "test:financial:local": "npm run build && node tests/financial.phase3.local-smoke.cjs",
     "start": "node dist/index.js",
     "db:check": "node scripts/check-database.js"
   },

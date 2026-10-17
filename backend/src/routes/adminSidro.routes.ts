@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import {
     listAccounts, linkAccount,
     updateServiceConfig, getServiceConfig,
@@ -7,27 +7,12 @@ import {
     linkUserToEmployee,
     getServiceImageUploadSignature, saveServiceImageReference, removeServiceImage
 } from '../controllers/adminSidro.controller';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireAdmin, requireStaff, verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-    if (req.userRole !== 'admin') {
-        return res.status(403).json({ error: 'Acceso denegado: Se requiere rol de administrador' });
-    }
-    next();
-};
-
 // Rutas protegidas para el administrador del POS
-router.use(verifyToken);
-
-// Asegura que las clientas de SIDRO (rol 'sidro_client' o sin rol) no entren
-router.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.userRole !== 'admin' && req.userRole !== 'user') {
-        return res.status(403).json({ error: 'Acceso denegado' });
-    }
-    next();
-});
+router.use(verifyToken, requireStaff);
 
 router.get('/accounts', requireAdmin, listAccounts);
 router.post('/link', requireAdmin, linkAccount);

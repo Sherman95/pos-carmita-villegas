@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 import { getItems, createItem, deleteItem, updateItem } from '../controllers/items.controller';
 
 const router = Router();
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 router.get('/', getItems);
 router.post('/', createItem);

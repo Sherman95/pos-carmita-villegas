@@ -69,6 +69,8 @@ export class FiadosComponent implements OnInit {
   // Variables para formularios
   montoAbono: number = 0;
   notaAbono: string = '';
+  paymentInProgress = signal(false);
+  private paymentOperationId = '';
   
   // Edición
   selectedMovimiento: Movimiento | null = null;
@@ -130,11 +132,13 @@ export class FiadosComponent implements OnInit {
     this.selectedDebtor.set(debtor);
     this.montoAbono = 0;
     this.notaAbono = '';
+    this.paymentOperationId = crypto.randomUUID();
+    this.paymentInProgress.set(false);
     this.dialog.open(this.abonoDialog, { width: '400px', panelClass: 'custom-dialog-container' });
   }
 
   async guardarAbono() {
-    if (this.montoAbono <= 0) return;
+    if (this.montoAbono <= 0 || this.paymentInProgress()) return;
     
     const debtor = this.selectedDebtor();
     if (!debtor) return;
@@ -145,11 +149,12 @@ export class FiadosComponent implements OnInit {
     // (Idealmente tu backend debería soportar "Abono a Cliente" general).
     
     try {
+      this.paymentInProgress.set(true);
       const ventasPendientes = debtor.originalData?.ventas || [];
       if (ventasPendientes.length > 0) {
         const ventaId = ventasPendientes[0].id; // Tomamos la primera para el ejemplo
         
-        await this.salesService.registrarAbono(ventaId, this.montoAbono, 'EFECTIVO');
+        await this.salesService.registrarAbono(ventaId, this.montoAbono, 'EFECTIVO', this.paymentOperationId);
         
         Swal.fire({
           icon: 'success',
@@ -166,7 +171,10 @@ export class FiadosComponent implements OnInit {
       }
     } catch (e) {
       console.error(e);
-      Swal.fire('Error', 'No se pudo procesar el pago.', 'error');
+      const message = (e as any)?.error?.error || 'No se pudo procesar el pago.';
+      Swal.fire('Error', message, 'error');
+    } finally {
+      this.paymentInProgress.set(false);
     }
   }
 

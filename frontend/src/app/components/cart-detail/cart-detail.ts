@@ -55,6 +55,8 @@ export class CartDetailComponent implements OnInit {
   // 💰 VARIABLES DE PAGO
   selectedPayment: TipoPago = 'EFECTIVO'; 
   abonoAmount: number = 0; 
+  isCharging = signal(false);
+  private saleOperationId = crypto.randomUUID();
 
   // COMPUTADAS
   subtotal = computed(() => this.cartService.total());
@@ -151,6 +153,7 @@ export class CartDetailComponent implements OnInit {
   }
 
   cobrar() {
+    if (this.isCharging()) return;
     // 0. Validar carrito vacío
     if (this.cartService.totalValue <= 0) { // Usamos el getter de compatibilidad
         Swal.fire('Error', 'El carrito está vacío', 'warning');
@@ -177,11 +180,13 @@ export class CartDetailComponent implements OnInit {
 
     // 3. USAMOS LA NUEVA FUNCIÓN 'checkout' DEL SERVICIO
     // Pasamos los 4 argumentos: ID, Tipo, Tasa, Abono
+    this.isCharging.set(true);
     this.cartService.checkout(
         this.selectedClientId(), 
         this.selectedPayment, 
         this.taxRate(),
-        this.abonoAmount
+        this.abonoAmount,
+        this.saleOperationId
     ).subscribe({
       next: () => {
         
@@ -198,11 +203,12 @@ export class CartDetailComponent implements OnInit {
         this.generarTicket();
       },
       error: (err: any) => {
+        this.isCharging.set(false);
         console.error('Error al cobrar:', err);
         if (err.message === 'NO_CREDIT_CF') {
             Swal.fire('Error', 'No se permite Crédito a Consumidor Final.', 'error');
         } else {
-            Swal.fire('Error', 'No se pudo registrar la venta.', 'error');
+            Swal.fire('Error', err.error?.error || 'No se pudo registrar la venta.', 'error');
         }
       }
     });

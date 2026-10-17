@@ -1,17 +1,21 @@
 import { PoolClient } from 'pg';
+import { assertAbsoluteInterval } from '../utils/businessTime';
 
 export class AppointmentService {
     static async validateOfficialAppointmentAvailability(
         client: PoolClient,
         data: {
-            employee_id: string;
+            employee_id: string | number;
             fecha_inicio: string;
             fecha_fin: string;
             force?: boolean;
             exclude_request_id?: number;
+            exclude_appointment_id?: string | number;
         }
     ) {
-        const { employee_id, fecha_inicio, fecha_fin, force, exclude_request_id } = data;
+        const { employee_id, fecha_inicio, fecha_fin, force, exclude_request_id, exclude_appointment_id } = data;
+
+        assertAbsoluteInterval(fecha_inicio, fecha_fin);
 
         // Serializa la comprobacion por profesional dentro de la transaccion.
         await client.query('SELECT id FROM employees WHERE id = $1 FOR UPDATE', [employee_id]);
@@ -24,11 +28,14 @@ export class AppointmentService {
             JOIN clients c ON a.client_id = c.id
             JOIN items i ON a.item_id = i.id
             WHERE a.employee_id = $1
-              AND a.fecha_inicio < $3
-              AND a.fecha_fin > $2
-              AND a.estado != 'CANCELADA'
+              AND a.fecha_inicio < $3::timestamptz
+              AND a.fecha_fin > $2::timestamptz
+              AND COALESCE(a.estado, 'PROGRAMADA') <> 'CANCELADA'
+              ${exclude_appointment_id !== undefined ? 'AND a.id <> $4' : ''}
         `;
-        const { rows: conflicts } = await client.query(conflictQuery, [employee_id, fecha_inicio, fecha_fin]);
+        const conflictParams: Array<string | number> = [employee_id, fecha_inicio, fecha_fin];
+        if (exclude_appointment_id !== undefined) conflictParams.push(exclude_appointment_id);
+        const { rows: conflicts } = await client.query(conflictQuery, conflictParams);
 
         if (conflicts.length > 0) {
             const conflict = conflicts[0];
@@ -52,12 +59,12 @@ export class AppointmentService {
             JOIN items i ON r.service_id = i.id
             WHERE r.employee_id = $1
               AND r.status = 'APROBADA_PENDIENTE_VINCULACION'
-              AND (r.request_date + r.start_time) < $3::timestamp
-              AND (r.request_date + r.end_time) > $2::timestamp
-              ${exclude_request_id ? `AND r.id != $4` : ''}
+              AND ((r.request_date + r.start_time) AT TIME ZONE 'America/Guayaquil') < $3::timestamptz
+              AND ((r.request_date + r.end_time) AT TIME ZONE 'America/Guayaquil') > $2::timestamptz
+              ${exclude_request_id !== undefined ? `AND r.id != $4` : ''}
         `;
-        const params = [employee_id, fecha_inicio, fecha_fin];
-        if (exclude_request_id) params.push(exclude_request_id.toString());
+        const params: Array<string | number> = [employee_id, fecha_inicio, fecha_fin];
+        if (exclude_request_id !== undefined) params.push(exclude_request_id);
 
         const { rows: requestConflicts } = await client.query(requestConflictQuery, params);
         if (requestConflicts.length > 0) {
@@ -73,7 +80,7 @@ export class AppointmentService {
         data: {
             client_id: string;
             item_id: string;
-            employee_id: string;
+            employee_id: string | number;
             fecha_inicio: string;
             fecha_fin: string;
             estado?: string;

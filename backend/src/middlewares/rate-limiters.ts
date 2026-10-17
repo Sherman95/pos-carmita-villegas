@@ -13,7 +13,7 @@ function clientIp(req: Request): string {
 const defaultKeyResolver: KeyResolver = (req) => clientIp(req);
 
 function accountKeyResolver(req: Request): string {
-  const account = String(req.body?.username || req.body?.telefono || req.body?.identifier || '')
+  const account = String(req.body?.email || req.body?.username || req.body?.telefono || req.body?.identifier || '')
     .trim()
     .toLowerCase();
   return account || clientIp(req);
@@ -77,7 +77,7 @@ export const authIpRateLimiter = factory({
   limit: 30
 });
 
-// Login attempts per account (username / phone), independent of the IP cap.
+// Login attempts per account (email), independent of the IP cap.
 export const authRateLimiter = factory({
   namespace: 'auth-login-account',
   windowMs: 15 * 60 * 1000,

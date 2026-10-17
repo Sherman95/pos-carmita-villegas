@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import pool from '../database/db';
 import { SidroRequestAppointmentsService } from '../services/sidroRequestAppointments.service';
 import { CloudinaryService } from '../services/cloudinary.service';
+import { normalizeDateOnly, minutesToTime, timeToMinutes } from '../utils/businessTime';
 
 const getUserEmployeeId = async (userId: string): Promise<string | null> => {
     const res = await pool.query('SELECT employee_id FROM users WHERE id = $1', [userId]);
@@ -70,12 +71,7 @@ export const linkAccount = async (req: Request, res: Response) => {
 
     for (const reqData of pendingReqs.rows) {
         try {
-            // Formatear localmente para evitar desfases UTC
-            const localDate = new Date(reqData.request_date);
-            const yyyy = localDate.getFullYear();
-            const mm = String(localDate.getMonth() + 1).padStart(2, '0');
-            const dd = String(localDate.getDate()).padStart(2, '0');
-            const dateStr = `${yyyy}-${mm}-${dd}`;
+            const dateStr = normalizeDateOnly(reqData.request_date);
 
             const officialAppointmentIds = await SidroRequestAppointmentsService.createOfficialAppointments(
                 client,
@@ -398,18 +394,17 @@ export const acceptRequest = async (req: Request, res: Response) => {
 
         if (req.userRole !== 'admin') {
             const uEmpId = await getUserEmployeeId(req.userId as string);
-            if (uEmpId !== peticion.employee_id) throw new Error('No tienes permiso para gestionar esta solicitud');
+            if (String(uEmpId) !== String(peticion.employee_id)) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'No tienes permiso para gestionar esta solicitud' });
+            }
         }
 
-        if (peticion.status === 'RECHAZADA' || peticion.status === 'CONFIRMADA' || peticion.status === 'CANCELADA') {
-            throw new Error('La solicitud ya fue procesada o esta inactiva');
+        if (peticion.status !== 'PENDIENTE') {
+            throw new Error('Solo una solicitud pendiente puede aprobarse en su horario original');
         }
 
-        const localDate = new Date(peticion.request_date);
-        const yyyy = localDate.getFullYear();
-        const mm = String(localDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(localDate.getDate()).padStart(2, '0');
-        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const dateStr = normalizeDateOnly(peticion.request_date);
 
         if (peticion.linked_client_id) {
             // Ya esta vinculada -> Crear la cita en POS usando el Servicio Transaccional y Validado
@@ -457,14 +452,22 @@ export const acceptRequest = async (req: Request, res: Response) => {
 export const rejectRequest = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const check = await pool.query('SELECT employee_id FROM sidro_appointment_requests WHERE id = $1', [id]);
+        const check = await pool.query('SELECT employee_id, status FROM sidro_appointment_requests WHERE id = $1', [id]);
         if (check.rows.length === 0) return res.status(404).json({ error: 'Solicitud no encontrada' });
+        if (!['PENDIENTE', 'PROPUESTA'].includes(check.rows[0].status)) {
+            return res.status(409).json({ error: 'La solicitud ya fue procesada o esta inactiva' });
+        }
         if (req.userRole !== 'admin') {
             const uEmpId = await getUserEmployeeId(req.userId as string);
-            if (uEmpId !== check.rows[0].employee_id) return res.status(403).json({ error: 'No tienes permiso para rechazar esta solicitud' });
+            if (String(uEmpId) !== String(check.rows[0].employee_id)) return res.status(403).json({ error: 'No tienes permiso para rechazar esta solicitud' });
         }
 
-        await pool.query(`UPDATE sidro_appointment_requests SET status = 'RECHAZADA' WHERE id = $1`, [id]);
+        const updated = await pool.query(
+            `UPDATE sidro_appointment_requests SET status = 'RECHAZADA'
+             WHERE id = $1 AND status IN ('PENDIENTE', 'PROPUESTA') RETURNING id`,
+            [id]
+        );
+        if (updated.rows.length === 0) return res.status(409).json({ error: 'La solicitud cambio de estado; vuelve a cargar la lista' });
         res.json({ message: 'Solicitud rechazada' });
     } catch (error) {
         console.error(error);
@@ -476,19 +479,25 @@ export const proposeAlternativeRequest = async (req: Request, res: Response) => 
     const { id } = req.params;
     const { new_date, new_time } = req.body;
     try {
-        const check = await pool.query('SELECT employee_id, start_time, end_time FROM sidro_appointment_requests WHERE id = $1', [id]);
+        const check = await pool.query('SELECT employee_id, start_time, end_time, status FROM sidro_appointment_requests WHERE id = $1', [id]);
         if (check.rows.length === 0) return res.status(404).json({ error: 'Solicitud no encontrada' });
+        if (check.rows[0].status !== 'PENDIENTE') return res.status(409).json({ error: 'Solo una solicitud pendiente puede recibir una propuesta' });
 
         if (req.userRole !== 'admin') {
             const uEmpId = await getUserEmployeeId(req.userId as string);
-            if (uEmpId !== check.rows[0].employee_id) return res.status(403).json({ error: 'No tienes permiso' });
+            if (String(uEmpId) !== String(check.rows[0].employee_id)) return res.status(403).json({ error: 'No tienes permiso' });
         }
 
-        const durMs = new Date(`1970-01-01T${check.rows[0].end_time}`).getTime() - new Date(`1970-01-01T${check.rows[0].start_time}`).getTime();
-        const endDt = new Date(new Date(`1970-01-01T${new_time}`).getTime() + durMs);
-        const new_end_time = endDt.toTimeString().split(' ')[0];
+        const durationMinutes = timeToMinutes(check.rows[0].end_time) - timeToMinutes(check.rows[0].start_time);
+        const new_end_time = `${minutesToTime(timeToMinutes(new_time) + durationMinutes)}:00`;
 
-        await pool.query(`UPDATE sidro_appointment_requests SET status = 'PROPUESTA', proposed_date = $1, proposed_start_time = $2, proposed_end_time = $3 WHERE id = $4`, [new_date, new_time, new_end_time, id]);
+        const updated = await pool.query(
+            `UPDATE sidro_appointment_requests
+             SET status = 'PROPUESTA', proposed_date = $1, proposed_start_time = $2, proposed_end_time = $3
+             WHERE id = $4 AND status = 'PENDIENTE' RETURNING id`,
+            [new_date, new_time, new_end_time, id]
+        );
+        if (updated.rows.length === 0) return res.status(409).json({ error: 'La solicitud cambio de estado; vuelve a cargar la lista' });
         res.json({ message: 'Propuesta enviada a la clienta' });
     } catch (error) {
         console.error(error);

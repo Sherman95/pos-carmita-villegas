@@ -1,6 +1,7 @@
 import { PoolClient } from 'pg';
 import { AppointmentService } from './appointment.service';
 import { buildSidroAppointmentNotes } from '../utils/sidroNotes';
+import { localMinutesToInstant, timeToMinutes } from '../utils/businessTime';
 
 export interface SidroRequestServiceSegment {
     service_id: string;
@@ -14,13 +15,10 @@ export interface SidroRequestServiceSegment {
 interface SidroRequestLike {
     id: number;
     service_id: string;
-    employee_id: string;
+    employee_id: string | number;
     start_time: string;
     client_notes?: string | null;
 }
-
-const toTime = (date: Date): string =>
-    `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
 
 export class SidroRequestAppointmentsService {
     static async getSegments(
@@ -83,20 +81,20 @@ export class SidroRequestAppointmentsService {
         clientId: string,
         dateStr: string,
         notePrefix: string
-    ): Promise<string[]> {
+    ): Promise<Array<string | number>> {
         const segments = await this.getSegments(client, request);
-        const appointmentIds: string[] = [];
-        let cursor = new Date(`${dateStr}T${request.start_time}`);
+        const appointmentIds: Array<string | number> = [];
+        let cursorMinutes = timeToMinutes(request.start_time);
 
         for (const segment of segments) {
-            const segmentStart = new Date(cursor.getTime());
-            const segmentEnd = new Date(cursor.getTime() + segment.total_minutes * 60000);
+            const segmentStart = cursorMinutes;
+            const segmentEnd = cursorMinutes + segment.total_minutes;
             const appointment = await AppointmentService.createOfficialAppointment(client, {
                 client_id: clientId,
                 item_id: segment.service_id,
                 employee_id: request.employee_id,
-                fecha_inicio: `${dateStr} ${toTime(segmentStart)}`,
-                fecha_fin: `${dateStr} ${toTime(segmentEnd)}`,
+                fecha_inicio: localMinutesToInstant(dateStr, segmentStart),
+                fecha_fin: localMinutesToInstant(dateStr, segmentEnd),
                 estado: 'PROGRAMADA',
                 notas: buildSidroAppointmentNotes(
                     `${notePrefix} · Servicio ${segment.position} de ${segments.length}`,
@@ -113,7 +111,7 @@ export class SidroRequestAppointmentsService {
                  WHERE request_id = $2 AND position = $3`,
                 [appointment.id, request.id, segment.position]
             );
-            cursor = segmentEnd;
+            cursorMinutes = segmentEnd;
         }
 
         return appointmentIds;
@@ -125,19 +123,19 @@ export class SidroRequestAppointmentsService {
         dateStr: string
     ): Promise<void> {
         const segments = await this.getSegments(client, request);
-        let cursor = new Date(`${dateStr}T${request.start_time}`);
+        let cursorMinutes = timeToMinutes(request.start_time);
 
         for (const segment of segments) {
-            const segmentStart = new Date(cursor.getTime());
-            const segmentEnd = new Date(cursor.getTime() + segment.total_minutes * 60000);
+            const segmentStart = cursorMinutes;
+            const segmentEnd = cursorMinutes + segment.total_minutes;
             await AppointmentService.validateOfficialAppointmentAvailability(client, {
                 employee_id: request.employee_id,
-                fecha_inicio: `${dateStr} ${toTime(segmentStart)}`,
-                fecha_fin: `${dateStr} ${toTime(segmentEnd)}`,
+                fecha_inicio: localMinutesToInstant(dateStr, segmentStart),
+                fecha_fin: localMinutesToInstant(dateStr, segmentEnd),
                 force: false,
                 exclude_request_id: request.id
             });
-            cursor = segmentEnd;
+            cursorMinutes = segmentEnd;
         }
     }
 }

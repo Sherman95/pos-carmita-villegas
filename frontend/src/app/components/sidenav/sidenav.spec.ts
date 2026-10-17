@@ -8,19 +8,18 @@ import { SidenavComponent } from './sidenav';
 describe('Sidenav', () => {
   let component: SidenavComponent;
   let fixture: ComponentFixture<SidenavComponent>;
-  const currentUser = signal({ id: 'admin-1', username: 'admin', role: 'user' });
+  const currentUser = signal({ id: 'admin-1', username: 'admin', role: 'admin' });
   const authMock = {
     currentUser,
     isAdmin: () => {
       const user = currentUser();
-      return user.role.trim().toLowerCase() === 'admin' ||
-        user.username.trim().toLowerCase() === 'admin';
+      return user.role.trim().toLowerCase() === 'admin';
     },
     logout: vi.fn()
   };
 
   beforeEach(async () => {
-    currentUser.set({ id: 'admin-1', username: 'admin', role: 'user' });
+    currentUser.set({ id: 'admin-1', username: 'admin', role: 'admin' });
     vi.clearAllMocks();
     await TestBed.configureTestingModule({
       imports: [SidenavComponent],
@@ -40,7 +39,7 @@ describe('Sidenav', () => {
     expect(component).toBeTruthy();
   });
 
-  it('muestra Configurar SIDRO al usuario admin aunque el rol local esté desactualizado', () => {
+  it('muestra Configurar SIDRO al usuario con rol admin', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 

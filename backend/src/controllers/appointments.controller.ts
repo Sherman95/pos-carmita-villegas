@@ -3,6 +3,7 @@ import pool from '../database/db';
 import { google } from 'googleapis';
 import path from 'path';
 import { AppointmentService } from '../services/appointment.service';
+import { SidroAppointmentReconciliationService } from '../services/sidroAppointmentReconciliation.service';
 
 
 export const getAppointments = async (_req: Request, res: Response) => {
@@ -76,54 +77,57 @@ export const createAppointment = async (req: Request, res: Response) => {
 };
 
 export const updateAppointment = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { client_id, item_id, employee_id, fecha_inicio, fecha_fin, estado, notas } = req.body;
 
+    let client;
     try {
         const force = req.query.force === 'true';
         if (force && req.userRole !== 'admin') {
             return res.status(403).json({ error: 'Solo un administrador puede forzar conflictos de horario' });
         }
 
-        // 0. Detectar conflictos de horario
-        if (!force) {
-            const conflictQuery = `
-                SELECT a.*, c.nombre as client_nombre, i.nombre as item_nombre
-                FROM appointments a
-                JOIN clients c ON a.client_id = c.id
-                JOIN items i ON a.item_id = i.id
-                WHERE a.employee_id = $1
-                  AND a.id != $2
-                  AND a.fecha_inicio < $4
-                  AND a.fecha_fin > $3
-            `;
-            const { rows: conflicts } = await pool.query(conflictQuery, [employee_id, id, fecha_inicio, fecha_fin]);
+        client = await pool.connect();
+        await client.query('BEGIN');
+        const { rows: currentRows } = await client.query('SELECT * FROM appointments WHERE id = $1 FOR UPDATE', [id]);
+        if (currentRows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Cita no encontrada' });
+        }
+        const current = currentRows[0];
+        const next = {
+            client_id: client_id ?? current.client_id,
+            item_id: item_id ?? current.item_id,
+            employee_id: employee_id ?? current.employee_id,
+            fecha_inicio: fecha_inicio ?? new Date(current.fecha_inicio).toISOString(),
+            fecha_fin: fecha_fin ?? new Date(current.fecha_fin).toISOString(),
+            estado: estado ?? current.estado,
+            notas: notas ?? current.notas
+        };
+        const relatedRequestIds = await SidroAppointmentReconciliationService.getRelatedRequestIds(client, id);
 
-            if (conflicts.length > 0) {
-                const c = conflicts[0];
-                const formatTime = (d: string) => new Date(d).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                return res.status(409).json({
-                    error: 'Conflicto de horario',
-                    conflict: `El profesional ya tiene una cita agendada: "${c.item_nombre}" con el cliente "${c.client_nombre}" de ${formatTime(c.fecha_inicio)} a ${formatTime(c.fecha_fin)}.`
-                });
-            }
+        if (next.estado !== 'CANCELADA') {
+            await AppointmentService.validateOfficialAppointmentAvailability(client, {
+                employee_id: next.employee_id,
+                fecha_inicio: next.fecha_inicio,
+                fecha_fin: next.fecha_fin,
+                force,
+                exclude_appointment_id: id
+            });
         }
 
-        const { rows: currentRows } = await pool.query('SELECT google_event_id FROM appointments WHERE id = $1', [id]);
-        if (currentRows.length === 0) return res.status(404).json({ error: 'Cita no encontrada' });
-
-        const googleEventId = currentRows[0].google_event_id;
-
         // 2. Actualizar en PostgreSQL
-        const { rows, rowCount } = await pool.query(
+        const { rows, rowCount } = await client.query(
             `UPDATE appointments
              SET client_id = $1, item_id = $2, employee_id = $3,
                  fecha_inicio = $4, fecha_fin = $5, estado = $6, notas = $7
              WHERE id = $8 RETURNING *`,
-            [client_id, item_id, employee_id, fecha_inicio, fecha_fin, estado, notas, id]
+            [next.client_id, next.item_id, next.employee_id, next.fecha_inicio, next.fecha_fin, next.estado, next.notas, id]
         );
 
-        if (rowCount === 0) return res.status(404).json({ error: 'Cita no encontrada al actualizar' });
+        if (rowCount === 0) throw new Error('Cita no encontrada al actualizar');
+        await SidroAppointmentReconciliationService.reconcileRequests(client, relatedRequestIds);
+        await client.query('COMMIT');
 
         // 3. Actualizar en Google Calendar si existe el evento
         try {
@@ -145,7 +149,7 @@ export const updateAppointment = async (req: Request, res: Response) => {
                             (SELECT nombre FROM employees WHERE id = $1) as emp_name,
                             (SELECT nombre FROM items WHERE id = $2) as item_name,
                             (SELECT nombre FROM clients WHERE id = $3) as client_name`,
-                        [employee_id, item_id, client_id]
+                        [next.employee_id, next.item_id, next.client_id]
                     );
                     const { emp_name, item_name, client_name } = details[0];
 
@@ -156,9 +160,9 @@ export const updateAppointment = async (req: Request, res: Response) => {
                                 eventId: sync.google_event_id,
                                 requestBody: {
                                     summary: `[${emp_name}] ${item_name} - ${client_name}`,
-                                    description: notas || '',
-                                    start: { dateTime: new Date(fecha_inicio).toISOString() },
-                                    end: { dateTime: new Date(fecha_fin).toISOString() }
+                                    description: next.notas || '',
+                                    start: { dateTime: new Date(next.fecha_inicio).toISOString() },
+                                    end: { dateTime: new Date(next.fecha_fin).toISOString() }
                                 }
                             });
                         } catch (e) {
@@ -172,14 +176,20 @@ export const updateAppointment = async (req: Request, res: Response) => {
         }
 
         res.status(200).json(rows[0]);
-    } catch (error) {
+    } catch (error: any) {
+        if (client) await client.query('ROLLBACK');
         console.error('Error actualizando cita:', error);
+        if (/agendada|retenida|Conflicto/i.test(error.message || '')) {
+            return res.status(409).json({ error: 'Conflicto de horario', conflict: error.message });
+        }
         res.status(500).json({ error: 'Error al actualizar cita' });
+    } finally {
+        if (client) client.release();
     }
 };
 
 export const deleteAppointment = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     try {
         // Read synchronization records before deletion because the foreign key
@@ -219,9 +229,25 @@ export const deleteAppointment = async (req: Request, res: Response) => {
             return res.status(502).json({ error: 'No se pudo sincronizar la eliminación de Calendar' });
         }
 
-        // 2. Eliminar de PostgreSQL only after remote deletion succeeds.
-        const { rowCount } = await pool.query('DELETE FROM appointments WHERE id = $1', [id]);
-        if (rowCount === 0) return res.status(404).json({ error: 'Cita no encontrada al eliminar' });
+        // 2. Eliminar y reconciliar SIDRO en una sola transaccion local.
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const locked = await client.query('SELECT id FROM appointments WHERE id = $1 FOR UPDATE', [id]);
+            if (locked.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Cita no encontrada al eliminar' });
+            }
+            const relatedRequestIds = await SidroAppointmentReconciliationService.getRelatedRequestIds(client, id);
+            await client.query('DELETE FROM appointments WHERE id = $1', [id]);
+            await SidroAppointmentReconciliationService.reconcileRequests(client, relatedRequestIds);
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
 
         res.status(200).json({ message: 'Cita eliminada correctamente' });
     } catch (error) {

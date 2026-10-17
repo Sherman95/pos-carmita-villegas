@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 import {
     getClients,
     createClient,
@@ -9,7 +9,7 @@ import {
 } from '../controllers/clients.controller';
 
 const router = Router();
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 router.get('/', getClients);
 router.get('/:id/deletion-impact', getClientDeletionImpact);

@@ -6,12 +6,12 @@ import {
     updateAppointment,
     deleteAppointment
 } from '../controllers/appointments.controller';
-import { verifyToken } from '../middlewares/auth.middleware';
+import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
 // Aplicar middleware de autenticación a todas las rutas de citas
-router.use(verifyToken);
+router.use(verifyToken, requireStaff);
 
 router.get('/', getAppointments);
 router.get('/:id', getAppointmentById);

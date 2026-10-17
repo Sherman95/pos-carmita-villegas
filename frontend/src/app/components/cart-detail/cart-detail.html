@@ -135,7 +135,7 @@
       </div>
       
       <button mat-flat-button color="primary" class="btn-cobrar-compact" 
-              (click)="cobrar()" [disabled]="cartService.items().length === 0">
+              (click)="cobrar()" [disabled]="cartService.items().length === 0 || isCharging()">
         COBRAR <mat-icon iconPositionEnd>check</mat-icon>
       </button>
     </div>
