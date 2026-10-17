@@ -1,14 +1,49 @@
-<div class="calendar-container mat-elevation-z2 dashboard-card">
-    <div class="header-section">
-      <div class="header-content">
-        <h1 class="brand-text-light"><mat-icon>calendar_month</mat-icon> Agenda de Citas</h1>
-        <p class="brand-text-light">Administra las citas y servicios por empleado</p>
-      </div>
-      <button mat-raised-button color="accent" (click)="openNewAppointment()">
-        <mat-icon>add</mat-icon> Nueva Cita
-      </button>
+<div class="appointments-container mat-elevation-z2 dashboard-card">
+  <div class="header-section">
+    <div class="header-content">
+      <h1 class="brand-text-light">
+        <mat-icon>calendar_month</mat-icon>
+        Agenda / Citas
+      </h1>
+      <p class="brand-text-light">Administra el calendario y las solicitudes recibidas desde SIDRO</p>
     </div>
-  
+
+    @if (currentView === 'agenda') {
+      <div class="agenda-header-actions">
+        <span class="sync-status" title="La agenda se actualiza automáticamente cada 30 segundos">
+          <mat-icon>sync</mat-icon>{{ lastUpdatedLabel() }}
+        </span>
+        <button mat-raised-button color="accent" (click)="openNewAppointment()">
+          <mat-icon>add</mat-icon>
+          Nueva cita local / WhatsApp
+        </button>
+      </div>
+    }
+  </div>
+
+  <nav class="section-tabs" aria-label="Secciones de Agenda y Citas">
+    <a
+      routerLink="/citas"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      aria-label="Ver agenda"
+    >
+      <mat-icon>calendar_view_week</mat-icon>
+      <span>Agenda</span>
+    </a>
+    <a
+      routerLink="/citas/solicitudes"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      aria-label="Ver solicitudes de SIDRO"
+    >
+      <mat-icon>inbox</mat-icon>
+      <span>Solicitudes SIDRO</span>
+    </a>
+  </nav>
+
+  @if (currentView === 'agenda') {
+    <section class="agenda-panel" aria-label="Calendario de citas">
     @defer (on viewport) {
       @if (!loading) {
         <div class="calendar-wrapper">
@@ -26,4 +61,8 @@
         <p>Iniciando módulo de citas...</p>
       </div>
     }
-  </div>
+    </section>
+  } @else {
+    <app-sidro-requests (appointmentsChanged)="refreshAgendaAfterRequest()"></app-sidro-requests>
+  }
+</div>

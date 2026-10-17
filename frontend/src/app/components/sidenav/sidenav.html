@@ -1,5 +1,5 @@
 <div class="sidenav-container">
-  
+
   <div class="sidenav-header">
     <div class="header-content">
       <div class="avatar-circle elevation-z8">
@@ -15,7 +15,7 @@
   </div>
 
   <mat-nav-list class="nav-list">
-    
+
     <div class="section-title">Operaciones</div>
 
     <a mat-list-item routerLink="/home" routerLinkActive="active-link" (click)="onClose()">
@@ -28,6 +28,19 @@
       <span matListItemTitle>Agenda / Citas</span>
     </a>
 
+    @if (isAdmin) {
+      <a mat-list-item routerLink="/sidro/settings" routerLinkActive="active-link" (click)="onClose()">
+        <mat-icon matListItemIcon>event_available</mat-icon>
+        <span matListItemTitle>Configurar SIDRO</span>
+        <span matListItemMeta class="admin-badge">ADMIN</span>
+      </a>
+
+      <a mat-list-item routerLink="/settings/users" routerLinkActive="active-link" (click)="onClose()">
+        <mat-icon matListItemIcon>manage_accounts</mat-icon>
+        <span matListItemTitle>Usuarios y permisos</span>
+      </a>
+    }
+
     <a mat-list-item routerLink="/expenses" routerLinkActive="active-link" (click)="onClose()">
       <mat-icon matListItemIcon>payments</mat-icon>
       <span matListItemTitle>Gastos y Retiros</span>
@@ -36,7 +49,7 @@
     <a mat-list-item routerLink="/fiados" routerLinkActive="active-link" (click)="onClose()">
       <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
       <span matListItemTitle>Cartera de Crédito</span>
-      <span matListItemMeta class="badge-pill">DEUDA</span> 
+      <span matListItemMeta class="badge-pill">DEUDA</span>
     </a>
 
     <a mat-list-item routerLink="/clients" routerLinkActive="active-link" (click)="onClose()">

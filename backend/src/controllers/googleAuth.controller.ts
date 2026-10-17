@@ -4,12 +4,16 @@ import path from 'path';
 import pool from '../database/db';
 
 export const getGoogleCalendarClient = async () => {
+    if (process.env.GOOGLE_CALENDAR_ENABLED === 'false') {
+        return null;
+    }
+
     const possiblePaths = [
         process.env.GOOGLE_CREDENTIALS_PATH,
         path.join(__dirname, '../../google-credentials.json'),
         '/etc/secrets/google-credentials.json'
     ];
-    
+
     const keyFile = possiblePaths.find(p => p && require('fs').existsSync(p));
     if (!keyFile) return null;
 
@@ -25,8 +29,8 @@ export const getGoogleCalendarClient = async () => {
 export const getCalendars = async (req: Request, res: Response) => {
     try {
         const { rows } = await pool.query(`
-            SELECT c.*, e.nombre as employee_nombre 
-            FROM google_calendars c 
+            SELECT c.*, e.nombre as employee_nombre
+            FROM google_calendars c
             LEFT JOIN employees e ON c.employee_id = e.id
             ORDER BY c.created_at DESC
         `);
@@ -51,9 +55,9 @@ export const addCalendar = async (req: Request, res: Response) => {
         await googleConfig.calendar.events.list({ calendarId, maxResults: 1 });
 
         const empId = employeeId ? employeeId : null;
-        
+
         const { rows } = await pool.query(
-            `INSERT INTO google_calendars (calendar_id, employee_id, description) 
+            `INSERT INTO google_calendars (calendar_id, employee_id, description)
              VALUES ($1, $2, $3) RETURNING *`,
             [calendarId, empId, description || '']
         );
@@ -99,7 +103,7 @@ export const syncAllAppointments = async (req: Request, res: Response) => {
     try {
         const { rows: calRows } = await pool.query('SELECT * FROM google_calendars WHERE id = $1', [id]);
         if (calRows.length === 0) return res.status(404).json({ error: 'Calendario no encontrado' });
-        
+
         const calendarRecord = calRows[0];
         const googleConfig = await getGoogleCalendarClient();
         if (!googleConfig) return res.status(500).json({ error: 'Credenciales de Google no configuradas' });

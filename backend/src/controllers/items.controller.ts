@@ -4,7 +4,10 @@ import pool from '../database/db';
 export const getItems = async (_req: Request, res: Response) => {
     try {
         const { rows } = await pool.query(
-            'SELECT id, nombre, precio, tipo, stock, active, created_at, updated_at FROM items ORDER BY nombre ASC'
+            `SELECT id, nombre, precio, tipo, stock, active, created_at, updated_at,
+                    duration_minutes, padding_minutes, is_reservable,
+                    sidro_image_url, sidro_image_public_id
+             FROM items ORDER BY nombre ASC`
         );
         res.status(200).json(rows);
     } catch (err) {

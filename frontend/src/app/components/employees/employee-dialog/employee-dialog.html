@@ -1,35 +1,49 @@
-<h2 mat-dialog-title>{{ isEdit ? 'Editar Profesional' : 'Nueva Profesional' }}</h2>
+<div class="dialog-heading" mat-dialog-title>
+  <span class="dialog-icon">
+    <mat-icon>{{ isEdit ? 'manage_accounts' : 'person_add' }}</mat-icon>
+  </span>
+  <div>
+    <h2>{{ isEdit ? 'Editar profesional' : 'Nueva profesional' }}</h2>
+    <p>{{ isEdit ? 'Actualiza los datos de esta integrante.' : 'Agrega una integrante a tu agenda.' }}</p>
+  </div>
+</div>
 
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
-
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Nombre Completo</mat-label>
-      <input matInput formControlName="nombre" placeholder="Ej. Ana Pérez" required>
+      <mat-label>Nombre completo</mat-label>
+      <mat-icon matPrefix>badge</mat-icon>
+      <input matInput formControlName="nombre" placeholder="Ej. Ana Pérez" autocomplete="name" required>
       @if (form.get('nombre')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
+        <mat-error>Ingresa el nombre de la profesional</mat-error>
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Teléfono (Opcional)</mat-label>
-      <input matInput formControlName="telefono" placeholder="Ej. 0991234567">
+      <mat-label>Teléfono (opcional)</mat-label>
+      <mat-icon matPrefix>phone</mat-icon>
+      <input
+        matInput
+        formControlName="telefono"
+        placeholder="Ej. 099 123 4567"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel"
+      >
     </mat-form-field>
-
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions-premium">
   @if (isEdit) {
-    <button mat-button color="warn" class="btn-delete" (click)="eliminar()">
-      <mat-icon>delete_forever</mat-icon> Eliminar
+    <button mat-button color="warn" class="btn-delete" type="button" (click)="eliminar()">
+      <mat-icon>delete_outline</mat-icon> Eliminar
     </button>
   }
   <span class="spacer"></span>
-  <button mat-stroked-button (click)="cancelar()">
-    <mat-icon>close</mat-icon> Cancelar
-  </button>
-  <button mat-flat-button color="primary" (click)="guardar()">
-    <mat-icon>save</mat-icon> {{ isEdit ? 'Actualizar' : 'Guardar' }}
+  <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="guardar()">
+    <mat-icon>{{ isEdit ? 'save' : 'person_add' }}</mat-icon>
+    {{ isEdit ? 'Guardar cambios' : 'Agregar' }}
   </button>
 </mat-dialog-actions>

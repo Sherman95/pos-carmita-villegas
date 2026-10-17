@@ -1,77 +1,163 @@
-.calendar-container { 
-  background-color: var(--ui-surface); 
-  border-radius: var(--ui-radius-lg); 
-  border: 1px solid var(--ui-border); 
-  box-shadow: var(--ui-shadow-md); 
-  overflow: hidden; 
-  margin: 1.5rem auto; 
+.appointments-container {
+  background-color: var(--ui-surface);
+  border-radius: var(--ui-radius-lg);
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--ui-shadow-md);
+  overflow: hidden;
+  margin: 1.5rem auto;
   max-width: 1400px;
-  display: flex; 
-  flex-direction: column; 
-  min-height: calc(100vh - 120px); 
-} 
-.header-section { 
-  padding: 2rem; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+}
+.section-tabs {
+  border-bottom: 1px solid var(--ui-border);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+
+  a {
+    align-items: center;
+    border-bottom: 3px solid transparent;
+    color: var(--ui-text-muted);
+    display: inline-flex;
+    font-weight: 650;
+    gap: 0.5rem;
+    min-height: 52px;
+    padding: 0 1rem;
+    text-decoration: none;
+    transition: background-color 160ms ease, color 160ms ease;
+
+    &:hover {
+      background: rgba(75, 30, 58, 0.05);
+      color: var(--brand-base);
+    }
+
+    &.active {
+      border-bottom-color: var(--brand-base);
+      color: var(--brand-base);
+    }
+  }
+}
+.agenda-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.header-section {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  
-  .header-content { 
-    h1 { margin: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 0.5rem; } 
-    p { margin: 0.5rem 0 0 0; opacity: 0.9; } 
-  } 
-  
+
+  .header-content {
+    h1 { margin: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 0.5rem; }
+    p { margin: 0.5rem 0 0 0; opacity: 0.9; }
+  }
+
   button {
     flex-shrink: 0;
   }
-} 
-.calendar-wrapper { 
-  flex: 1; 
-  padding: 1.5rem; 
-  background: var(--ui-surface); 
-  border-top: 1px solid var(--ui-border); 
+}
+.agenda-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid rgba(75, 30, 58, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  opacity: 0.86;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+.calendar-wrapper {
+  flex: 1;
+  padding: 1.5rem;
+  background: var(--ui-surface);
+  border-top: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
   min-height: 500px; /* Ensure minimum space in landscape */
-} 
+}
 full-calendar {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0; /* Crucial for inner flex children to scroll */
-} 
-.loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 400px; color: var(--ui-text-muted); p { margin-top: 1rem; } } 
-::ng-deep .fc-theme-standard td, ::ng-deep .fc-theme-standard th { border-color: var(--ui-border); } 
-::ng-deep .fc .fc-toolbar-title { color: var(--brand-text); font-weight: 700; } 
-::ng-deep .fc .fc-button-primary { background-color: var(--brand-base); border-color: var(--brand-base); border-radius: 8px; font-weight: 600; text-transform: capitalize; &:not(:disabled):active, &:not(:disabled).fc-button-active { background-color: var(--brand-dark); border-color: var(--brand-dark); } &:hover { background-color: var(--brand-accent); border-color: var(--brand-accent); } } 
-::ng-deep .fc-event { border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s ease; padding: 2px 4px; &:hover { transform: translateY(-1px); box-shadow: var(--ui-shadow-sm); } } 
+}
+.loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 400px; color: var(--ui-text-muted); p { margin-top: 1rem; } }
+::ng-deep .fc-theme-standard td, ::ng-deep .fc-theme-standard th { border-color: var(--ui-border); }
+::ng-deep .fc .fc-toolbar-title { color: var(--brand-text); font-weight: 700; }
+::ng-deep .fc .fc-button-primary { background-color: var(--brand-base); border-color: var(--brand-base); border-radius: 8px; font-weight: 600; text-transform: capitalize; &:not(:disabled):active, &:not(:disabled).fc-button-active { background-color: var(--brand-dark); border-color: var(--brand-dark); } &:hover { background-color: var(--brand-accent); border-color: var(--brand-accent); } }
+::ng-deep .fc-event { border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s ease; padding: 2px 4px; &:hover { transform: translateY(-1px); box-shadow: var(--ui-shadow-sm); } }
 
-@media (max-width: 768px) { 
-  .calendar-container { 
-    margin: 0; 
-    border-radius: 0; 
+@media (max-width: 768px) {
+  .appointments-container {
+    margin: 0;
+    border-radius: 0;
     min-height: calc(100vh - 60px); /* Fill screen optimally */
-    border-left: none; 
-    border-right: none; 
+    border-left: none;
+    border-right: none;
     border-bottom: none;
-  } 
-  .header-section { 
-    flex-direction: column; 
-    align-items: stretch; 
-    gap: 1rem; 
-    padding: 1rem; 
-    
+  }
+  .header-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+
     button {
       width: 100%;
     }
-  } 
-  .header-content h1 { font-size: 1.4rem; } 
-  .calendar-wrapper { 
+  }
+  .agenda-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .sync-status {
+    align-self: center;
+  }
+  .header-content h1 { font-size: 1.4rem; }
+  .section-tabs {
+    gap: 0;
+    padding: 0 0.5rem;
+
+    a {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+      padding: 0 0.4rem;
+
+      mat-icon {
+        flex: 0 0 auto;
+      }
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+  .calendar-wrapper {
     padding: 0; /* Quitamos el padding para aprovechar todo el ancho */
-  } 
-  
+  }
+
   /* Reducir escala general del calendario un 30% más */
   ::ng-deep .fc {
     font-size: 0.65rem; /* Letra super compacta */
@@ -87,19 +173,19 @@ full-calendar {
   }
 
   /* Ajustes del Toolbar (Botones) para celular */
-  ::ng-deep .fc .fc-header-toolbar { 
-    flex-wrap: wrap; 
-    gap: 4px; 
-    padding: 0.2rem; 
+  ::ng-deep .fc .fc-header-toolbar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0.2rem;
     justify-content: center !important;
-  } 
+  }
   ::ng-deep .fc .fc-toolbar-chunk {
     display: flex;
     justify-content: center;
     width: 100%;
   }
   ::ng-deep .fc .fc-toolbar-title { font-size: 0.9rem !important; }
-  
+
   /* Reducir botón padding para que ocupen menos */
   ::ng-deep .fc .fc-button {
     padding: 0.1rem 0.3rem;

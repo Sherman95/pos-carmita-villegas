@@ -1,136 +1,188 @@
-<div class="main-layout fade-in">
-  
-  <div class="header-bg"></div> <div class="content-wrapper">
+<main class="profile-page fade-in">
+  <section class="profile-hero" aria-labelledby="profile-title">
+    <div class="hero-glow"></div>
+    <div class="hero-topline">
+      <span class="hero-eyebrow"><mat-icon>storefront</mat-icon> Perfil del negocio</span>
+      <span class="location-chip"><mat-icon>location_on</mat-icon> Piñas, El Oro</span>
+    </div>
 
-    <aside class="profile-sidebar">
+    <div class="hero-content">
+      <div class="business-brand">
+        <div class="business-monogram">{{ businessInitials() }}</div>
+        <div class="business-title">
+          <span>POS Carmita</span>
+          <h1 id="profile-title">{{ business().name || 'Carmita Villegas' }}</h1>
+          <p>Información comercial, facturación y acceso al sistema.</p>
+        </div>
+      </div>
+
+      <div class="completion-card" aria-label="Porcentaje de perfil completado">
+        <div class="completion-copy">
+          <span>Perfil completado</span>
+          <strong>{{ profileCompletion() }}%</strong>
+        </div>
+        <div class="progress-track">
+          <span [style.width.%]="profileCompletion()"></span>
+        </div>
+        <small>Completa los datos para mantener tus comprobantes actualizados.</small>
+      </div>
+    </div>
+  </section>
+
+  <div class="profile-workspace">
+    <aside class="account-card">
       @if (user(); as u) {
-        <div class="identity-card">
-          <div class="avatar-container">
+        <div class="account-header">
+          <div class="avatar-wrap">
             <div class="avatar-circle">{{ (u.username || 'U')[0] | uppercase }}</div>
-            <div class="status-indicator" matTooltip="Online"></div>
+            <span class="online-dot" aria-label="Sesión activa"></span>
           </div>
-          <div class="user-info">
+          <div>
+            <span class="account-label">Cuenta conectada</span>
             <h2>{{ u.username }}</h2>
-            <span class="role-pill">{{ u.role || 'Admin' }}</span>
-            <span class="session-label"><mat-icon>verified_user</mat-icon> Sesión activa</span>
-          </div>
-          <div class="sidebar-actions">
-            <button mat-flat-button color="warn" class="logout-btn" (click)="logout()">
-              <mat-icon>logout</mat-icon> Cerrar Sesión
-            </button>
+            <span class="role-pill"><mat-icon>admin_panel_settings</mat-icon>{{ u.role || 'Admin' }}</span>
           </div>
         </div>
+
+        <div class="account-details">
+          <div class="detail-row">
+            <span class="detail-icon"><mat-icon>verified_user</mat-icon></span>
+            <div><small>Estado</small><strong>Sesión protegida</strong></div>
+            <span class="success-dot"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-icon"><mat-icon>location_on</mat-icon></span>
+            <div><small>Ubicación</small><strong>Piñas, El Oro</strong></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-icon"><mat-icon>percent</mat-icon></span>
+            <div><small>IVA configurado</small><strong>{{ taxRateInput() * 100 }}%</strong></div>
+          </div>
+        </div>
+
+        <div class="security-note">
+          <mat-icon>shield</mat-icon>
+          <p><strong>Acceso administrativo</strong><span>Los cambios se sincronizan con la cuenta del POS.</span></p>
+        </div>
+
+        <button mat-stroked-button class="logout-btn" type="button" (click)="logout()">
+          <mat-icon>logout</mat-icon> Cerrar sesión
+        </button>
       }
     </aside>
 
-    <main class="profile-forms">
-      
-      <div class="section-header">
-        <span class="section-kicker"><mat-icon>tune</mat-icon> Panel de ajustes</span>
-        <h1>Configuración</h1>
-        <p>Actualiza la información de tu negocio</p>
-      </div>
-
-      <div class="form-card">
-        <div class="card-header-styled biz-header">
-          <div class="icon-wrapper"><mat-icon>storefront</mat-icon></div>
-          <div class="header-copy">
-            <h3>Datos del Negocio</h3>
-            <p>Esta información aparecerá en tus recibos.</p>
+    <div class="settings-column">
+      <section class="settings-card" aria-labelledby="business-data-title">
+        <header class="card-heading">
+          <div class="heading-icon"><mat-icon>domain</mat-icon></div>
+          <div>
+            <span class="step-label">Sección 01</span>
+            <h2 id="business-data-title">Información del negocio</h2>
+            <p>Estos datos aparecerán en recibos y comprobantes.</p>
           </div>
-        </div>
+          <span class="card-badge">Comercial</span>
+        </header>
 
-        <div class="card-content">
-          <form (ngSubmit)="saveBusiness()" autocomplete="off">
-            
-            <div class="form-grid-row">
-              <mat-form-field appearance="fill" class="modern-input col-full">
-                <mat-label>Nombre Comercial</mat-label>
-                <input matInput [(ngModel)]="business().name" name="bizName" placeholder="Ej. Tienda Carmita" />
-                <mat-icon matSuffix>badge</mat-icon>
-              </mat-form-field>
-            </div>
+        <form class="settings-form" (ngSubmit)="saveBusiness()" autocomplete="off">
+          <div class="field-grid">
+            <mat-form-field appearance="outline" class="field-full polished-field">
+              <mat-label>Nombre comercial</mat-label>
+              <mat-icon matPrefix>store</mat-icon>
+              <input matInput [(ngModel)]="business().name" name="bizName" placeholder="Carmita Villegas">
+              <mat-hint>Nombre visible en los comprobantes</mat-hint>
+            </mat-form-field>
 
-            <div class="form-grid-row">
-              <mat-form-field appearance="fill" class="modern-input col-half">
-                <mat-label>RUC / CI</mat-label>
-                <input matInput [(ngModel)]="business().ruc" name="bizRuc" inputmode="numeric" />
-                <mat-icon matSuffix>fingerprint</mat-icon>
-              </mat-form-field>
+            <mat-form-field appearance="outline" class="polished-field">
+              <mat-label>RUC / Cédula</mat-label>
+              <mat-icon matPrefix>fingerprint</mat-icon>
+              <input matInput [(ngModel)]="business().ruc" name="bizRuc" inputmode="numeric">
+            </mat-form-field>
 
-              <mat-form-field appearance="fill" class="modern-input col-half">
-                <mat-label>Teléfono</mat-label>
-                <input matInput [(ngModel)]="business().phone" name="bizPhone" type="tel" inputmode="tel" />
-                <mat-icon matSuffix>phone</mat-icon>
-              </mat-form-field>
-            </div>
+            <mat-form-field appearance="outline" class="polished-field">
+              <mat-label>Teléfono</mat-label>
+              <mat-icon matPrefix>phone</mat-icon>
+              <input matInput [(ngModel)]="business().phone" name="bizPhone" type="tel" inputmode="tel">
+            </mat-form-field>
 
-            <div class="form-grid-row">
-              <mat-form-field appearance="fill" class="modern-input col-full">
-                <mat-label>Dirección</mat-label>
-                <input matInput [(ngModel)]="business().address" name="bizAddress" />
-                <mat-icon matSuffix>location_on</mat-icon>
-              </mat-form-field>
-            </div>
+            <mat-form-field appearance="outline" class="field-full polished-field">
+              <mat-label>Dirección</mat-label>
+              <mat-icon matPrefix>location_on</mat-icon>
+              <input matInput [(ngModel)]="business().address" name="bizAddress" placeholder="Piñas, El Oro">
+            </mat-form-field>
+          </div>
 
-            <div class="tax-box">
-              <div class="tax-icon"><mat-icon>percent</mat-icon></div>
-              <div class="tax-text">
+          <div class="tax-setting">
+            <div class="tax-copy">
+              <span class="tax-icon"><mat-icon>receipt_long</mat-icon></span>
+              <div>
                 <strong>Impuesto (IVA)</strong>
-                <span>Valor en decimal (0.15 = 15%)</span>
+                <p>Ingresa el valor decimal. Por ejemplo: 0.15 corresponde al 15%.</p>
               </div>
-              <input type="number" step="0.01" class="tax-field-mini"
-                 inputmode="decimal" aria-label="Tasa de IVA en decimal"
-                 [ngModel]="taxRateInput()" 
-                 (ngModelChange)="taxRateInput.set($event)"
-                 name="bizIva" />
             </div>
-
-            <button mat-flat-button color="primary" type="submit" class="btn-save">
-              <mat-icon>cloud_done</mat-icon> Guardar cambios
-            </button>
-
-            @if (message() && message().includes('Sincronizado')) {
-              <div class="feedback-msg success">
-                <mat-icon>check_circle</mat-icon> {{ message() }}
-              </div>
-            }
-          </form>
-        </div>
-      </div>
-
-      <div class="form-card">
-        <div class="card-header-styled user-header">
-          <div class="icon-wrapper"><mat-icon>manage_accounts</mat-icon></div>
-          <div class="header-copy">
-            <h3>Cuenta de Usuario</h3>
-            <p>Cambia el nombre utilizado para acceder al sistema.</p>
+            <div class="tax-control">
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                inputmode="decimal"
+                aria-label="Tasa de IVA en decimal"
+                [ngModel]="taxRateInput()"
+                (ngModelChange)="taxRateInput.set($event)"
+                name="bizIva"
+              >
+              <span>decimal</span>
+            </div>
           </div>
-        </div>
 
-        <div class="card-content">
-          <form (ngSubmit)="save()" autocomplete="off">
-            <div class="form-grid-row">
-              <mat-form-field appearance="fill" class="modern-input col-full">
-                <mat-label>Nombre de Usuario</mat-label>
-                <input matInput [(ngModel)]="username" name="username" required />
-                <mat-icon matSuffix>person</mat-icon>
-              </mat-form-field>
-            </div>
-            
-            <button mat-stroked-button color="primary" type="submit" class="btn-save secondary-save">
-              <mat-icon>person_check</mat-icon> Actualizar usuario
+          <div class="form-footer">
+            <div class="sync-caption"><mat-icon>cloud_sync</mat-icon> Sincronización segura</div>
+            <button mat-flat-button color="primary" type="submit" class="save-button" [disabled]="savingBusiness()">
+              <mat-icon [class.icon-spin]="savingBusiness()">{{ savingBusiness() ? 'sync' : 'save' }}</mat-icon>
+              {{ savingBusiness() ? 'Guardando...' : 'Guardar negocio' }}
             </button>
+          </div>
 
-            @if (message() && message().includes('nombre')) {
-              <div class="feedback-msg info">
-                <mat-icon>info</mat-icon> {{ message() }}
-              </div>
-            }
-          </form>
-        </div>
-      </div>
+          @if (businessMessage()) {
+            <div class="feedback-msg {{ businessMessageType() }}" aria-live="polite">
+              <mat-icon>{{ businessMessageType() === 'success' ? 'check_circle' : businessMessageType() === 'error' ? 'error_outline' : 'sync' }}</mat-icon>
+              {{ businessMessage() }}
+            </div>
+          }
+        </form>
+      </section>
 
-    </main>
+      <section class="settings-card compact-card" aria-labelledby="account-data-title">
+        <header class="card-heading">
+          <div class="heading-icon account"><mat-icon>manage_accounts</mat-icon></div>
+          <div>
+            <span class="step-label">Sección 02</span>
+            <h2 id="account-data-title">Datos de acceso</h2>
+            <p>Actualiza el nombre utilizado para identificar tu cuenta.</p>
+          </div>
+          <span class="card-badge">Cuenta</span>
+        </header>
+
+        <form class="settings-form account-form" (ngSubmit)="save()" autocomplete="off">
+          <mat-form-field appearance="outline" class="polished-field account-input">
+            <mat-label>Nombre de usuario</mat-label>
+            <mat-icon matPrefix>person</mat-icon>
+            <input matInput [(ngModel)]="username" name="username" required autocomplete="username">
+          </mat-form-field>
+
+          <button mat-stroked-button color="primary" type="submit" class="account-save" [disabled]="savingAccount()">
+            <mat-icon [class.icon-spin]="savingAccount()">{{ savingAccount() ? 'sync' : 'person_check' }}</mat-icon>
+            {{ savingAccount() ? 'Actualizando...' : 'Actualizar usuario' }}
+          </button>
+
+          @if (accountMessage()) {
+            <div class="feedback-msg account-feedback {{ accountMessageType() }}" aria-live="polite">
+              <mat-icon>{{ accountMessageType() === 'success' ? 'check_circle' : accountMessageType() === 'error' ? 'error_outline' : 'info' }}</mat-icon>
+              {{ accountMessage() }}
+            </div>
+          }
+        </form>
+      </section>
+    </div>
   </div>
-</div>
+</main>

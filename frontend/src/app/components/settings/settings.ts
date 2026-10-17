@@ -3,25 +3,25 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
 import { FormsModule } from '@angular/forms';
 import { EmployeeService, Employee } from '../../services/employee.service';
-import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatCardModule, FormsModule, MatSelectModule],
+  imports: [MatButtonModule, MatIconModule, FormsModule],
   templateUrl: './settings.html',
   styleUrls: ['./settings.scss']
 })
 export class SettingsComponent implements OnInit {
+  readonly serviceAccountEmail = 'robot-citas@pos-carmita-calendar.iam.gserviceaccount.com';
   calendars: any[] = [];
   employees: Employee[] = [];
   loading = true;
-  
+  loadError = '';
+
   newCalendarId = '';
   newEmployeeId: number | null = null;
   newDescription = '';
@@ -40,8 +40,17 @@ export class SettingsComponent implements OnInit {
     setTimeout(() => this.loadCalendars(), 0);
   }
 
+  get professionalCalendars(): number {
+    return this.calendars.filter((calendar) => Boolean(calendar.employee_id)).length;
+  }
+
+  get generalCalendars(): number {
+    return this.calendars.length - this.professionalCalendars;
+  }
+
   loadCalendars() {
     this.loading = true;
+    this.loadError = '';
     this.http.get<any[]>(`${environment.apiBaseUrl}/api/auth/google/calendars`).subscribe({
       next: (res) => {
         this.calendars = res;
@@ -50,6 +59,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error cargando calendarios', err);
+        this.loadError = 'No pudimos consultar los calendarios vinculados. Revisa la conexión e inténtalo nuevamente.';
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -57,11 +67,14 @@ export class SettingsComponent implements OnInit {
   }
 
   addCalendar() {
+    const calendarId = this.newCalendarId.trim();
+    if (!calendarId) return;
+
     this.loading = true;
     const payload = {
-      calendarId: this.newCalendarId,
+      calendarId,
       employeeId: this.newEmployeeId,
-      description: this.newDescription
+      description: this.newDescription.trim()
     };
 
     this.http.post<{success: boolean, message: string}>(`${environment.apiBaseUrl}/api/auth/google/calendar`, payload).subscribe({
@@ -89,6 +102,27 @@ export class SettingsComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  async copyServiceEmail(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.serviceAccountEmail);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Correo copiado',
+        text: 'Ya puedes pegarlo en la configuración de Google Calendar.',
+        toast: true,
+        position: 'top-end',
+        timer: 2200,
+        showConfirmButton: false
+      });
+    } catch {
+      await Swal.fire({
+        icon: 'info',
+        title: 'Copia el correo manualmente',
+        text: this.serviceAccountEmail
+      });
+    }
   }
 
   deleteCalendar(id: number) {
@@ -121,7 +155,7 @@ export class SettingsComponent implements OnInit {
 
   syncCalendar(id: number) {
     this.loading = true;
-    
+
     Swal.fire({
       title: 'Sincronizando...',
       text: 'Enviando citas a Google Calendar. Esto puede tardar unos segundos.',

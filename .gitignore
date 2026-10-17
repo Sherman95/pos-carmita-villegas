@@ -1,0 +1,38 @@
+# Dependencies and generated output
+node_modules/
+**/node_modules/
+**/dist/
+**/.angular/
+coverage/
+
+# Environment files and credentials
+.env
+.env.*
+!**/.env.example
+**/google-credentials.json
+
+# Logs and local tooling
+*.log
+.vscode/
+.idea/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Local database backups
+backup_*.sql
+**/backup_*.sql
+
+# Local one-off diagnostics and superseded migration drafts
+backend/scratch*
+backend/check_*.js
+backend/check_*.bat
+backend/create_table.js
+backend/apply_sidro_migration.js
+backend/run_*.bat
+backend/test_*.js
+backend/test_*.ts
+backend/sidro_migration.sql
+backend/sidro_phase*.sql
+pos_carmita_esquema_sin_datos.sql

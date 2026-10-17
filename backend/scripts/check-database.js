@@ -9,9 +9,10 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+const databaseUrl = process.env.DATABASE_URL;
 const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  connectionString: databaseUrl,
+  ...(databaseUrl.includes('localhost') ? {} : { ssl: { rejectUnauthorized: false } }),
 });
 
 async function checkDatabase() {

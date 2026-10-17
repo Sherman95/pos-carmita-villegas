@@ -1,5 +1,5 @@
 <div class="pro-dialog">
-  
+
   <div class="dialog-header">
     <h3>Nueva Salida de Dinero</h3>
     <button mat-icon-button (click)="cancelar()" tabindex="-1">
@@ -8,14 +8,14 @@
   </div>
 
   <mat-dialog-content class="content-wrapper">
-    
+
     <div class="amount-hero-wrapper">
       <span class="currency-symbol">$</span>
-      <input 
-        type="number" 
-        [(ngModel)]="data.monto" 
-        class="ghost-input" 
-        placeholder="0.00" 
+      <input
+        type="number"
+        [(ngModel)]="data.monto"
+        class="ghost-input"
+        placeholder="0.00"
         autoFocus>
     </div>
     <p class="helper-text">Ingrese el monto a retirar</p>
@@ -31,19 +31,23 @@
     </mat-button-toggle-group>
 
     <div class="inputs-grid">
-      
-      <mat-form-field appearance="outline" class="pro-field">
-        <mat-label>Categoría</mat-label>
-        <mat-select [(ngModel)]="data.categoria">
-          <mat-option value="INSUMOS_LOCAL">💅 Insumos</mat-option>
-          <mat-option value="SERVICIOS_BASICOS">💡 Servicios</mat-option>
-          <mat-option value="MANTENIMIENTO">🔧 Mantenimiento</mat-option>
-          <mat-option value="ALIMENTACION">🍔 Alimentación</mat-option>
-          <mat-option value="GASTOS_PERSONALES">🛍️ Personales</mat-option>
-          <mat-option value="OTROS">❓ Otros</mat-option>
-        </mat-select>
-        <mat-icon matPrefix>category</mat-icon>
-      </mat-form-field>
+
+      <div class="category-field-wrapper">
+        <mat-form-field appearance="outline" class="pro-field">
+          <mat-label>Categoría</mat-label>
+          <mat-select [(ngModel)]="data.categoria">
+            @for (cat of categories; track cat.id) {
+              <mat-option [value]="cat.codigo">
+                <mat-icon [style.color]="cat.color">{{ cat.icono }}</mat-icon> {{ cat.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>category</mat-icon>
+        </mat-form-field>
+        <button type="button" mat-button class="btn-manage-cats-inline" (click)="openManageCategories()">
+          <mat-icon>add_circle_outline</mat-icon> Gestionar / Nueva Categoría
+        </button>
+      </div>
 
       <mat-form-field appearance="outline" class="pro-field">
         <mat-label>Nota / Descripción</mat-label>
@@ -55,7 +59,7 @@
   </mat-dialog-content>
 
   <div class="dialog-footer">
-    <button mat-flat-button class="submit-btn" (click)="guardar()" 
+    <button mat-flat-button class="submit-btn" (click)="guardar()"
             [disabled]="!data.monto || !data.descripcion || data.monto <= 0">
       REGISTRAR GASTO
     </button>

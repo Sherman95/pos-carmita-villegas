@@ -1,24 +1,55 @@
+:host {
+  display: block;
+  color: var(--brand-text);
+}
+
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 0 !important;
+  padding: 22px 24px 17px !important;
+  border-bottom: 1px solid var(--ui-border);
+  background: linear-gradient(90deg, #fdf9fb, white);
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: var(--brand-dark);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin-top: 3px;
+    color: var(--ui-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+}
+
+.dialog-icon {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(75, 30, 58, 0.12);
+  border-radius: 13px;
+  background: var(--brand-soft);
+  color: var(--brand-base);
+}
+
 .dialog-form {
   display: flex;
   flex-direction: column;
-  padding-top: 5px;
-}
-
-/* Hacer que los campos de Angular Material ocupen menos espacio vertical sin aplastarse */
-::ng-deep .mat-mdc-form-field {
-  margin-bottom: 4px;
-  font-size: 0.9rem;
-}
-::ng-deep .mat-mdc-form-field-subscript-wrapper {
-  height: 16px !important;
-}
-::ng-deep .mat-mdc-text-field-wrapper {
-  padding: 0 12px !important;
-}
-::ng-deep .mat-mdc-form-field-infix {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-  min-height: 44px !important;
+  gap: 5px;
+  padding: 12px 0 2px;
 }
 
 .full-width {
@@ -34,32 +65,60 @@
 }
 
 .dialog-actions-premium {
-  padding: 12px 20px;
-  border-top: 1px solid var(--ui-border);
   gap: 8px;
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--ui-border);
+
+  button {
+    min-height: 42px;
+    border-radius: 12px;
+    font-weight: 650;
+  }
 }
 
-::ng-deep .mat-mdc-dialog-actions .mat-mdc-button-base {
-  border-radius: var(--ui-radius-lg);
-  font-weight: 600;
-  letter-spacing: 0.3px;
+::ng-deep .employee-dialog-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+  border: 1px solid rgba(75, 30, 58, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(46, 14, 34, 0.24);
 }
 
-::ng-deep .mat-mdc-dialog-actions .mat-mdc-flat-button {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transition: all 0.2s ease;
+::ng-deep .employee-dialog-panel .mat-mdc-dialog-content {
+  max-height: none;
+  padding: 18px 24px 8px !important;
 }
 
-::ng-deep .mat-mdc-dialog-actions .mat-mdc-flat-button:hover:not([disabled]) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+::ng-deep .employee-dialog-panel .mat-mdc-form-field-icon-prefix {
+  padding: 0 10px 0 2px;
+  color: var(--brand-accent);
 }
 
-::ng-deep .mat-mdc-dialog-title {
-  color: var(--brand-base) !important;
-  font-weight: 700;
-  font-size: 1.25rem;
-  padding: 16px 24px 12px 24px !important;
-  border-bottom: 1px solid var(--ui-border);
-  margin-bottom: 10px;
+::ng-deep .employee-dialog-panel .mat-mdc-text-field-wrapper {
+  border-radius: 12px;
+}
+
+@media (max-width: 520px) {
+  .dialog-heading {
+    padding: 19px 18px 15px !important;
+  }
+
+  ::ng-deep .employee-dialog-panel .mat-mdc-dialog-content {
+    padding-inline: 18px !important;
+  }
+
+  .dialog-actions-premium {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 13px 18px 18px;
+
+    .spacer {
+      display: none;
+    }
+
+    .btn-delete {
+      grid-column: 1 / -1;
+      margin: 0;
+      order: 3;
+    }
+  }
 }

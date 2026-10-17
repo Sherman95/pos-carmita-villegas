@@ -1,4 +1,4 @@
-import { Component, OnInit , ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -11,7 +11,8 @@ import { AppointmentDialogComponent } from './appointment-dialog/appointment-dia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
+import { SidroRequestsComponent } from '../sidro-requests/sidro-requests.component';
 
 @Component({
   selector: 'app-appointments',
@@ -22,12 +23,19 @@ import { ChangeDetectorRef } from '@angular/core';
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    RouterLink,
+    RouterLinkActive,
+    SidroRequestsComponent
 ],
   templateUrl: './appointments.html',
   styleUrls: ['./appointments.scss']
 })
-export class AppointmentsComponent implements OnInit {
+export class AppointmentsComponent implements OnInit, OnDestroy {
+  currentView: 'agenda' | 'requests' = 'agenda';
+  lastUpdated: Date | null = null;
+  private refreshTimer?: ReturnType<typeof setInterval>;
+
   calendarOptions: any = {
     plugins: [resourceTimeGridPlugin, interactionPlugin],
     initialView: 'resourceTimeGridDay',
@@ -53,36 +61,73 @@ export class AppointmentsComponent implements OnInit {
     private appointmentService: AppointmentService,
     private employeeService: EmployeeService,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    this.loadData();
+    this.currentView = this.route.snapshot.data['view'] === 'requests' ? 'requests' : 'agenda';
+    if (this.currentView === 'agenda') {
+      this.loadData();
+      this.refreshTimer = setInterval(() => this.loadData(true), 30000);
+    } else {
+      this.loading = false;
+    }
   }
 
-  loadData() {
-    this.loading = true;
-    this.employeeService.getEmployees().subscribe(employees => {
+  ngOnDestroy(): void {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+  }
+
+  @HostListener('window:focus')
+  refreshWhenWindowReturns(): void {
+    if (this.currentView === 'agenda') this.loadData(true);
+  }
+
+  loadData(silent = false) {
+    if (!silent) this.loading = true;
+    this.employeeService.getEmployees().subscribe({
+      next: employees => {
       const resources = employees.map(e => ({ id: e.id, title: e.nombre }));
-      
-      this.appointmentService.getAppointments().subscribe(appointments => {
-        const events: any[] = appointments.map(a => ({
-          id: a.id,
-          resourceId: a.employee_id,
-          title: `${a.client_nombre} - ${a.item_nombre}`,
-          start: a.fecha_inicio,
-          end: a.fecha_fin,
-          backgroundColor: 'var(--brand-accent)',
-          borderColor: 'var(--brand-base)',
-          extendedProps: { ...a }
-        }));
-        
-        this.calendarOptions.resources = resources;
-        this.calendarOptions.events = events;
+
+        this.appointmentService.getAppointments().subscribe({
+          next: appointments => {
+            const events: any[] = appointments.map(a => ({
+              id: a.id,
+              resourceId: a.employee_id,
+              title: `${a.client_nombre || 'Cliente'} - ${a.item_nombre || 'Servicio'}`,
+              start: a.fecha_inicio,
+              end: a.fecha_fin,
+              backgroundColor: a.estado === 'CANCELADA' ? '#929baa' : 'var(--brand-accent)',
+              borderColor: a.estado === 'CANCELADA' ? '#697386' : 'var(--brand-base)',
+              extendedProps: { ...a }
+            }));
+
+            this.calendarOptions = { ...this.calendarOptions, resources, events };
+            this.lastUpdated = new Date();
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.loading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: () => {
         this.loading = false;
         this.cdr.detectChanges();
-      });
+      }
     });
+  }
+
+  lastUpdatedLabel(): string {
+    if (!this.lastUpdated) return 'Sincronizando agenda';
+    return `Actualizada ${this.lastUpdated.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+
+  refreshAgendaAfterRequest(): void {
+    this.loadData();
   }
 
   openNewAppointment() {
@@ -91,7 +136,9 @@ export class AppointmentsComponent implements OnInit {
 
   handleDateClick(arg: any) {
     const dialogRef = this.dialog.open(AppointmentDialogComponent, {
-      width: '500px',
+      width: '840px',
+      maxWidth: 'calc(100vw - 24px)',
+      panelClass: 'appointment-dialog-panel',
       data: {
         isEdit: false,
         employee_id: arg.resource ? arg.resource.id : null,
@@ -108,7 +155,9 @@ export class AppointmentsComponent implements OnInit {
 
   handleEventClick(arg: any) {
     const dialogRef = this.dialog.open(AppointmentDialogComponent, {
-      width: '500px',
+      width: '840px',
+      maxWidth: 'calc(100vw - 24px)',
+      panelClass: 'appointment-dialog-panel',
       data: {
         isEdit: true,
         appointment: arg.event.extendedProps

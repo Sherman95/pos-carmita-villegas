@@ -1,137 +1,189 @@
-<div class="dialog-header">
-  <h2 mat-dialog-title>{{ isEdit ? 'Editar Cita' : 'Nueva Cita' }}</h2>
-  <p class="dialog-subtitle">Completa los datos para agendar</p>
-</div>
+<header class="dialog-header">
+  <span class="header-icon"><mat-icon>{{ isEdit ? 'edit_calendar' : 'event_available' }}</mat-icon></span>
+  <div>
+    <span class="header-kicker">{{ isEdit ? 'Editar reservación' : 'Agenda administrativa' }}</span>
+    <h2 mat-dialog-title>{{ isEdit ? 'Editar cita' : 'Nueva cita' }}</h2>
+    <p>Registra atenciones del local, teléfono o WhatsApp.</p>
+  </div>
+  <span class="header-status"><span></span>{{ isEdit ? 'Registrada' : 'Nueva' }}</span>
+</header>
 
-<mat-dialog-content>
-  <form [formGroup]="form" class="dialog-form">
-
-    <!-- SECCIÓN: QUIÉN -->
-    <span class="section-label">Quién</span>
-
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Cliente</mat-label>
-      <mat-icon matPrefix class="field-icon">person</mat-icon>
-      <mat-select formControlName="client_id" required>
-        <div class="select-search-container">
-          <input matInput placeholder="Buscar cliente..." (input)="filterClients($event)" (keydown)="$event.stopPropagation()">
-          <mat-icon class="search-icon">search</mat-icon>
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="form" class="appointment-form">
+    <div class="form-column">
+      <section class="form-section">
+        <div class="section-heading">
+          <span>01</span>
+          <div><h3>Clienta</h3><p>Busca y selecciona a quién vas a atender.</p></div>
         </div>
-        @for (client of filteredClients; track client) {
-          <mat-option [value]="client.id">
-            {{ client.nombre }}
-          </mat-option>
-        }
-        @if (filteredClients.length === 0) {
-          <div class="no-results">No se encontraron clientes</div>
-        }
-      </mat-select>
-      @if (form.get('client_id')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
-      }
-    </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Profesional</mat-label>
-      <mat-icon matPrefix class="field-icon">badge</mat-icon>
-      <mat-select formControlName="employee_id" required>
-        <div class="select-search-container">
-          <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
-          <mat-icon class="search-icon">search</mat-icon>
+        <mat-form-field appearance="outline" class="full-width polished-field">
+          <mat-label>Seleccionar cliente</mat-label>
+          <mat-icon matPrefix class="field-icon">person_search</mat-icon>
+          <mat-select formControlName="client_id" required>
+            <div class="select-search-container">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input matInput placeholder="Buscar por nombre..." (input)="filterClients($event)" (keydown)="$event.stopPropagation()">
+            </div>
+            @for (client of filteredClients; track client.id) {
+              <mat-option [value]="client.id">
+                <span class="option-content">
+                  <strong>{{ client.nombre }}</strong>
+                  <small>{{ client.telefono || 'Sin teléfono registrado' }}</small>
+                </span>
+              </mat-option>
+            }
+            @if (filteredClients.length === 0) {
+              <div class="no-results">No se encontraron clientes</div>
+            }
+          </mat-select>
+          @if (form.get('client_id')?.touched && form.get('client_id')?.hasError('required')) {
+            <mat-error>Selecciona una clienta</mat-error>
+          }
+        </mat-form-field>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <span>02</span>
+          <div><h3>Atención</h3><p>Indica quién atiende y qué servicio realizará.</p></div>
         </div>
-        @for (emp of filteredEmployees; track emp) {
-          <mat-option [value]="emp.id">
-            {{ emp.nombre }}
-          </mat-option>
-        }
-        @if (filteredEmployees.length === 0) {
-          <div class="no-results">No se encontraron profesionales</div>
-        }
-      </mat-select>
-      @if (form.get('employee_id')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
-      }
-    </mat-form-field>
 
-    <!-- SECCIÓN: QUÉ -->
-    <span class="section-label">Servicio</span>
+        <div class="field-grid">
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Profesional</mat-label>
+            <mat-icon matPrefix class="field-icon">badge</mat-icon>
+            <mat-select formControlName="employee_id" required>
+              <div class="select-search-container">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input matInput placeholder="Buscar profesional..." (input)="filterEmployees($event)" (keydown)="$event.stopPropagation()">
+              </div>
+              @for (emp of filteredEmployees; track emp.id) {
+                <mat-option [value]="emp.id">{{ emp.nombre }}</mat-option>
+              }
+              @if (filteredEmployees.length === 0) {
+                <div class="no-results">No se encontraron profesionales</div>
+              }
+            </mat-select>
+            @if (form.get('employee_id')?.touched && form.get('employee_id')?.hasError('required')) {
+              <mat-error>Selecciona una profesional</mat-error>
+            }
+          </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Servicio</mat-label>
-      <mat-icon matPrefix class="field-icon">spa</mat-icon>
-      <mat-select formControlName="item_id" required>
-        <div class="select-search-container">
-          <input matInput placeholder="Buscar servicio..." (input)="filterServices($event)" (keydown)="$event.stopPropagation()">
-          <mat-icon class="search-icon">search</mat-icon>
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Servicio</mat-label>
+            <mat-icon matPrefix class="field-icon">spa</mat-icon>
+            <mat-select formControlName="item_id" required>
+              <div class="select-search-container">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input matInput placeholder="Buscar servicio..." (input)="filterServices($event)" (keydown)="$event.stopPropagation()">
+              </div>
+              @for (service of filteredServices; track service.id) {
+                <mat-option [value]="service.id">
+                  <span class="option-content service-option">
+                    <strong>{{ service.nombre }}</strong>
+                    <small>${{ service.precio }} · {{ service.duration_minutes || 60 }} min</small>
+                  </span>
+                </mat-option>
+              }
+              @if (filteredServices.length === 0) {
+                <div class="no-results">No se encontraron servicios</div>
+              }
+            </mat-select>
+            @if (form.get('item_id')?.touched && form.get('item_id')?.hasError('required')) {
+              <mat-error>Selecciona un servicio</mat-error>
+            }
+          </mat-form-field>
         </div>
-        @for (srv of filteredServices; track srv) {
-          <mat-option [value]="srv.id">
-            {{ srv.nombre }} - ${{ srv.precio }}
-          </mat-option>
-        }
-        @if (filteredServices.length === 0) {
-          <div class="no-results">No se encontraron servicios</div>
-        }
-      </mat-select>
-      @if (form.get('item_id')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <span>03</span>
+          <div><h3>Fecha y horario</h3><p>El final se ajusta con la duración configurada.</p></div>
+        </div>
+
+        <div class="field-grid schedule-grid">
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Inicio</mat-label>
+            <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
+            <input matInput type="datetime-local" formControlName="fecha_inicio" required>
+            @if (form.get('fecha_inicio')?.touched && form.get('fecha_inicio')?.hasError('required')) {
+              <mat-error>Selecciona fecha y hora</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Fin</mat-label>
+            <mat-icon matPrefix class="field-icon">schedule</mat-icon>
+            <input matInput type="datetime-local" formControlName="fecha_fin" required>
+            <mat-hint>Cálculo automático editable</mat-hint>
+            @if (form.get('fecha_fin')?.touched && form.get('fecha_fin')?.hasError('required')) {
+              <mat-error>Selecciona la hora final</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </section>
+
+      @if (isEdit) {
+        <section class="form-section compact-section">
+          <div class="section-heading">
+            <span>04</span>
+            <div><h3>Estado</h3><p>Actualiza el progreso de la atención.</p></div>
+          </div>
+          <mat-button-toggle-group formControlName="estado" aria-label="Estado de la cita" class="custom-toggle-group">
+            <mat-button-toggle value="PROGRAMADA"><mat-icon>event</mat-icon> Programada</mat-button-toggle>
+            <mat-button-toggle value="COMPLETADA"><mat-icon>task_alt</mat-icon> Completada</mat-button-toggle>
+            <mat-button-toggle value="CANCELADA"><mat-icon>event_busy</mat-icon> Cancelada</mat-button-toggle>
+          </mat-button-toggle-group>
+        </section>
       }
-    </mat-form-field>
 
-    <!-- SECCIÓN: CUÁNDO -->
-    <span class="section-label">Cuándo</span>
+      <section class="form-section notes-section">
+        <div class="section-heading">
+          <span>{{ isEdit ? '05' : '04' }}</span>
+          <div><h3>Detalles adicionales</h3><p>Incluye referencias enviadas por WhatsApp o indicaciones importantes.</p></div>
+        </div>
+        <mat-form-field appearance="outline" class="full-width polished-field notes-field">
+          <mat-label>Notas opcionales</mat-label>
+          <mat-icon matPrefix class="field-icon">notes</mat-icon>
+          <textarea matInput formControlName="notas" rows="3" placeholder="Ej. Clienta solicita un tono específico y envió foto por WhatsApp"></textarea>
+        </mat-form-field>
+      </section>
+    </div>
 
-    <mat-form-field appearance="outline" class="full-width date-field">
-      <mat-label>Inicio</mat-label>
-      <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
-      <input matInput type="datetime-local" formControlName="fecha_inicio" required>
-      @if (form.get('fecha_inicio')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width date-field">
-      <mat-label>Fin</mat-label>
-      <mat-icon matPrefix class="field-icon">calendar_today</mat-icon>
-      <input matInput type="datetime-local" formControlName="fecha_fin" required>
-      @if (form.get('fecha_fin')?.hasError('required')) {
-        <mat-error>Requerido</mat-error>
-      }
-    </mat-form-field>
-
-    @if (isEdit) {
-      <!-- SECCIÓN: ESTADO -->
-      <span class="section-label">Estado</span>
-      <div class="state-toggle-container">
-        <mat-button-toggle-group formControlName="estado" aria-label="Estado de la Cita" class="custom-toggle-group">
-          <mat-button-toggle value="PROGRAMADA">Programada</mat-button-toggle>
-          <mat-button-toggle value="COMPLETADA">Completada</mat-button-toggle>
-          <mat-button-toggle value="CANCELADA">Cancelada</mat-button-toggle>
-        </mat-button-toggle-group>
+    <aside class="appointment-summary" aria-label="Resumen de la cita">
+      <span class="summary-eyebrow">Resumen</span>
+      <h3>Vista rápida</h3>
+      <div class="summary-person">
+        <span class="summary-avatar">{{ selectedClientName().charAt(0) || '?' }}</span>
+        <div><small>Clienta</small><strong>{{ selectedClientName() }}</strong></div>
       </div>
-    }
-
-    <!-- SECCIÓN: NOTAS -->
-    <span class="section-label">Notas (Opcional)</span>
-    <mat-form-field appearance="outline" class="full-width">
-      <textarea matInput formControlName="notas" rows="3" placeholder="Agrega cualquier detalle relevante"></textarea>
-    </mat-form-field>
-
+      <div class="summary-list">
+        <div><mat-icon>content_cut</mat-icon><span><small>Servicio</small><strong>{{ selectedServiceName() }}</strong></span></div>
+        <div><mat-icon>badge</mat-icon><span><small>Profesional</small><strong>{{ selectedProfessionalName() }}</strong></span></div>
+        <div><mat-icon>calendar_month</mat-icon><span><small>Fecha</small><strong>{{ appointmentDateLabel() }}</strong></span></div>
+        <div><mat-icon>schedule</mat-icon><span><small>Horario</small><strong>{{ appointmentTimeLabel() }}</strong></span></div>
+      </div>
+      <div class="duration-card">
+        <span><mat-icon>timer</mat-icon> Tiempo reservado</span>
+        <strong>{{ appointmentDurationLabel() }}</strong>
+      </div>
+      <p class="summary-note"><mat-icon>sync</mat-icon> Al guardar, el horario se bloqueará también para SIDRO.</p>
+    </aside>
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions-premium">
   @if (isEdit) {
-    <button mat-button color="warn" class="btn-delete" (click)="eliminar()">
-      <mat-icon>delete_forever</mat-icon> Eliminar
+    <button mat-button color="warn" class="btn-delete" type="button" (click)="eliminar()" [disabled]="isSaving">
+      <mat-icon>delete_outline</mat-icon> Eliminar
     </button>
   }
   <span class="spacer"></span>
-  <button mat-stroked-button (click)="cancelar()">
-    <mat-icon>close</mat-icon> Cancelar
-  </button>
-  <button mat-flat-button color="primary" (click)="guardar()">
-    <mat-icon>{{ isEdit ? 'save' : 'event_available' }}</mat-icon>
-    {{ isEdit ? 'Actualizar' : 'Agendar Cita' }}
+  <button mat-stroked-button type="button" (click)="cancelar()" [disabled]="isSaving">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="form.invalid || isSaving">
+    <mat-icon [class.icon-spin]="isSaving">{{ isSaving ? 'sync' : isEdit ? 'save' : 'event_available' }}</mat-icon>
+    {{ isSaving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Agendar cita' }}
   </button>
 </mat-dialog-actions>

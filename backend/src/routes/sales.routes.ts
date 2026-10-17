@@ -1,20 +1,22 @@
 import { Router } from 'express';
+import { verifyToken } from '../middlewares/auth.middleware';
 // 👇 IMPORTA LAS NUEVAS FUNCIONES AQUÍ
-import { 
-    createSale, 
-    getSales, 
-    getSalesByRange, 
-    getSalesSummary, 
-    getSalesByClient, 
-    getSaleWithDetails, 
+import {
+    createSale,
+    getSales,
+    getSalesByRange,
+    getSalesSummary,
+    getSalesByClient,
+    getSaleWithDetails,
     getSaleDetailsBatch,
-    getSalesByItem, 
+    getSalesByItem,
     getReceiptsByClient,
     getDebtors,      // <--- NUEVO
     registerPayment  // <--- NUEVO
 } from '../controllers/sales.controller';
 
 const router = Router();
+router.use(verifyToken);
 
 // ... tus rutas existentes ...
 router.get('/', getSales);
@@ -31,6 +33,6 @@ router.get('/by-item/:itemId', getSalesByItem);
 router.get('/receipt-by-client/:clientId', getReceiptsByClient);
 router.post('/details/batch', getSaleDetailsBatch);
 router.get('/:id', getSaleWithDetails);
-router.post('/', createSale); 
+router.post('/', createSale);
 
 export default router;

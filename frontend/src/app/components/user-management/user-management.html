@@ -1,0 +1,170 @@
+<main class="users-page animate-fade-in">
+  <section class="users-hero" aria-labelledby="users-title">
+    <div class="hero-copy">
+      <span class="eyebrow"><mat-icon>admin_panel_settings</mat-icon> Seguridad del POS</span>
+      <h1 id="users-title">Usuarios y permisos</h1>
+      <p>Decide quién puede administrar la configuración y quién utiliza el sistema como colaborador.</p>
+    </div>
+
+    <div class="hero-lock" aria-hidden="true">
+      <mat-icon>shield_lock</mat-icon>
+    </div>
+  </section>
+
+  <section class="summary-grid" aria-label="Resumen de cuentas">
+    <article class="summary-card">
+      <span class="summary-icon"><mat-icon>group</mat-icon></span>
+      <div><strong>{{ users.length }}</strong><span>Cuentas registradas</span></div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon active"><mat-icon>verified_user</mat-icon></span>
+      <div><strong>{{ activeUsers }}</strong><span>Cuentas activas</span></div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon admin"><mat-icon>workspace_premium</mat-icon></span>
+      <div><strong>{{ adminUsers }}</strong><span>Administradores</span></div>
+    </article>
+  </section>
+
+  <section class="security-note">
+    <span class="note-icon"><mat-icon>lock</mat-icon></span>
+    <div>
+      <strong>La cuenta <code>admin</code> es la administradora principal</strong>
+      <p>Su rol y acceso están protegidos. Ningún cambio de esta pantalla puede desactivarla ni quitarle permisos.</p>
+    </div>
+  </section>
+
+  <section class="users-panel" aria-labelledby="accounts-title">
+    <header class="panel-header">
+      <div>
+        <span class="panel-kicker">Control de acceso</span>
+        <h2 id="accounts-title">Cuentas del equipo</h2>
+        <p>Los cambios se aplican en el backend inmediatamente.</p>
+      </div>
+
+      <label class="search-box">
+        <span class="sr-only">Buscar cuenta o profesional</span>
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          [(ngModel)]="query"
+          placeholder="Buscar cuenta"
+          autocomplete="off"
+        >
+        @if (query) {
+          <button type="button" aria-label="Limpiar búsqueda" (click)="query = ''">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </label>
+    </header>
+
+    @if (actionMessage) {
+      <div class="feedback success" role="status">
+        <mat-icon>check_circle</mat-icon><span>{{ actionMessage }}</span>
+        <button type="button" aria-label="Cerrar mensaje" (click)="actionMessage = ''"><mat-icon>close</mat-icon></button>
+      </div>
+    }
+
+    @if (actionError) {
+      <div class="feedback error" role="alert">
+        <mat-icon>error_outline</mat-icon><span>{{ actionError }}</span>
+        <button type="button" aria-label="Cerrar mensaje" (click)="actionError = ''"><mat-icon>close</mat-icon></button>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="state-panel" role="status">
+        <mat-spinner diameter="38"></mat-spinner>
+        <h3>Cargando usuarios</h3>
+        <p>Consultando las cuentas autorizadas del POS.</p>
+      </div>
+    } @else if (loadError) {
+      <div class="state-panel error-state" role="alert">
+        <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
+        <h3>No se pudieron cargar las cuentas</h3>
+        <p>{{ loadError }}</p>
+        <button mat-stroked-button type="button" (click)="loadUsers()"><mat-icon>refresh</mat-icon> Reintentar</button>
+      </div>
+    } @else if (!filteredUsers.length) {
+      <div class="state-panel">
+        <span class="state-icon"><mat-icon>person_search</mat-icon></span>
+        <h3>Sin coincidencias</h3>
+        <p>Prueba con otro usuario o nombre de profesional.</p>
+      </div>
+    } @else {
+      <div class="users-grid">
+        @for (user of filteredUsers; track user.id) {
+          <article class="user-card" [class.protected]="isProtected(user)" [class.inactive]="!user.active">
+            <header class="user-identity">
+              <span class="avatar">{{ initials(user) }}</span>
+              <div class="identity-copy">
+                <div class="name-row">
+                  <h3>{{ user.username }}</h3>
+                  @if (isCurrentUser(user)) { <span class="you-badge">Tu cuenta</span> }
+                </div>
+                <p>{{ user.employee_name || 'Cuenta sin profesional vinculado' }}</p>
+              </div>
+              <span class="status" [class.off]="!user.active">
+                <i></i>{{ user.active ? 'Activa' : 'Inactiva' }}
+              </span>
+            </header>
+
+            <div class="access-fields">
+              <label>
+                <span>Rol</span>
+                <select
+                  [ngModel]="draftFor(user).role"
+                  (ngModelChange)="setRole(user, $event)"
+                  [disabled]="isProtected(user) || isSaving(user)"
+                >
+                  <option value="admin">Administrador</option>
+                  <option value="user">Colaborador</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Acceso</span>
+                <select
+                  [ngModel]="draftFor(user).active ? 'active' : 'inactive'"
+                  (ngModelChange)="setActive(user, $event)"
+                  [disabled]="isProtected(user) || isSaving(user)"
+                >
+                  <option value="active">Permitido</option>
+                  <option value="inactive">Bloqueado</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="role-explanation">
+              <mat-icon>{{ draftFor(user).role === 'admin' ? 'admin_panel_settings' : 'badge' }}</mat-icon>
+              <p>
+                @if (draftFor(user).role === 'admin') {
+                  Puede gestionar usuarios, permisos y la configuración de SIDRO.
+                } @else {
+                  Puede trabajar en el POS sin administrar usuarios ni la configuración de SIDRO.
+                }
+              </p>
+            </div>
+
+            <footer class="card-actions">
+              @if (isPrimaryAdmin(user)) {
+                <span class="protected-label"><mat-icon>lock</mat-icon> Administradora principal</span>
+              } @else if (isCurrentUser(user)) {
+                <span class="protected-label"><mat-icon>verified_user</mat-icon> Protegida durante tu sesión</span>
+              } @else {
+                <button mat-button type="button" (click)="reset(user)" [disabled]="!hasChanges(user) || isSaving(user)">
+                  Cancelar
+                </button>
+                <button mat-flat-button class="save-button" type="button" (click)="save(user)" [disabled]="!hasChanges(user) || isSaving(user)">
+                  @if (isSaving(user)) { <mat-spinner diameter="18"></mat-spinner> } @else { <mat-icon>save</mat-icon> }
+                  Guardar cambios
+                </button>
+              }
+            </footer>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>

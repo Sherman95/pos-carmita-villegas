@@ -1,47 +1,173 @@
-<div class="content-container animate-fade-in">
-  <div class="header-section">
-    <div class="header-content">
-      <h1 class="brand-text-light"><mat-icon>group</mat-icon> Personal / Profesionales</h1>
-      <p class="brand-text-light">Administra las empleadas que aparecerán en el calendario</p>
+<main class="professionals-page animate-fade-in">
+  <section class="professionals-hero" aria-labelledby="professionals-title">
+    <div class="hero-copy">
+      <span class="eyebrow"><mat-icon>groups</mat-icon> Gestión del equipo</span>
+      <h1 id="professionals-title">Profesionales</h1>
+      <p>Organiza al personal que atiende y aparece disponible en tu agenda.</p>
     </div>
-    <button mat-raised-button color="accent" (click)="openDialog()">
-      <mat-icon>person_add</mat-icon> Nueva Profesional
+
+    <button mat-flat-button class="primary-action" type="button" (click)="openDialog()">
+      <mat-icon>person_add</mat-icon>
+      Nueva profesional
     </button>
-  </div>
+  </section>
 
-  <div class="table-container mat-elevation-z8">
-    <table mat-table [dataSource]="dataSource">
-      
-      <!-- Nombre Column -->
-      <ng-container matColumnDef="nombre">
-        <th mat-header-cell *matHeaderCellDef> Nombre </th>
-        <td mat-cell *matCellDef="let element"> {{element.nombre}} </td>
-      </ng-container>
+  <section class="summary-grid" aria-label="Resumen del equipo">
+    <article class="summary-card">
+      <span class="summary-icon"><mat-icon>badge</mat-icon></span>
+      <div>
+        <strong>{{ dataSource.length }}</strong>
+        <span>Profesionales</span>
+      </div>
+    </article>
 
-      <!-- Telefono Column -->
-      <ng-container matColumnDef="telefono">
-        <th mat-header-cell *matHeaderCellDef> Teléfono </th>
-        <td mat-cell *matCellDef="let element"> {{element.telefono || 'Sin registrar'}} </td>
-      </ng-container>
+    <article class="summary-card">
+      <span class="summary-icon active"><mat-icon>verified</mat-icon></span>
+      <div>
+        <strong>{{ activeEmployees }}</strong>
+        <span>Activas</span>
+      </div>
+    </article>
 
-      <!-- Acciones Column -->
-      <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef> Acciones </th>
-        <td mat-cell *matCellDef="let element">
-          <button mat-icon-button color="primary" (click)="openDialog(element)">
-            <mat-icon>edit</mat-icon>
+    <article class="summary-card">
+      <span class="summary-icon phone"><mat-icon>phone_in_talk</mat-icon></span>
+      <div>
+        <strong>{{ employeesWithPhone }}</strong>
+        <span>Con teléfono</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="team-panel" aria-labelledby="team-list-title">
+    <header class="panel-header">
+      <div>
+        <span class="panel-kicker">Directorio</span>
+        <h2 id="team-list-title">Tu equipo</h2>
+        <p>Consulta y actualiza los datos de cada profesional.</p>
+      </div>
+
+      <label class="search-box">
+        <span class="sr-only">Buscar por nombre o teléfono</span>
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar profesional"
+          autocomplete="off"
+        >
+        @if (searchTerm) {
+          <button type="button" aria-label="Limpiar búsqueda" (click)="searchTerm = ''">
+            <mat-icon>close</mat-icon>
           </button>
-        </td>
-      </ng-container>
+        }
+      </label>
+    </header>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="3" style="text-align: center; padding: 2rem;">
-          No hay profesionales registradas. Haz clic en "Nueva Profesional".
-        </td>
-      </tr>
-    </table>
-  </div>
-</div>
+    @if (loading) {
+      <div class="state-panel" role="status">
+        <span class="state-icon loading"><mat-icon>sync</mat-icon></span>
+        <h3>Cargando profesionales</h3>
+        <p>Estamos preparando la información de tu equipo.</p>
+      </div>
+    } @else if (loadError) {
+      <div class="state-panel error" role="alert">
+        <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
+        <h3>No se pudo cargar el equipo</h3>
+        <p>{{ loadError }}</p>
+        <button mat-stroked-button type="button" (click)="loadEmployees()">
+          <mat-icon>refresh</mat-icon> Reintentar
+        </button>
+      </div>
+    } @else if (!filteredEmployees.length) {
+      <div class="state-panel">
+        <span class="state-icon"><mat-icon>{{ searchTerm ? 'person_search' : 'group_add' }}</mat-icon></span>
+        <h3>{{ searchTerm ? 'Sin coincidencias' : 'Aún no hay profesionales' }}</h3>
+        <p>
+          {{ searchTerm
+            ? 'Prueba con otro nombre o número de teléfono.'
+            : 'Agrega la primera profesional para comenzar a organizar tu agenda.' }}
+        </p>
+        @if (!searchTerm) {
+          <button mat-flat-button color="primary" type="button" (click)="openDialog()">
+            <mat-icon>person_add</mat-icon> Agregar profesional
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="desktop-table">
+        <table mat-table [dataSource]="filteredEmployees">
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Profesional</th>
+            <td mat-cell *matCellDef="let employee">
+              <div class="professional-cell">
+                <span class="mini-avatar">{{ employeeInitials(employee.nombre) }}</span>
+                <div>
+                  <strong>{{ employee.nombre }}</strong>
+                  <span>Atención en agenda</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="telefono">
+            <th mat-header-cell *matHeaderCellDef>Contacto</th>
+            <td mat-cell *matCellDef="let employee">
+              @if (employee.telefono) {
+                <a class="phone-link" [href]="'tel:' + employee.telefono">
+                  <mat-icon>phone</mat-icon>{{ employee.telefono }}
+                </a>
+              } @else {
+                <span class="muted-value">Sin registrar</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let employee">
+              <span class="status-pill" [class.inactive]="employee.active === false">
+                <span></span>{{ employee.active === false ? 'Inactiva' : 'Activa' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef><span class="sr-only">Acciones</span></th>
+            <td mat-cell *matCellDef="let employee" class="action-cell">
+              <button mat-stroked-button type="button" (click)="openDialog(employee)">
+                <mat-icon>edit</mat-icon> Editar
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <div class="mobile-cards">
+        @for (employee of filteredEmployees; track employee.id) {
+          <article class="professional-card">
+            <div class="card-topline">
+              <span class="mini-avatar">{{ employeeInitials(employee.nombre) }}</span>
+              <span class="status-pill" [class.inactive]="employee.active === false">
+                <span></span>{{ employee.active === false ? 'Inactiva' : 'Activa' }}
+              </span>
+            </div>
+            <h3>{{ employee.nombre }}</h3>
+            @if (employee.telefono) {
+              <a class="phone-link" [href]="'tel:' + employee.telefono">
+                <mat-icon>phone</mat-icon>{{ employee.telefono }}
+              </a>
+            } @else {
+              <span class="muted-value"><mat-icon>phone_disabled</mat-icon> Sin teléfono</span>
+            }
+            <button mat-stroked-button type="button" (click)="openDialog(employee)">
+              <mat-icon>edit</mat-icon> Editar información
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>

@@ -22,22 +22,27 @@ export class ProfileComponent implements OnInit {
   user = signal<{ id: string; username: string; role: string; tax_rate?: number } | null>(null);
   username = signal('');
   role = signal('');
-  message = signal('');
-  
+  businessMessage = signal('');
+  businessMessageType = signal<'success' | 'error' | 'info'>('info');
+  accountMessage = signal('');
+  accountMessageType = signal<'success' | 'error' | 'info'>('info');
+  savingBusiness = signal(false);
+  savingAccount = signal(false);
+
   // Datos del negocio (Visuales)
   business = signal<BusinessSettings>({
-    name: '',
+    name: 'Carmita Villegas',
     ruc: '',
-    address: '',
+    address: 'Piñas, El Oro',
     phone: '',
-    taxRate: 0 
+    taxRate: 0
   });
-  
+
   taxRateInput = signal<number>(0);
 
   constructor(
-    private auth: AuthService, 
-    private router: Router, 
+    private auth: AuthService,
+    private router: Router,
     private settings: SettingsService
   ) {}
 
@@ -48,7 +53,7 @@ export class ProfileComponent implements OnInit {
   cargarDatos() {
     // 1. Cargar Usuario (Desde la memoria del Auth - Base de Datos)
     const currentUser: any = this.auth.currentUser(); // Tipado any para acceder a campos nuevos
-    
+
     if (currentUser) {
       this.user.set(currentUser);
       this.username.set(currentUser.username);
@@ -58,13 +63,13 @@ export class ProfileComponent implements OnInit {
       const taxFromDB = Number(currentUser.tax_rate || 0);
       this.taxRateInput.set(taxFromDB);
 
-      // 🔥 CAMBIO CRÍTICO: 
+      // 🔥 CAMBIO CRÍTICO:
       // Si la BD trae datos del negocio, úsalos. Si no, usa valores vacíos.
       // Ya no dependemos solo del localStorage.
       this.business.set({
-        name: currentUser.business_name || '',
+        name: currentUser.business_name || 'Carmita Villegas',
         ruc: currentUser.business_ruc || '',
-        address: currentUser.business_address || '',
+        address: currentUser.business_address || 'Piñas, El Oro',
         phone: currentUser.business_phone || '',
         taxRate: taxFromDB
       });
@@ -74,24 +79,31 @@ export class ProfileComponent implements OnInit {
   // Guardar Nombre de Usuario
   save() {
     const nextUsername = this.username().trim();
-    
+
     if (!nextUsername) {
-      this.message.set('Completa el usuario');
+      this.accountMessageType.set('error');
+      this.accountMessage.set('Completa el nombre de usuario.');
       return;
     }
 
-    this.message.set('Guardando nombre... ⏳');
+    this.savingAccount.set(true);
+    this.accountMessageType.set('info');
+    this.accountMessage.set('Guardando nombre de usuario...');
 
-    this.auth.updateProfile({ 
+    this.auth.updateProfile({
       username: nextUsername,
-      tax_rate: this.taxRateInput() 
+      tax_rate: this.taxRateInput()
     }).subscribe({
       next: () => {
-        this.message.set('Nombre actualizado en la nube ✅');
+        this.savingAccount.set(false);
+        this.accountMessageType.set('success');
+        this.accountMessage.set('Nombre de usuario actualizado correctamente.');
       },
       error: (err) => {
         console.error(err);
-        this.message.set('Error al guardar nombre ❌');
+        this.savingAccount.set(false);
+        this.accountMessageType.set('error');
+        this.accountMessage.set('No se pudo guardar el nombre. Intenta nuevamente.');
       }
     });
   }
@@ -99,20 +111,22 @@ export class ProfileComponent implements OnInit {
   // Guardar Datos del Negocio e IVA
   saveBusiness() {
     const current = this.business();
-    const nuevaTasa = this.taxRateInput(); 
+    const nuevaTasa = this.taxRateInput();
 
     // 1. Guardamos configuración visual en Local (SettingsService)
     const nextSettings: BusinessSettings = {
-      name: current.name?.trim() || 'Negocio',
+      name: current.name?.trim() || 'Carmita Villegas',
       ruc: current.ruc?.trim() || '9999999999001',
-      address: current.address?.trim() || 'Dirección',
+      address: current.address?.trim() || 'Piñas, El Oro',
       phone: current.phone?.trim() || '0999999999',
       taxRate: nuevaTasa
     };
     this.settings.update(nextSettings);
-    
+
     // 2. 🔥 EL GRAN FIX: Enviamos TODO a la Base de Datos
-    this.message.set('Sincronizando con la nube... ☁️');
+    this.savingBusiness.set(true);
+    this.businessMessageType.set('info');
+    this.businessMessage.set('Sincronizando los datos del negocio...');
 
     // Mapeamos los nombres del formulario (name, ruc) a los de la BD (business_name, business_ruc)
     const payload = {
@@ -127,11 +141,15 @@ export class ProfileComponent implements OnInit {
     this.auth.updateProfile(payload).subscribe({
       next: (resp) => {
         console.log('✅ Respuesta del servidor:', resp);
-        this.message.set('¡Guardado y Sincronizado! ✅');
+        this.savingBusiness.set(false);
+        this.businessMessageType.set('success');
+        this.businessMessage.set('Datos guardados y sincronizados correctamente.');
       },
       error: (err) => {
         console.error('Error guardando en nube', err);
-        this.message.set('Error de conexión ⚠️');
+        this.savingBusiness.set(false);
+        this.businessMessageType.set('error');
+        this.businessMessage.set('No se pudo sincronizar. Revisa tu conexión e intenta nuevamente.');
       }
     });
   }
@@ -139,5 +157,28 @@ export class ProfileComponent implements OnInit {
   logout() {
     this.auth.logout();
     this.router.navigateByUrl('/login');
+  }
+
+  businessInitials(): string {
+    return (this.business().name || 'Carmita Villegas')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase();
+  }
+
+  profileCompletion(): number {
+    const current = this.business();
+    const completed = [
+      current.name,
+      current.ruc,
+      current.address,
+      current.phone,
+      this.username()
+    ].filter(value => String(value || '').trim()).length;
+
+    return Math.round((completed / 5) * 100);
   }
 }

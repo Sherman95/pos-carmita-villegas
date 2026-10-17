@@ -1,8 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import pool from './database/db'; 
+import helmet from 'helmet';
+import { sensitiveRateLimiter, startRateLimitCleanup } from './middlewares/rate-limiters';
+import pool from './database/db';
+import { initRateLimitTable } from './database/migrate_rate_limits';
+import { ensurePrimaryAdminRole } from './database/migrate_user_roles';
 import itemsRoutes from './routes/items.routes';
-import salesRoutes from './routes/sales.routes'; 
+import salesRoutes from './routes/sales.routes';
 import clientsRoutes from './routes/clients.routes';
 import authRoutes from './routes/auth.routes';
 import expensesRoutes from './routes/expenses.routes';
@@ -13,11 +17,50 @@ import appointmentsRoutes from './routes/appointments.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const jwtSecret = process.env.JWT_SECRET;
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:4200,http://localhost:4201')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+if (!jwtSecret || jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET es obligatorio y debe tener al menos 32 caracteres');
+}
+if (isProduction && !process.env.CORS_ORIGINS) {
+    throw new Error('CORS_ORIGINS es obligatorio en producción');
+}
+
+// Proxy handling is opt-in. Without TRUST_PROXY, Express ignores
+// X-Forwarded-For and rate limits key on the real socket address.
+const trustProxy = process.env.TRUST_PROXY;
+if (trustProxy !== undefined && trustProxy.trim() !== '') {
+    const hops = Number(trustProxy);
+    if (!Number.isInteger(hops) || hops < 0) {
+        throw new Error('TRUST_PROXY debe ser un entero >= 0 (número de proxies de confianza)');
+    }
+    app.set('trust proxy', hops);
+}
 
 // LOG 1: Inicio del servidor
 console.log(`[SERVER] 🚀 Iniciando servidor en entorno: ${process.env.NODE_ENV || 'development'}`);
 
-app.use(cors());
+app.use(cors({
+    origin: (origin, callback) => {
+        // En desarrollo se acepta cualquier puerto local (ng serve puede
+        // arrancar en un puerto distinto al 4200/4201). Producción sigue
+        // limitada estrictamente a CORS_ORIGINS.
+        const isLocalDevOrigin = !isProduction && origin &&
+            /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+        if (!origin || allowedOrigins.includes(origin) || isLocalDevOrigin) {
+            callback(null, true);
+            return;
+        }
+        callback(null, false);
+    }
+}));
+app.use(helmet());
+app.use(sensitiveRateLimiter);
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
@@ -40,7 +83,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Rutas
 console.log('[SERVER] 📂 Cargando rutas...');
 app.use('/api/items', itemsRoutes);
-app.use('/api/sales', salesRoutes); 
+app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expensesRoutes);
@@ -49,13 +92,20 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/employees', employeesRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 
+// SIDRO Routes
+import sidroRoutes from './routes/sidro.routes';
+import adminSidroRoutes from './routes/adminSidro.routes';
+
+app.use('/api/sidro', sidroRoutes);
+app.use('/api/admin/sidro', adminSidroRoutes);
+
 // Ruta Ping (Para UptimeRobot)
 app.get('/ping', async (req: Request, res: Response) => {
     try {
         // Hacemos una consulta real para asegurar que la BD no esté dormida
         const result = await pool.query('SELECT NOW()');
-        res.json({ 
-            mensaje: 'Pong! 🏓 API activa', 
+        res.json({
+            mensaje: 'Pong! 🏓 API activa',
             hora_db: result.rows[0].now,
             uptime: process.uptime() // Cuántos segundos lleva prendido el server
         });
@@ -71,7 +121,15 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(PORT, () => {
+import { startGoogleCalendarWorker } from './workers/googleCalendarWorker';
+import { initExpenseCategoriesTable } from './database/migrate_expense_categories';
+
+app.listen(PORT, async () => {
     console.log(`[SERVER] 📡 Escuchando en http://localhost:${PORT}`);
     console.log(`[SERVER] 🕒 Hora del sistema: ${new Date().toLocaleString()}`);
+    await initExpenseCategoriesTable();
+    await initRateLimitTable();
+    await ensurePrimaryAdminRole();
+    startRateLimitCleanup();
+    startGoogleCalendarWorker();
 });

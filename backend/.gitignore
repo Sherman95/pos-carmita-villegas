@@ -23,3 +23,6 @@ google-credentials.json
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Respaldos y temporales locales
+backup_*.sql

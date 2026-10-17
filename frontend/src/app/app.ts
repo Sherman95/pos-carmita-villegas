@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 
@@ -23,10 +23,21 @@ import { AuthService } from './services/auth.service';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit {
   @ViewChild('sidenav') sidenav!: MatSidenav;
 
   constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    if (this.authService.getToken()) {
+      this.authService.refreshCurrentUser().subscribe({
+        error: () => {
+          // El interceptor gestiona sesiones vencidas; ante un fallo de red
+          // conservamos temporalmente la sesión local existente.
+        }
+      });
+    }
+  }
 
   get isAuthenticated(): boolean {
     return this.authService.currentUser() !== null;

@@ -6,9 +6,14 @@
       <div class="amount">{{ totalAmount | currency }}</div>
     </div>
 
-    <button mat-fab extended color="primary" (click)="openAddDialog()">
-      <mat-icon>add</mat-icon> Nuevo Gasto
-    </button>
+    <div class="header-actions">
+      <button mat-stroked-button class="btn-manage-cats" (click)="openCategoriesDialog()">
+        <mat-icon>category</mat-icon> Categorías
+      </button>
+      <button mat-fab extended color="primary" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon> Nuevo Gasto
+      </button>
+    </div>
   </div>
 
   <div class="filters-section">
@@ -20,7 +25,7 @@
 
     <mat-form-field appearance="outline" class="search-field">
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Buscar (ej: Taxis, Cole...)" [(ngModel)]="searchTerm" (keyup)="applyFilters()">
+      <input matInput placeholder="Buscar (ej: Taxis, Cole, Publicidad...)" [(ngModel)]="searchTerm" (keyup)="applyFilters()">
     </mat-form-field>
   </div>
 
@@ -52,7 +57,7 @@
               <div class="col-info">
                 <div class="desc">{{ item.descripcion || 'Sin descripción' }}</div>
                 <div class="cat-badge" [ngClass]="getColor(item.categoria)">
-                  {{ item.categoria.replace('_', ' ') }}
+                  {{ getCategoryLabel(item.categoria) }}
                 </div>
               </div>
               <div class="col-method">

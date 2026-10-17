@@ -1,22 +1,22 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http'; 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 interface LoginResponse {
   token: string;
-  user: { 
-    id: string; 
-    username: string; 
+  user: {
+    id: string;
+    username: string;
     role: string;
-    tax_rate?: number; 
+    tax_rate?: number;
   };
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = `${environment.apiBaseUrl}/api/auth`;
-  
+
   currentUser = signal<LoginResponse['user'] | null>(this.getStoredUser());
 
   constructor(private http: HttpClient) {}
@@ -27,8 +27,8 @@ export class AuthService {
         resp.user.tax_rate = Number(resp.user.tax_rate || 0);
 
         localStorage.setItem('token', resp.token);
-        localStorage.setItem('currentUser', JSON.stringify(resp.user)); 
-        
+        localStorage.setItem('currentUser', JSON.stringify(resp.user));
+
         this.currentUser.set(resp.user);
       })
     );
@@ -40,9 +40,28 @@ export class AuthService {
     this.currentUser.set(null);
   }
 
+  refreshCurrentUser() {
+    return this.http.get<{ user: LoginResponse['user'] }>(`${this.apiUrl}/me`).pipe(
+      tap((resp) => {
+        if (resp.user) {
+          resp.user.tax_rate = Number(resp.user.tax_rate || 0);
+          this.setUserLocal(resp.user);
+        }
+      })
+    );
+  }
+
+  isAdmin(): boolean {
+    const user = this.currentUser();
+    const role = user?.role?.trim().toLowerCase();
+    const username = user?.username?.trim().toLowerCase();
+
+    return role === 'admin' || username === 'admin';
+  }
+
   // ✅ MÉTODO CORREGIDO: Ahora SÍ construye y envía la cabecera con el Token
   updateProfile(data: { tax_rate: number; username?: string }) {
-    
+
     // 1. Recuperamos el token del almacenamiento local
     const token = this.getToken();
 
@@ -53,7 +72,7 @@ export class AuthService {
 
     // 3. Enviamos la petición PUT incluyendo los 'headers'
     return this.http.put<{ message: string, user: LoginResponse['user'] }>(
-      `${this.apiUrl}/profile`, 
+      `${this.apiUrl}/profile`,
       data,
       { headers } // 👈 ¡ESTA ES LA LLAVE QUE FALTABA!
     ).pipe(

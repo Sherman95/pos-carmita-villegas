@@ -19,7 +19,7 @@ $border-color: #e2e8f0;
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px 0;
-  
+
   h3 {
     margin: 0;
     font-size: 1.1rem;
@@ -28,7 +28,7 @@ $border-color: #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  
+
   mat-icon { color: $gray-text; opacity: 0.7; }
 }
 
@@ -68,7 +68,7 @@ $border-color: #e2e8f0;
     margin: 0;
 
     &::placeholder { color: #cbd5e1; font-weight: 300; }
-    
+
     /* Quitar flechas del input number */
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -105,7 +105,7 @@ $border-color: #e2e8f0;
     border-right: 1px solid $border-color;
     font-size: 0.95rem;
     color: #64748b;
-    
+
     ::ng-deep .mat-button-toggle-label-content {
       line-height: 40px;
       display: flex;
@@ -120,7 +120,7 @@ $border-color: #e2e8f0;
       background-color: $vino-light; // Fondo suave vino
       color: $vino-tinto !important;
       font-weight: 600;
-      
+
       mat-icon { color: $vino-tinto; }
     }
   }
@@ -132,6 +132,34 @@ $border-color: #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 15px;
+
+  .category-field-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .btn-manage-cats-inline {
+      align-self: flex-end;
+      margin-top: -12px;
+      margin-bottom: 4px;
+      font-size: 0.76rem;
+      color: $vino-tinto;
+      height: 28px;
+      line-height: 28px;
+      padding: 0 8px;
+
+      mat-icon {
+        font-size: 15px;
+        width: 15px;
+        height: 15px;
+        margin-right: 4px;
+      }
+
+      &:hover {
+        background-color: $vino-light;
+      }
+    }
+  }
 
   .pro-field {
     width: 100%;
@@ -153,7 +181,7 @@ $border-color: #e2e8f0;
 
     // Quitar la linea de abajo fea
     ::ng-deep .mdc-line-ripple { display: none; }
-    
+
     // Iconos
     mat-icon { color: #94a3b8; margin-right: 8px; }
   }
@@ -163,7 +191,7 @@ $border-color: #e2e8f0;
 .dialog-footer {
   padding: 20px 24px 24px;
   border-top: 1px solid $border-color;
-  
+
   .submit-btn {
     width: 100%;
     height: 50px;

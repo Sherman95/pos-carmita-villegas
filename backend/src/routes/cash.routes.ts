@@ -1,16 +1,18 @@
 import { Router } from 'express';
+import { verifyToken } from '../middlewares/auth.middleware';
 
 // 👇 ASEGÚRATE DE IMPORTAR 'getClosingReport' AQUÍ
-import { 
-    getStatus, 
-    openRegister, 
-    getClosingDetails, 
-    closeRegister, 
-    getCashHistory, 
+import {
+    getStatus,
+    openRegister,
+    getClosingDetails,
+    closeRegister,
+    getCashHistory,
     getClosingReport // <--- ¡IMPORTANTE!
 } from '../controllers/cash.controller';
 
 const router = Router();
+router.use(verifyToken);
 
 // Rutas
 router.get('/status', getStatus);

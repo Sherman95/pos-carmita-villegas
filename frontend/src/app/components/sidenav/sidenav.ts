@@ -21,7 +21,7 @@ import { MatDividerModule } from '@angular/material/divider';
   styleUrls: ['./sidenav.scss']
 })
 export class SidenavComponent {
-  
+
   // Evento para avisar al padre que cierre el menú
   @Output() closeMenu = new EventEmitter<void>();
 
@@ -38,6 +38,10 @@ export class SidenavComponent {
   // Función auxiliar para emitir el cierre
   onClose() {
     this.closeMenu.emit();
+  }
+
+  get isAdmin(): boolean {
+    return this.auth.isAdmin();
   }
 
   logout() {

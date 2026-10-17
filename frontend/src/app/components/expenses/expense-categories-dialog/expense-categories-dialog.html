@@ -1,0 +1,159 @@
+<div class="categories-dialog">
+
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="title-wrap">
+      <mat-icon class="header-icon">category</mat-icon>
+      <div>
+        <h3>Categorías de Gastos</h3>
+        <p class="subtitle">Administra los tipos de gastos del negocio y personales</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-body">
+
+    <!-- Form Section -->
+    <div class="form-card" [class.editing]="editingId">
+      <div class="form-header">
+        <span class="form-title">
+          <mat-icon>{{ editingId ? 'edit' : 'add_circle' }}</mat-icon>
+          {{ editingId ? 'Modificar Categoría' : 'Crear Nueva Categoría' }}
+        </span>
+        @if (editingId) {
+          <button mat-button color="warn" (click)="cancelEdit()" class="cancel-edit-btn">
+            <mat-icon>close</mat-icon> Cancelar Edición
+          </button>
+        }
+      </div>
+
+      <div class="form-grid">
+        <!-- Nombre -->
+        <mat-form-field appearance="outline" class="field-name">
+          <mat-label>Nombre de la Categoría</mat-label>
+          <input matInput [(ngModel)]="formModel.nombre" placeholder="Ej: Marketing y Redes, Combustible...">
+          <mat-icon matPrefix>label</mat-icon>
+        </mat-form-field>
+
+        <!-- Tipo: Local vs Personal -->
+        <div class="field-tipo">
+          <span class="label-tiny">Ámbito del Gasto</span>
+          <mat-button-toggle-group [(ngModel)]="formModel.tipo" class="tipo-toggles">
+            <mat-button-toggle value="LOCAL">
+              <mat-icon>store</mat-icon> 🏠 Local
+            </mat-button-toggle>
+            <mat-button-toggle value="PERSONAL">
+              <mat-icon>person</mat-icon> 👤 Personal
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <!-- Ícono -->
+        <mat-form-field appearance="outline" class="field-icon">
+          <mat-label>Ícono</mat-label>
+          <mat-select [(ngModel)]="formModel.icono">
+            @for (ico of availableIcons; track ico.name) {
+              <mat-option [value]="ico.name">
+                <mat-icon class="option-icon">{{ ico.name }}</mat-icon>
+                <span>{{ ico.label }}</span>
+              </mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>{{ formModel.icono || 'category' }}</mat-icon>
+        </mat-form-field>
+
+        <!-- Color -->
+        <mat-form-field appearance="outline" class="field-color">
+          <mat-label>Color</mat-label>
+          <mat-select [(ngModel)]="formModel.color">
+            @for (col of availableColors; track col.key) {
+              <mat-option [value]="col.key">
+                <span class="color-dot" [style.background-color]="col.hex"></span>
+                <span>{{ col.label }}</span>
+              </mat-option>
+            }
+          </mat-select>
+          <span matPrefix class="color-dot prefix-dot" [ngClass]="formModel.color || 'blue'"></span>
+        </mat-form-field>
+
+        <!-- Descripción -->
+        <mat-form-field appearance="outline" class="field-desc">
+          <mat-label>Descripción (Opcional)</mat-label>
+          <input matInput [(ngModel)]="formModel.descripcion" placeholder="Para qué se usa esta categoría...">
+          <mat-icon matPrefix>notes</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-flat-button color="primary" class="btn-save" (click)="saveCategory()" [disabled]="saving || !formModel.nombre">
+          <mat-icon>{{ editingId ? 'save' : 'add' }}</mat-icon>
+          {{ editingId ? 'Actualizar Categoría' : 'Guardar Nueva Categoría' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Category List Section -->
+    <div class="list-section">
+      <div class="list-header">
+        <h4>Categorías Registradas ({{ categories.length }})</h4>
+        <span class="hint">Puedes editar cualquier categoría o eliminar aquellas sin gastos asociados.</span>
+      </div>
+
+      @if (loading) {
+        <div class="loading-state">
+          <span>Cargando categorías...</span>
+        </div>
+      }
+
+      @if (!loading && categories.length === 0) {
+        <div class="empty-state">
+          <mat-icon>category</mat-icon>
+          <p>No hay categorías registradas.</p>
+        </div>
+      }
+
+      <div class="categories-grid">
+        @for (cat of categories; track cat.id) {
+          <div class="cat-item-card" [class.is-editing]="editingId === cat.id">
+            <div class="cat-icon-box" [ngClass]="cat.color || 'blue'">
+              <mat-icon>{{ cat.icono || 'category' }}</mat-icon>
+            </div>
+
+            <div class="cat-details">
+              <div class="cat-top">
+                <span class="cat-name">{{ cat.nombre }}</span>
+                <span class="type-pill" [class.local]="cat.tipo === 'LOCAL'" [class.personal]="cat.tipo === 'PERSONAL'">
+                  {{ cat.tipo === 'LOCAL' ? '🏠 Local' : '👤 Personal' }}
+                </span>
+              </div>
+              @if (cat.descripcion) {
+                <p class="cat-desc">{{ cat.descripcion }}</p>
+              }
+            </div>
+
+            <div class="cat-actions">
+              <button mat-icon-button (click)="editCategory(cat)" matTooltip="Editar" class="action-btn edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteCategory(cat)" matTooltip="Eliminar" class="action-btn delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+  </mat-dialog-content>
+
+  <!-- Footer -->
+  <div class="dialog-footer">
+    <button mat-stroked-button (click)="close()">
+      Cerrar
+    </button>
+  </div>
+
+</div>

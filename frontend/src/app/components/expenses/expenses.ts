@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, inject , ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,8 +13,9 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { ExpensesService } from '../../services/expenses';
-import { Expense, ExpensesResponse } from '../../models/expense.model';
+import { Expense, ExpensesResponse, ExpenseCategoryItem } from '../../models/expense.model';
 import { AddExpenseDialogComponent } from './add-expense-dialog/add-expense-dialog';
+import { ExpenseCategoriesDialogComponent } from './expense-categories-dialog/expense-categories-dialog';
 import { CashService } from '../../services/cash';
 
 // 1. Interfaz estricta para el grupo
@@ -36,8 +37,8 @@ interface CategoryConfig {
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule, FormsModule, 
-    MatButtonModule, MatIconModule, MatCardModule, 
+    CommonModule, FormsModule,
+    MatButtonModule, MatIconModule, MatCardModule,
     MatFormFieldModule, MatSelectModule, MatInputModule,
     MatDialogModule, MatTabsModule
   ],
@@ -45,13 +46,14 @@ interface CategoryConfig {
   styleUrls: ['./expenses.scss']
 })
 export class ExpensesComponent implements OnInit {
-  
+
   // Datos
-  allExpenses: Expense[] = []; 
-  groupedExpenses: ExpenseGroup[] = []; 
+  allExpenses: Expense[] = [];
+  groupedExpenses: ExpenseGroup[] = [];
+  categories: ExpenseCategoryItem[] = [];
   totalAmount = 0;
   loading = false;
-  
+
   // Filtros
   searchTerm: string = '';
   currentTab: 'ALL' | 'LOCAL' | 'PERSONAL' = 'ALL';
@@ -59,12 +61,11 @@ export class ExpensesComponent implements OnInit {
   // Inyecciones
   private cashService = inject(CashService);
   private router = inject(Router);
-  private expensesService = inject(ExpensesService); // Inyección moderna
+  private expensesService = inject(ExpensesService);
   private dialog = inject(MatDialog);
   private cd = inject(ChangeDetectorRef);
 
-  // Configuración Visual Centralizada
-  // Si añades una categoría nueva en BD, asegúrate de ponerla aquí o saldrá por defecto
+  // Configuración Visual Dinámica (con valores base por defecto)
   categoryConfig: Record<string, CategoryConfig> = {
     'SERVICIOS_BASICOS': { icon: 'lightbulb', color: 'orange', type: 'LOCAL' },
     'INSUMOS_LOCAL':     { icon: 'store', color: 'blue', type: 'LOCAL' },
@@ -76,7 +77,26 @@ export class ExpensesComponent implements OnInit {
   };
 
   ngOnInit() {
+    this.loadCategories();
     this.loadExpenses();
+  }
+
+  loadCategories() {
+    this.expensesService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats || [];
+        for (const c of this.categories) {
+          this.categoryConfig[c.codigo] = {
+            icon: c.icono || 'category',
+            color: c.color || 'blue',
+            type: c.tipo || 'LOCAL'
+          };
+        }
+        this.applyFilters();
+        this.cd.markForCheck();
+      },
+      error: (err) => console.error('Error cargando categorías:', err)
+    });
   }
 
   loadExpenses() {
@@ -84,25 +104,26 @@ export class ExpensesComponent implements OnInit {
     this.expensesService.getExpenses(undefined, undefined, undefined)
       .subscribe({
         next: (res: ExpensesResponse) => {
-          this.allExpenses = res.expenses || []; // Protección contra arrays nulos
-          this.applyFilters(); 
+          this.allExpenses = res.expenses || [];
+          this.applyFilters();
           this.loading = false;
+          this.cd.markForCheck();
         },
         error: (err: any) => {
           console.error('Error cargando gastos:', err);
           this.loading = false;
+          this.cd.markForCheck();
         }
       });
   }
 
-  // 🔥 EL CORAZÓN DE LA LÓGICA PRO
+  // 🔥 LÓGICA DE FILTRADO Y AGRUPACIÓN
   applyFilters() {
-    let filtered = [...this.allExpenses]; // Trabajamos sobre una copia
+    let filtered = [...this.allExpenses];
 
     // 1. Filtro por Pestaña (Local vs Personal)
     if (this.currentTab !== 'ALL') {
       filtered = filtered.filter(e => {
-        // Si la categoría no existe en el config, asumimos que es PERSONAL por seguridad
         const config = this.categoryConfig[e.categoria];
         const type = config ? config.type : 'PERSONAL';
         return type === this.currentTab;
@@ -112,47 +133,42 @@ export class ExpensesComponent implements OnInit {
     // 2. Filtro por Buscador
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(e => 
-        (e.descripcion || '').toLowerCase().includes(term) ||
-        (e.categoria || '').toLowerCase().includes(term)
-      );
+      filtered = filtered.filter(e => {
+        const descMatch = (e.descripcion || '').toLowerCase().includes(term);
+        const catLabel = this.getCategoryLabel(e.categoria).toLowerCase();
+        return descMatch || catLabel.includes(term) || (e.categoria || '').toLowerCase().includes(term);
+      });
     }
 
-    // 3. Agrupación por Fecha (Solución a los errores de TS)
+    // 3. Agrupación por Fecha
     const groups: { [key: string]: ExpenseGroup } = {};
 
     filtered.forEach(item => {
-      // A. Protección de Fecha: Si es null/undefined, usa HOY
       const rawDate = item.fecha ? new Date(item.fecha) : new Date();
-      
-      // B. Clave de agrupación (Ej: "Fri Feb 12 2026")
-      const dateKey = rawDate.toDateString(); 
-      
+      const dateKey = rawDate.toDateString();
+
       if (!groups[dateKey]) {
-        groups[dateKey] = { 
-          date: rawDate.toISOString(), // Guardamos string ISO para el HTML
-          total: 0, 
-          items: [] 
+        groups[dateKey] = {
+          date: rawDate.toISOString(),
+          total: 0,
+          items: []
         };
       }
-      
-      // C. Protección de Monto: Asegurar que sea número
-      const montoNum = Number(item.monto || 0);
 
+      const montoNum = Number(item.monto || 0);
       groups[dateKey].items.push(item);
       groups[dateKey].total += montoNum;
     });
 
     // 4. Ordenar Grupos (Del más reciente al más antiguo)
-    this.groupedExpenses = Object.values(groups).sort((a, b) => 
+    this.groupedExpenses = Object.values(groups).sort((a, b) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
     // 5. Calcular Total General Visible
     this.totalAmount = filtered.reduce((sum, item) => sum + Number(item.monto || 0), 0);
-    
-    // Forzar actualización de vista
-    this.cd.detectChanges();
+
+    this.cd.markForCheck();
   }
 
   // Cambio de pestañas
@@ -165,7 +181,7 @@ export class ExpensesComponent implements OnInit {
     this.applyFilters();
   }
 
-  // Abrir diálogo (Verifica caja primero)
+  // Abrir diálogo de nuevo gasto (Verifica caja primero)
   openAddDialog() {
     this.cashService.getStatus().subscribe(status => {
       if (!status.isOpen) {
@@ -177,39 +193,58 @@ export class ExpensesComponent implements OnInit {
           confirmButtonText: 'Ir a Abrir Caja',
           cancelButtonText: 'Cancelar'
         }).then((res) => {
-          if(res.isConfirmed) this.router.navigate(['/cash-control']);
+          if (res.isConfirmed) this.router.navigate(['/cash-control']);
         });
         return;
       }
 
-      const dialogRef = this.dialog.open(AddExpenseDialogComponent, { 
-        width: '400px', 
-        disableClose: true 
+      const dialogRef = this.dialog.open(AddExpenseDialogComponent, {
+        width: '450px',
+        disableClose: true
       });
-      
-      dialogRef.afterClosed().subscribe(result => { 
-        if (result) this.loadExpenses(); 
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.loadExpenses();
+          this.loadCategories();
+        }
       });
+    });
+  }
+
+  // Abrir diálogo CRUD de categorías
+  openCategoriesDialog() {
+    const dialogRef = this.dialog.open(ExpenseCategoriesDialogComponent, {
+      width: '650px',
+      maxWidth: '95vw',
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe(hasChanges => {
+      if (hasChanges) {
+        this.loadCategories();
+        this.loadExpenses();
+      }
     });
   }
 
   // Borrar gasto
   deleteExpense(id: string | undefined) {
     if (!id) return;
-    
+
     Swal.fire({
       title: '¿Borrar gasto?',
       text: 'Esta acción no se puede deshacer',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      confirmButtonText: 'Sí, borrar'
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
         this.expensesService.deleteExpense(id).subscribe({
           next: () => {
             this.loadExpenses();
-            // Opcional: Mostrar toast de éxito
           },
           error: () => Swal.fire('Error', 'No se pudo borrar el gasto', 'error')
         });
@@ -219,10 +254,15 @@ export class ExpensesComponent implements OnInit {
 
   // Helpers Visuales (Con valores por defecto)
   getIcon(cat: string): string {
-    return this.categoryConfig[cat]?.icon || 'paid';
+    return this.categoryConfig[cat]?.icon || 'category';
   }
 
   getColor(cat: string): string {
-    return this.categoryConfig[cat]?.color || 'grey';
+    return this.categoryConfig[cat]?.color || 'blue';
+  }
+
+  getCategoryLabel(catCode: string): string {
+    const found = this.categories.find(c => c.codigo === catCode);
+    return found ? found.nombre : (catCode || 'Otros').replace(/_/g, ' ');
   }
 }

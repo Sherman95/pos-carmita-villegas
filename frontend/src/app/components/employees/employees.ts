@@ -1,4 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef , ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,13 +12,34 @@ import { EmployeeDialogComponent } from './employee-dialog/employee-dialog';
   selector: 'app-employees',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [MatTableModule, MatButtonModule, MatIconModule, MatDialogModule],
+  imports: [FormsModule, MatTableModule, MatButtonModule, MatIconModule, MatDialogModule],
   templateUrl: './employees.html',
   styleUrls: ['./employees.scss']
 })
 export class EmployeesComponent implements OnInit {
-  displayedColumns: string[] = ['nombre', 'telefono', 'acciones'];
+  displayedColumns: string[] = ['nombre', 'telefono', 'estado', 'acciones'];
   dataSource: Employee[] = [];
+  searchTerm = '';
+  loading = true;
+  loadError = '';
+
+  get filteredEmployees(): Employee[] {
+    const query = this.searchTerm.trim().toLocaleLowerCase('es');
+    if (!query) return this.dataSource;
+
+    return this.dataSource.filter(employee =>
+      employee.nombre.toLocaleLowerCase('es').includes(query) ||
+      (employee.telefono || '').toLocaleLowerCase('es').includes(query)
+    );
+  }
+
+  get activeEmployees(): number {
+    return this.dataSource.filter(employee => employee.active !== false).length;
+  }
+
+  get employeesWithPhone(): number {
+    return this.dataSource.filter(employee => employee.telefono?.trim()).length;
+  }
 
   constructor(private employeeService: EmployeeService, private dialog: MatDialog, private cdr: ChangeDetectorRef) {}
 
@@ -25,16 +47,29 @@ export class EmployeesComponent implements OnInit {
     this.loadEmployees();
   }
 
-  loadEmployees() {
-    this.employeeService.getEmployees().subscribe(data => {
-      this.dataSource = data;
-      this.cdr.detectChanges();
+  loadEmployees(): void {
+    this.loading = true;
+    this.loadError = '';
+
+    this.employeeService.getEmployees().subscribe({
+      next: data => {
+        this.dataSource = data;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loading = false;
+        this.loadError = 'No pudimos cargar el equipo. Intenta nuevamente.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  openDialog(employee?: Employee) {
+  openDialog(employee?: Employee): void {
     const dialogRef = this.dialog.open(EmployeeDialogComponent, {
-      width: '400px',
+      width: '520px',
+      maxWidth: 'calc(100vw - 24px)',
+      panelClass: 'employee-dialog-panel',
       data: { employee: employee || null }
     });
 
@@ -43,5 +78,15 @@ export class EmployeesComponent implements OnInit {
         this.loadEmployees();
       }
     });
+  }
+
+  employeeInitials(name: string): string {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase() || 'PR';
   }
 }

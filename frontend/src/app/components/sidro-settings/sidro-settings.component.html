@@ -1,0 +1,296 @@
+<main class="sidro-settings-page">
+  <header class="sidro-hero">
+    <div class="hero-copy">
+      <span class="hero-eyebrow"><mat-icon>tune</mat-icon> Centro de configuración</span>
+      <h1>Configuración SIDRO</h1>
+      <p>Controla qué clientas, servicios y profesionales participan en las reservas en línea.</p>
+    </div>
+    <div class="hero-actions">
+      <span class="system-status"><i></i> Integración activa</span>
+      <button mat-stroked-button type="button" (click)="refreshAll()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar datos
+      </button>
+    </div>
+  </header>
+
+  <section class="overview-grid" aria-label="Resumen de configuración SIDRO">
+    <article class="overview-card accounts-overview">
+      <span class="overview-icon"><mat-icon>group</mat-icon></span>
+      <div>
+        <small>Cuentas SIDRO</small>
+        <strong>{{ accounts.length }}</strong>
+        <span>{{ pendingAccountsCount }} pendientes de vincular</span>
+      </div>
+    </article>
+    <article class="overview-card linked-overview">
+      <span class="overview-icon"><mat-icon>link</mat-icon></span>
+      <div>
+        <small>Clientas vinculadas</small>
+        <strong>{{ linkedAccountsCount }}</strong>
+        <span>Con historial compartido</span>
+      </div>
+    </article>
+    <article class="overview-card services-overview">
+      <span class="overview-icon"><mat-icon>spa</mat-icon></span>
+      <div>
+        <small>Servicios publicados</small>
+        <strong>{{ publishedServicesCount }}</strong>
+        <span>De {{ services.length }} servicios</span>
+      </div>
+    </article>
+    <article class="overview-card team-overview">
+      <span class="overview-icon"><mat-icon>badge</mat-icon></span>
+      <div>
+        <small>Profesionales activas</small>
+        <strong>{{ activeEmployeesCount }}</strong>
+        <span>Disponibles para configurar</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="settings-workspace">
+    <mat-tab-group class="sidro-tabs" animationDuration="220ms" mat-stretch-tabs="false">
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>account_tree</mat-icon>
+          <span>Vincular cuentas</span>
+          @if (pendingAccountsCount > 0) {
+            <b class="tab-counter warning">{{ pendingAccountsCount }}</b>
+          }
+        </ng-template>
+
+        <div class="tab-panel accounts-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">Identidad de clientas</span>
+              <h2>Conecta SIDRO con el historial del POS</h2>
+              <p>Cada cuenta se vincula una sola vez para que las reservas y visitas pertenezcan a la clienta correcta.</p>
+            </div>
+            <div class="panel-search compact-search">
+              <mat-icon>search</mat-icon>
+              <input [(ngModel)]="accountQuery" type="search" placeholder="Buscar cuenta o teléfono" aria-label="Buscar cuentas SIDRO">
+              @if (accountQuery) {
+                <button type="button" aria-label="Limpiar búsqueda" (click)="accountQuery = ''"><mat-icon>close</mat-icon></button>
+              }
+            </div>
+          </div>
+
+          <div class="filter-row" role="group" aria-label="Filtrar cuentas por estado">
+            <button type="button" [class.active]="accountFilter === 'all'" (click)="setAccountFilter('all')">
+              Todas <span>{{ accounts.length }}</span>
+            </button>
+            <button type="button" [class.active]="accountFilter === 'pending'" (click)="setAccountFilter('pending')">
+              Pendientes <span>{{ pendingAccountsCount }}</span>
+            </button>
+            <button type="button" [class.active]="accountFilter === 'linked'" (click)="setAccountFilter('linked')">
+              Vinculadas <span>{{ linkedAccountsCount }}</span>
+            </button>
+          </div>
+
+          @if (accountsLoading) {
+            <div class="loading-state"><mat-spinner diameter="34"></mat-spinner><span>Cargando cuentas SIDRO…</span></div>
+          } @else if (accountsError) {
+            <div class="feedback-state error-state">
+              <mat-icon>cloud_off</mat-icon>
+              <div><strong>No pudimos cargar las cuentas</strong><span>{{ accountsError }}</span></div>
+              <button mat-stroked-button type="button" (click)="loadAccounts()">Reintentar</button>
+            </div>
+          } @else if (filteredAccounts.length === 0) {
+            <div class="feedback-state empty-state">
+              <mat-icon>person_search</mat-icon>
+              <div><strong>No encontramos coincidencias</strong><span>Prueba con otro nombre, teléfono o estado.</span></div>
+            </div>
+          } @else {
+            <div class="desktop-account-table">
+              <table mat-table [dataSource]="filteredAccounts">
+                <ng-container matColumnDef="nombre_completo">
+                  <th mat-header-cell *matHeaderCellDef>Cuenta SIDRO</th>
+                  <td mat-cell *matCellDef="let acc">
+                    <div class="identity-cell">
+                      <span class="person-avatar">{{ (acc.nombre_completo || '?').charAt(0) }}</span>
+                      <div><strong>{{ acc.nombre_completo }}</strong><small>Cuenta digital</small></div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="telefono">
+                  <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+                  <td mat-cell *matCellDef="let acc"><span class="phone-value"><mat-icon>call</mat-icon>{{ acc.telefono || 'Sin teléfono' }}</span></td>
+                </ng-container>
+
+                <ng-container matColumnDef="client_nombre">
+                  <th mat-header-cell *matHeaderCellDef>Cliente en el POS</th>
+                  <td mat-cell *matCellDef="let acc">
+                    @if (acc.client_nombre) {
+                      <span class="link-status linked"><mat-icon>check_circle</mat-icon>{{ acc.client_nombre }}</span>
+                    } @else {
+                      <span class="link-status pending"><mat-icon>link_off</mat-icon>Pendiente</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Acción</th>
+                  <td mat-cell *matCellDef="let acc" class="action-cell">
+                    @if (acc.client_nombre) {
+                      <span class="completed-label"><mat-icon>verified</mat-icon> Vinculada</span>
+                    } @else {
+                      <button mat-flat-button color="primary" type="button" (click)="linkAccount(acc)">
+                        <mat-icon>add_link</mat-icon> Vincular
+                      </button>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="accountCols"></tr>
+                <tr mat-row *matRowDef="let row; columns: accountCols;" [class.pending-row]="!row.client_nombre"></tr>
+              </table>
+            </div>
+
+            <div class="mobile-account-list">
+              <article *ngFor="let acc of filteredAccounts; trackBy: trackById" class="account-card" [class.is-linked]="acc.client_nombre">
+                <div class="account-card-main">
+                  <span class="person-avatar">{{ (acc.nombre_completo || '?').charAt(0) }}</span>
+                  <div><strong>{{ acc.nombre_completo }}</strong><span><mat-icon>call</mat-icon>{{ acc.telefono || 'Sin teléfono' }}</span></div>
+                  <span class="mini-status" [class.linked]="acc.client_nombre">{{ acc.client_nombre ? 'Vinculada' : 'Pendiente' }}</span>
+                </div>
+                @if (acc.client_nombre) {
+                  <div class="linked-client"><mat-icon>account_circle</mat-icon><span><small>Cliente POS</small><strong>{{ acc.client_nombre }}</strong></span></div>
+                } @else {
+                  <button mat-flat-button color="primary" type="button" (click)="linkAccount(acc)"><mat-icon>add_link</mat-icon> Vincular con cliente POS</button>
+                }
+              </article>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>design_services</mat-icon>
+          <span>Servicios reservables</span>
+          <b class="tab-counter">{{ services.length }}</b>
+        </ng-template>
+
+        <div class="tab-panel services-settings-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">Catálogo en línea</span>
+              <h2>Servicios que pueden reservarse</h2>
+              <p>Define precio, duración, margen entre citas y profesionales habilitadas.</p>
+            </div>
+            <div class="panel-search compact-search">
+              <mat-icon>search</mat-icon>
+              <input [(ngModel)]="serviceQuery" type="search" placeholder="Buscar servicio" aria-label="Buscar servicios">
+              @if (serviceQuery) {
+                <button type="button" aria-label="Limpiar búsqueda" (click)="serviceQuery = ''"><mat-icon>close</mat-icon></button>
+              }
+            </div>
+          </div>
+
+          <div class="info-banner">
+            <span><mat-icon>sync</mat-icon></span>
+            <div><strong>El catálogo se comparte con el POS</strong><p>No necesitas crear los servicios otra vez. Aquí solamente decides cómo se reservan en SIDRO.</p></div>
+          </div>
+
+          @if (servicesLoading) {
+            <div class="loading-state"><mat-spinner diameter="34"></mat-spinner><span>Cargando servicios…</span></div>
+          } @else if (servicesError) {
+            <div class="feedback-state error-state">
+              <mat-icon>cloud_off</mat-icon><div><strong>No pudimos cargar los servicios</strong><span>{{ servicesError }}</span></div>
+              <button mat-stroked-button type="button" (click)="loadClients()">Reintentar</button>
+            </div>
+          } @else if (filteredServices.length === 0) {
+            <div class="feedback-state empty-state"><mat-icon>search_off</mat-icon><div><strong>No hay servicios para mostrar</strong><span>Revisa la búsqueda o agrega servicios desde el catálogo del POS.</span></div></div>
+          } @else {
+            <div class="service-settings-grid">
+              <article *ngFor="let svc of filteredServices; trackBy: trackById" class="service-setting-card" [class.is-hidden]="!isServiceReservable(svc)">
+                <figure class="service-cover" [class.has-image]="svc.sidro_image_url">
+                  @if (svc.sidro_image_url) {
+                    <img [src]="svc.sidro_image_url" [alt]="'Imagen publicada de ' + svc.nombre">
+                  } @else {
+                    <mat-icon>add_photo_alternate</mat-icon>
+                    <span>Sin fotografía personalizada</span>
+                  }
+                </figure>
+                <div class="service-card-top">
+                  <span class="service-setting-icon"><mat-icon>{{ svc.sidro_image_url ? 'photo_camera' : 'content_cut' }}</mat-icon></span>
+                  <span class="service-state" [class.hidden]="!isServiceReservable(svc)">
+                    <i></i>{{ isServiceReservable(svc) ? 'Publicado' : 'Oculto' }}
+                  </span>
+                </div>
+                <div class="service-setting-copy">
+                  <h3>{{ svc.nombre }}</h3>
+                  <strong>{{ svc.precio | currency:'USD':'symbol':'1.2-2' }}</strong>
+                </div>
+                <div class="service-metadata">
+                  <span><mat-icon>timer</mat-icon><small>Duración</small><b>{{ svc.duration_minutes || 60 }} min</b></span>
+                  <span><mat-icon>hourglass_bottom</mat-icon><small>Margen</small><b>{{ svc.padding_minutes || 0 }} min</b></span>
+                </div>
+                <button mat-stroked-button type="button" (click)="configureService(svc)">
+                  Configurar reserva e imagen <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </article>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>schedule</mat-icon>
+          <span>Horarios profesionales</span>
+          <b class="tab-counter">{{ employees.length }}</b>
+        </ng-template>
+
+        <div class="tab-panel schedules-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">Disponibilidad semanal</span>
+              <h2>Horarios de las profesionales</h2>
+              <p>Define los días y las horas que SIDRO puede ofrecer para cada profesional.</p>
+            </div>
+            <div class="panel-search compact-search">
+              <mat-icon>search</mat-icon>
+              <input [(ngModel)]="employeeQuery" type="search" placeholder="Buscar profesional" aria-label="Buscar profesionales">
+              @if (employeeQuery) {
+                <button type="button" aria-label="Limpiar búsqueda" (click)="employeeQuery = ''"><mat-icon>close</mat-icon></button>
+              }
+            </div>
+          </div>
+
+          <div class="schedule-guide">
+            <mat-icon>lightbulb</mat-icon>
+            <p><strong>Estos horarios definen la disponibilidad base.</strong> Las citas creadas en el POS también bloquean automáticamente esos espacios en SIDRO.</p>
+          </div>
+
+          @if (employeesLoading) {
+            <div class="loading-state"><mat-spinner diameter="34"></mat-spinner><span>Cargando profesionales…</span></div>
+          } @else if (employeesError) {
+            <div class="feedback-state error-state">
+              <mat-icon>cloud_off</mat-icon><div><strong>No pudimos cargar las profesionales</strong><span>{{ employeesError }}</span></div>
+              <button mat-stroked-button type="button" (click)="loadClients()">Reintentar</button>
+            </div>
+          } @else if (filteredEmployees.length === 0) {
+            <div class="feedback-state empty-state"><mat-icon>person_search</mat-icon><div><strong>No encontramos profesionales</strong><span>Prueba con otro nombre o teléfono.</span></div></div>
+          } @else {
+            <div class="professionals-grid">
+              <article *ngFor="let emp of filteredEmployees; trackBy: trackById" class="professional-card" [class.inactive]="emp.active === false">
+                <div class="professional-main">
+                  <span class="professional-avatar">{{ emp.nombre.charAt(0) }}</span>
+                  <div><h3>{{ emp.nombre }}</h3><p>{{ emp.telefono || 'Sin teléfono registrado' }}</p></div>
+                  <span class="professional-state"><i></i>{{ emp.active === false ? 'Inactiva' : 'Activa' }}</span>
+                </div>
+                <div class="professional-description"><mat-icon>calendar_month</mat-icon><span>Configura días de atención, hora de entrada y salida.</span></div>
+                <button mat-stroked-button type="button" (click)="configureSchedule(emp)">
+                  <mat-icon>edit_calendar</mat-icon> Configurar horario
+                </button>
+              </article>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </section>
+</main>
