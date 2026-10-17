@@ -7,6 +7,18 @@ const isUuid = (value: unknown): value is string =>
     typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
+const normalizeEmployeeId = (value: unknown): string =>
+    typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+
+// Producción usa employees.id INTEGER; algunas instalaciones locales antiguas usan UUID.
+const isEmployeeId = (value: string): boolean => {
+    if (isUuid(value)) return true;
+    if (!/^[1-9]\d*$/.test(value)) return false;
+
+    const numericId = Number(value);
+    return Number.isSafeInteger(numericId) && numericId <= 2147483647;
+};
+
 const normalizeServiceIds = (serviceIds: unknown, serviceId?: unknown): string[] => {
     const rawIds = Array.isArray(serviceIds)
         ? serviceIds
@@ -23,12 +35,13 @@ export const createRequest = async (req: Request, res: Response) => {
     const sidroAccountId = req.userId;
     const { service_id, service_ids, employee_id, request_date, start_time, client_notes } = req.body;
     const normalizedServiceIds = normalizeServiceIds(service_ids, service_id);
+    const normalizedEmployeeId = normalizeEmployeeId(employee_id);
 
-    if (!sidroAccountId || normalizedServiceIds.length === 0 || !employee_id || !request_date || !start_time) {
+    if (!sidroAccountId || normalizedServiceIds.length === 0 || !normalizedEmployeeId || !request_date || !start_time) {
         return res.status(400).json({ error: 'Faltan datos requeridos' });
     }
     if (normalizedServiceIds.length > 8 || normalizedServiceIds.some((id) => !isUuid(id)) ||
-        !isUuid(employee_id) ||
+        !isEmployeeId(normalizedEmployeeId) ||
         !/^\d{4}-\d{2}-\d{2}$/.test(request_date) ||
         !/^\d{2}:\d{2}(:\d{2})?$/.test(start_time)) {
         return res.status(400).json({ error: 'Identificadores o fecha/hora inválidos' });
@@ -52,10 +65,10 @@ export const createRequest = async (req: Request, res: Response) => {
             return res.status(429).json({ error: 'Límite de solicitudes pendientes alcanzado (Máx. 3)' });
         }
 
-        const servicePlan = await AvailabilityEngine.getServicePlan(normalizedServiceIds, employee_id);
+        const servicePlan = await AvailabilityEngine.getServicePlan(normalizedServiceIds, normalizedEmployeeId);
         const availableSlots = await AvailabilityEngine.getAvailableSlotsForServices(
             normalizedServiceIds,
-            employee_id,
+            normalizedEmployeeId,
             request_date
         );
         const requestedSlot = start_time.substring(0, 5);
@@ -77,7 +90,7 @@ export const createRequest = async (req: Request, res: Response) => {
             [
                 sidroAccountId,
                 normalizedServiceIds[0],
-                employee_id,
+                normalizedEmployeeId,
                 request_date,
                 start_time,
                 endTime,
@@ -165,19 +178,20 @@ export const getMyRequests = async (req: Request, res: Response) => {
 export const getAvailability = async (req: Request, res: Response) => {
     const { service_id, service_ids, employee_id, request_date } = req.query;
     const normalizedServiceIds = normalizeServiceIds(service_ids, service_id);
+    const normalizedEmployeeId = normalizeEmployeeId(employee_id);
 
-    if (normalizedServiceIds.length === 0 || !employee_id || !request_date) {
+    if (normalizedServiceIds.length === 0 || !normalizedEmployeeId || !request_date) {
         return res.status(400).json({ error: 'service_ids, employee_id y request_date son requeridos' });
     }
     if (normalizedServiceIds.length > 8 || normalizedServiceIds.some((id) => !isUuid(id)) ||
-        !isUuid(employee_id) || !/^\d{4}-\d{2}-\d{2}$/.test(request_date as string)) {
+        !isEmployeeId(normalizedEmployeeId) || !/^\d{4}-\d{2}-\d{2}$/.test(request_date as string)) {
         return res.status(400).json({ error: 'Identificadores o fecha inválidos' });
     }
 
     try {
         const slots = await AvailabilityEngine.getAvailableSlotsForServices(
             normalizedServiceIds,
-            employee_id as string,
+            normalizedEmployeeId,
             request_date as string
         );
         return res.json(slots);

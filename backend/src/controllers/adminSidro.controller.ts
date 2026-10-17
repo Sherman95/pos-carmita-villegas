@@ -270,7 +270,7 @@ export const setEmployeeSchedule = async (req: Request, res: Response) => {
 
     if (req.userRole !== 'admin') {
         const uEmpId = await getUserEmployeeId(req.userId as string);
-        if (uEmpId !== employee_id) return res.status(403).json({ error: 'No tienes permiso para gestionar este horario' });
+        if (String(uEmpId) !== String(employee_id)) return res.status(403).json({ error: 'No tienes permiso para gestionar este horario' });
     }
 
     let client;
@@ -302,7 +302,7 @@ export const getEmployeeSchedule = async (req: Request, res: Response) => {
 
     if (req.userRole !== 'admin') {
         const uEmpId = await getUserEmployeeId(req.userId as string);
-        if (uEmpId !== employee_id) return res.status(403).json({ error: 'No tienes permiso para ver este horario' });
+        if (String(uEmpId) !== String(employee_id)) return res.status(403).json({ error: 'No tienes permiso para ver este horario' });
     }
 
     try {
