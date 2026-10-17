@@ -27,6 +27,7 @@ export const listAccounts = async (req: Request, res: Response) => {
 
 export const linkAccount = async (req: Request, res: Response) => {
   const { sidro_account_id, client_id, force } = req.body;
+  const allowReassignment = force === true;
   const admin_id = (req as any).userId; // o (req as any).user.id dependiendo de la auth
 
   if (!sidro_account_id || !client_id) {
@@ -39,7 +40,7 @@ export const linkAccount = async (req: Request, res: Response) => {
     await client.query('BEGIN');
 
     // Verificar si el cliente ya esta vinculado a otra cuenta
-    if (!force) {
+    if (!allowReassignment) {
         const { rows: existing } = await client.query(
             `SELECT * FROM sidro_account_links WHERE client_id = $1 AND is_active = true AND sidro_account_id != $2`,
             [client_id, sidro_account_id]

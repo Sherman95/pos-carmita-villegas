@@ -200,7 +200,9 @@ export class SidroSettingsComponent implements OnInit {
   }
 
   async linkAccount(sidro_account: any) {
+    const isRelinking = Boolean(sidro_account.client_id);
     const clientOptions = [...this.clients]
+      .filter(client => client.id !== sidro_account.client_id)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
       .map(client => ({
         id: client.id,
@@ -210,11 +212,13 @@ export class SidroSettingsComponent implements OnInit {
     let selectedClientId: string | null = null;
 
     const { value: clientId } = await Swal.fire({
-      title: 'Vincular cuenta',
+      title: isRelinking ? 'Cambiar vinculación' : 'Vincular cuenta',
       html: `
         <div class="sidro-link-dialog">
-          <span class="sidro-link-icon"><span class="material-icons">link</span></span>
-          <p>Selecciona la clienta del POS que corresponde a <strong>${this.escapeHtml(sidro_account.nombre_completo)}</strong>.</p>
+          <span class="sidro-link-icon"><span class="material-icons">${isRelinking ? 'edit' : 'link'}</span></span>
+          <p>${isRelinking
+            ? `Actualmente <strong>${this.escapeHtml(sidro_account.nombre_completo)}</strong> está vinculada con <strong>${this.escapeHtml(sidro_account.client_nombre)}</strong>. Selecciona la clienta correcta del POS.`
+            : `Selecciona la clienta del POS que corresponde a <strong>${this.escapeHtml(sidro_account.nombre_completo)}</strong>.`}</p>
         </div>
         <label class="sidro-search-label" for="sidro-client-query">Buscar en clientes del POS</label>
         <div class="sidro-client-search-box">
@@ -226,7 +230,7 @@ export class SidroSettingsComponent implements OnInit {
       `,
       focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: 'Vincular cuenta',
+      confirmButtonText: isRelinking ? 'Guardar cambio' : 'Vincular cuenta',
       cancelButtonText: 'Cancelar',
       width: 560,
       customClass: { popup: 'sidro-link-popup' },
@@ -312,11 +316,37 @@ export class SidroSettingsComponent implements OnInit {
          Swal.fire('Error', 'Debes seleccionar una clienta válida de la lista', 'error');
          return;
       }
-      this.sidroService.linkAccount(sidro_account.id, clientId).subscribe({
-        next: () => { Swal.fire('Cuenta vinculada', 'SIDRO y el historial del POS ya corresponden a la misma clienta.', 'success'); this.loadAccounts(); },
-        error: (e: any) => Swal.fire('Error', e.error?.error || 'Error al vincular', 'error')
-      });
+      this.saveAccountLink(sidro_account, clientId, false);
     }
+  }
+
+  private saveAccountLink(sidroAccount: any, clientId: string, force: boolean): void {
+    this.sidroService.linkAccount(sidroAccount.id, clientId, force).subscribe({
+      next: () => {
+        Swal.fire(
+          sidroAccount.client_id ? 'Vinculación actualizada' : 'Cuenta vinculada',
+          'SIDRO y el historial del POS ya corresponden a la misma clienta.',
+          'success'
+        );
+        this.loadAccounts();
+      },
+      error: async (error: any) => {
+        if (error.status === 409 && !force) {
+          const confirmation = await Swal.fire({
+            icon: 'warning',
+            title: 'La clienta ya tiene una cuenta SIDRO',
+            text: 'Si continúas, el vínculo anterior se desactivará y esta cuenta quedará asociada a la clienta seleccionada.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, reasignar vínculo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#7a1839'
+          });
+          if (confirmation.isConfirmed) this.saveAccountLink(sidroAccount, clientId, true);
+          return;
+        }
+        Swal.fire('Error', error.error?.error || 'No se pudo actualizar la vinculación', 'error');
+      }
+    });
   }
 
   async configureSchedule(emp: Employee) {

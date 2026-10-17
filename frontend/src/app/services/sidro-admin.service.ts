@@ -64,8 +64,8 @@ export class SidroAdminService {
     return this.http.get(`${this.apiUrl}/accounts`);
   }
 
-  linkAccount(sidro_account_id: string, client_id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/link`, { sidro_account_id, client_id });
+  linkAccount(sidro_account_id: string, client_id: string, force = false): Observable<any> {
+    return this.http.post(`${this.apiUrl}/link`, { sidro_account_id, client_id, force });
   }
 
   getRequests(): Observable<SidroRequest[]> {
