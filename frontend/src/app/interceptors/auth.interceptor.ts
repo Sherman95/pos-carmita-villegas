@@ -25,6 +25,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         authService.logout();
         router.navigate(['/login']);
       }
+      // El backend exige cambiar la contraseña temporal antes de operar
+      if (error.status === 403 && error.error?.code === 'PASSWORD_CHANGE_REQUIRED') {
+        router.navigate(['/profile']);
+      }
       return throwError(() => error);
     })
   );

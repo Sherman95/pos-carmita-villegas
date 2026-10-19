@@ -179,7 +179,7 @@ test('administrador POS conserva acceso administrativo', async () => {
 test('usuario POS común conserva acceso permitido', async () => {
   const response = await request('/api/auth/me', signPos(ids.user));
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).user.role, 'user');
+  assert.equal((await response.json()).user.role, 'professional');
 });
 
 test('usuario POS común no ejecuta acciones administrativas', async () => {
@@ -263,8 +263,8 @@ const mockResponse = () => {
 test('login POS sigue emitiendo identidad POS con audiencia separada', async () => {
   const password = 'Prueba-segura-123';
   const passwordHash = await bcrypt.hash(password, 4);
-  queryHandler = async (sql) => /FROM users WHERE username/i.test(sql)
-    ? { rows: [{ id: ids.admin, username: 'admin', password: passwordHash, role: 'admin', active: true }], rowCount: 1 }
+  queryHandler = async (sql) => /FROM users WHERE lower\(username\)/i.test(sql)
+    ? { rows: [{ id: ids.admin, username: 'admin', password: passwordHash, role: 'admin', active: true, token_version: 0, must_change_password: false }], rowCount: 1 }
     : { rows: [], rowCount: 0 };
   const response = mockResponse();
   await authController.login({ body: { username: 'admin', password } }, response);
@@ -294,16 +294,22 @@ test('recuperación de contraseña conserva respuesta neutral para correo inexis
   assert.match(response.state.body.message, /cuenta SIDRO activa/i);
 });
 
-test('el perfil no permite cambiar el username reservado', async () => {
-  queryHandler = async (sql) => /SELECT username FROM users/i.test(sql)
-    ? { rows: [{ username: 'admin' }], rowCount: 1 }
-    : { rows: [], rowCount: 0 };
+test('el perfil ignora cualquier intento de cambiar el username desde el body', async () => {
+  queryHandler = async (sql) => {
+    if (/SELECT username FROM users/i.test(sql)) return { rows: [{ username: 'admin' }], rowCount: 1 };
+    if (/UPDATE users/i.test(sql)) return { rows: [{ id: ids.admin, username: 'admin', role: 'owner', tax_rate: 0.15 }], rowCount: 1 };
+    return { rows: [], rowCount: 0 };
+  };
   const response = mockResponse();
   await authController.updateProfile(
     { userId: ids.admin, user: { sub: ids.admin }, body: { username: 'otro-admin', tax_rate: 0.15 } },
     response
   );
-  assert.equal(response.state.status, 403);
+  assert.equal(response.state.status, 200);
+  const updates = queries.filter((entry) => /UPDATE users/i.test(entry.sql));
+  assert.ok(updates.length > 0);
+  updates.forEach((entry) => assert.doesNotMatch(entry.sql, /username\s*=/i));
+  assert.equal(response.state.body.user.username, 'admin');
 });
 
 test('todos los routers operativos exigen requireStaff o requireSidroClient', () => {

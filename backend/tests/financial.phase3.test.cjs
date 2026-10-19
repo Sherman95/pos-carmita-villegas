@@ -119,7 +119,7 @@ test('32 rutas de caja mantienen identidad POS obligatoria', () => {
 });
 test('33 gastos mantienen autorizacion administrativa de Fase 1', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'routes', 'expenses.routes.ts'), 'utf8');
-  assert.match(source, /router\.use\(verifyToken, requireStaff, requireAdmin\)/);
+  assert.match(source, /router\.use\(verifyToken, requireStaff, requirePermission\(PERMISSIONS\.expensesManage\)\)/);
 });
 test('34 cierre ignora totales financieros enviados por el navegador', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'controllers', 'cashIntegrity.controller.ts'), 'utf8');

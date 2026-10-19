@@ -1,0 +1,12 @@
+-- PASO MANUAL OBLIGATORIO DESPUÉS DE REVISAR LA CUENTA CORRECTA.
+-- No ejecutar con el marcador. No seleccionar al propietario solo por username.
+--
+-- 1. Consultar candidatos sin modificar datos:
+-- SELECT id, username, role, active, employee_id FROM users ORDER BY created_at;
+--
+-- 2. Sustituir OWNER_USER_UUID por el UUID confirmado por el propietario y ejecutar:
+-- BEGIN;
+-- UPDATE users SET role='owner', active=true, token_version=token_version+1, updated_at=now()
+-- WHERE id='OWNER_USER_UUID';
+-- COMMIT;
+

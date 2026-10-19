@@ -10,8 +10,26 @@
     "test:appointments": "npm run build && node --test tests/appointments.phase2.test.cjs",
     "test:financial": "npm run build && node --test tests/financial.phase3.test.cjs",
     "test:financial:local": "npm run build && node tests/financial.phase3.local-smoke.cjs",
+    "test:sidro-auth": "npm run build && node --test tests/sidro-auth.phase4.test.cjs",
+    "test:calendar": "npm run build && node --test tests/google-calendar.phase5.test.cjs",
+    "test:rbac-phase6": "npm run build && node --test tests/rbac.phase6.test.cjs",
+    "test:cash-control-phase7": "npm run build && node --test tests/cash-control.phase7.test.cjs",
+    "test:notifications-phase8": "npm run build && node --test tests/notifications-whatsapp.phase8.test.cjs",
+    "test:notifications:local": "npm run build && node tests/notifications-whatsapp.phase8.local-smoke.cjs",
+    "test:cash-control:local": "npm run build && node tests/cash-control.phase7.local-smoke.cjs",
+    "test:rbac:local": "npm run build && node tests/rbac.phase6.local-smoke.cjs",
+    "test:calendar:local": "node tests/google-calendar.phase5.local-smoke.cjs",
     "start": "node dist/index.js",
-    "db:check": "node scripts/check-database.js"
+    "db:check": "node scripts/check-database.js",
+    "test:sidro-registration-phase85a": "npm run build && node --test tests/sidro-registration.phase85a.test.cjs",
+    "test:sidro-registration:local": "npm run build && node tests/sidro-registration.phase85a.local-smoke.cjs",
+    "migrate:sidro-85a": "npm run build && node scripts/migrate-sidro-85a.cjs",
+    "test:sidro-linking:local": "npm run build && node tests/sidro-linking.phase85a.local-smoke.cjs",
+    "migrate:web-push:local": "node scripts/migrate-web-push-phase9.cjs",
+    "test:web-push-phase9": "npm run build && node --test tests/web-push.phase9.test.cjs tests/web-push-endpoints.phase9.test.cjs",
+    "test:web-push:local": "npm run build && node tests/web-push.phase9.local-smoke.cjs",
+    "test:notifications-cleanup-phase9": "npm run build && node --test tests/notifications-cleanup.phase9.test.cjs",
+    "test:notifications-cleanup:local": "npm run build && node tests/notifications-cleanup.phase9.local-smoke.cjs"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +43,8 @@
     "googleapis": "^178.1.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -34,6 +53,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^25.0.6",
     "@types/pg": "^8.16.0",
+    "@types/web-push": "^3.6.4",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

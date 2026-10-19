@@ -3,14 +3,25 @@ import { Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
+export interface PosCurrentUser {
+  id: string;
+  username: string;
+  role: 'owner' | 'admin' | 'reception' | 'professional';
+  permissions: string[];
+  employee_id?: string | number | null;
+  email?: string | null;
+  email_verified_at?: string | null;
+  must_change_password?: boolean;
+  tax_rate?: number;
+  business_name?: string;
+  business_ruc?: string;
+  business_address?: string;
+  business_phone?: string;
+}
+
 interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    username: string;
-    role: string;
-    tax_rate?: number;
-  };
+  user: PosCurrentUser;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,9 +46,24 @@ export class AuthService {
   }
 
   logout() {
+    this.revokePushSubscription();
     localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
     this.currentUser.set(null);
+  }
+
+  private revokePushSubscription(): void {
+    const token = this.getToken();
+    if (!token || !('serviceWorker' in navigator)) return;
+    void navigator.serviceWorker.getRegistration().then((registration) => registration?.pushManager.getSubscription())
+      .then((subscription) => {
+        if (!subscription) return;
+        return fetch(`${environment.apiBaseUrl}/api/notifications/subscriptions`, {
+          method: 'DELETE', keepalive: true,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ endpoint: subscription.endpoint })
+        }).finally(() => subscription.unsubscribe());
+      }).catch(() => undefined);
   }
 
   refreshCurrentUser() {
@@ -54,11 +80,29 @@ export class AuthService {
   isAdmin(): boolean {
     const user = this.currentUser();
     const role = user?.role?.trim().toLowerCase();
-    return role === 'admin';
+    return role === 'owner' || role === 'admin';
+  }
+
+  isOwner(): boolean {
+    return this.currentUser()?.role === 'owner';
+  }
+
+  hasPermission(permission: string): boolean {
+    return this.currentUser()?.permissions?.includes(permission) ?? false;
+  }
+
+  changePassword(payload: { current_password: string; new_password: string; confirmation: string }) {
+    return this.http.post<{ message: string; token: string }>(`${this.apiUrl}/change-password`, payload).pipe(
+      tap((response) => localStorage.setItem('token', response.token))
+    );
+  }
+
+  completePasswordReset(payload: { token: string; new_password: string; confirmation: string }) {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/complete`, payload);
   }
 
   // ✅ MÉTODO CORREGIDO: Ahora SÍ construye y envía la cabecera con el Token
-  updateProfile(data: { tax_rate: number; username?: string }) {
+  updateProfile(data: Record<string, unknown>) {
 
     // 1. Recuperamos el token del almacenamiento local
     const token = this.getToken();

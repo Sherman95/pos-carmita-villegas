@@ -168,8 +168,43 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let request">
-            @if (canManage(request)) {
-              <div class="table-actions">
+            <div class="table-actions">
+              <button
+                mat-icon-button
+                type="button"
+                class="whatsapp-action"
+                (click)="openWhatsapp(request)"
+                [disabled]="!hasWhatsapp(request)"
+                [attr.aria-label]="whatsappUnavailableMessage(request)"
+                [title]="whatsappUnavailableMessage(request)"
+              >
+                <mat-icon>chat</mat-icon>
+              </button>
+              @if (canLinkRequest(request)) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="link-action"
+                  (click)="linkExisting(request)"
+                  [disabled]="linkingRequestId !== null || processingId !== null"
+                  [attr.aria-label]="'Vincular con cliente existente: ' + request.client_name"
+                  title="Vincular con cliente existente"
+                >
+                  <mat-icon>link</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="create-link-action"
+                  (click)="createClientAndLink(request)"
+                  [disabled]="linkingRequestId !== null || processingId !== null"
+                  [attr.aria-label]="'Crear cliente nuevo y vincular: ' + request.client_name"
+                  title="Crear cliente nuevo y vincular"
+                >
+                  <mat-icon>person_add</mat-icon>
+                </button>
+              }
+              @if (canManage(request)) {
                 <button
                   mat-icon-button
                   type="button"
@@ -202,21 +237,31 @@
                 >
                   <mat-icon>cancel</mat-icon>
                 </button>
-              </div>
-            } @else {
+              }
+            </div>
+            @if (!canManage(request) && !hasWhatsapp(request) && !canLinkRequest(request)) {
               <span class="no-actions">Sin acciones pendientes</span>
             }
           </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [id]="'sidro-request-' + row.id"
+          [class.highlighted-row]="row.id === highlightedRequestId"
+        ></tr>
       </table>
     </div>
 
     <div class="mobile-list" aria-label="Solicitudes SIDRO">
       @for (request of filteredRequests; track request.id) {
-        <article class="request-card">
+        <article
+          class="request-card"
+          [id]="'sidro-request-' + request.id"
+          [class.highlighted-row]="request.id === highlightedRequestId"
+        >
           <div class="card-heading">
             <div>
               <h3>{{ request.client_name }}</h3>
@@ -262,8 +307,41 @@
             }
           </dl>
 
-          @if (canManage(request)) {
-            <div class="card-actions">
+          <div class="card-actions">
+            <button
+              mat-stroked-button
+              type="button"
+              class="whatsapp-button"
+              (click)="openWhatsapp(request)"
+              [disabled]="!hasWhatsapp(request)"
+              [title]="whatsappUnavailableMessage(request)"
+            >
+              <mat-icon>chat</mat-icon>
+              WhatsApp
+            </button>
+            @if (canLinkRequest(request)) {
+              <button
+                mat-stroked-button
+                type="button"
+                class="link-button"
+                (click)="linkExisting(request)"
+                [disabled]="linkingRequestId !== null || processingId !== null"
+              >
+                <mat-icon>link</mat-icon>
+                Vincular
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                class="create-link-button"
+                (click)="createClientAndLink(request)"
+                [disabled]="linkingRequestId !== null || processingId !== null"
+              >
+                <mat-icon>person_add</mat-icon>
+                Crear y vincular
+              </button>
+            }
+            @if (canManage(request)) {
               <button
                 mat-flat-button
                 type="button"
@@ -293,8 +371,8 @@
                 <mat-icon>close</mat-icon>
                 Rechazar
               </button>
-            </div>
-          }
+            }
+          </div>
         </article>
       }
     </div>

@@ -1,0 +1,150 @@
+<div class="mobile-container luxury-dashboard">
+  <header class="dashboard-topbar">
+    <a class="dashboard-brand" routerLink="/dashboard" aria-label="Carmita Villegas Estilistas, inicio">
+      <span class="dashboard-logo" aria-hidden="true"><img [src]="visuals.brandLogo" alt=""></span>
+      <span class="brand-copy">
+        <strong>Carmita<br>Villegas</strong>
+        <small>Estilistas</small>
+      </span>
+    </a>
+
+    <div class="topbar-side">
+      <span class="location-label">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        Piñas, El Oro
+      </span>
+      <a class="profile-access" routerLink="/profile" aria-label="Abrir mi perfil">
+        <span class="profile-avatar">{{ profileInitials }}</span>
+      </a>
+    </div>
+  </header>
+
+  <div *ngIf="isLoading" class="dashboard-loading" role="status">
+    <span class="spinner" aria-hidden="true"></span>
+    <p>Preparando tu espacio...</p>
+  </div>
+
+  <main *ngIf="!isLoading && profile" class="dashboard-main">
+    <div class="dashboard-grid">
+      <section class="booking-feature" aria-labelledby="dashboard-title">
+        <header class="dashboard-welcome">
+          <span>Tu espacio SIDRO</span>
+          <h1 id="dashboard-title">Hola, {{ firstName }} <em>♥</em></h1>
+          <p>¿Qué servicio te gustaría agendar hoy?</p>
+        </header>
+
+        <article class="feature-banner">
+          <img [src]="visuals.dashboardFeature" alt="Salón elegante de Carmita Villegas Estilistas">
+          <span class="banner-shade" aria-hidden="true"></span>
+          <div class="banner-copy">
+            <strong>Resalta tu esencia</strong>
+            <span>Cuidado, estilo y belleza en un solo lugar</span>
+          </div>
+        </article>
+
+        <div class="banner-dots" aria-hidden="true"><span class="active"></span><span></span><span></span></div>
+
+        <a class="reserve-cta" routerLink="/booking">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 14v4M10 16h4"/></svg>
+          <span>Nueva reserva</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </section>
+
+      <section class="quick-panel" aria-labelledby="quick-title">
+        <h2 id="quick-title">Accesos rápidos</h2>
+        <nav class="quick-actions" aria-label="Accesos rápidos">
+          <a routerLink="/my-requests">
+            <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+            <span>Solicitudes</span>
+          </a>
+          <a routerLink="/booking">
+            <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+            <span>Reservar</span>
+          </a>
+          <a routerLink="/booking">
+            <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4c1.4 2.5 1.4 5 0 7.5M16 4c-1.4 2.5-1.4 5 0 7.5M6 20l12-8M18 20 6 12"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span>
+            <span>Servicios</span>
+          </a>
+          <a routerLink="/profile">
+            <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span>Mi perfil</span>
+          </a>
+        </nav>
+
+        <div *ngIf="!profile.linked" class="linking-notice">
+          <span class="notice-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.15 1.15"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.15-1.15"/></svg>
+          </span>
+          <div>
+            <strong>Estamos vinculando tu historial</strong>
+            <p>Puedes reservar desde ahora. Tus visitas aparecerán cuando el equipo complete la vinculación.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="notifications-card" aria-labelledby="notifications-title">
+      <header class="section-header">
+        <div>
+          <span>Tu actividad</span>
+          <h2 id="notifications-title">
+            Notificaciones
+            <em *ngIf="notificationsService.unreadCount() > 0" class="unread-pill">{{ notificationsService.unreadCount() }}</em>
+          </h2>
+        </div>
+        <a routerLink="/my-requests">Mis solicitudes <span aria-hidden="true">→</span></a>
+      </header>
+
+      <p *ngIf="notificationsService.items().length === 0" class="notifications-empty">
+        No tienes notificaciones por ahora.
+      </p>
+
+      <ul *ngIf="notificationsService.items().length > 0" class="notifications-list">
+        <li *ngFor="let item of notificationsService.items(); trackBy: trackNotificationById">
+          <button type="button" [class.unread]="!item.read_at" (click)="openNotification(item)">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.body }}</span>
+            <small>{{ formatNotificationDate(item.created_at) }}</small>
+          </button>
+        </li>
+      </ul>
+
+      <p *ngIf="notificationsService.lastError()" class="notifications-error">
+        {{ notificationsService.lastError() }}
+      </p>
+    </section>
+
+    <section *ngIf="featuredServices.length > 0" class="featured-services" aria-labelledby="featured-title">
+      <header class="section-header">
+        <div>
+          <span>Selección del salón</span>
+          <h2 id="featured-title">Servicios destacados</h2>
+        </div>
+        <a routerLink="/booking">Ver todos <span aria-hidden="true">→</span></a>
+      </header>
+
+      <div class="service-rail">
+        <a *ngFor="let service of featuredServices; let index = index" class="service-card" routerLink="/booking">
+          <figure>
+            <img [src]="getServiceImage(service, index)" [alt]="'Referencia visual para ' + service.nombre">
+          </figure>
+          <div class="service-copy">
+            <h3>{{ service.nombre }}</h3>
+            <div class="service-meta">
+              <strong>{{ service.precio | currency:'USD':'symbol':'1.2-2' }}</strong>
+              <span *ngIf="service.duration_minutes">{{ service.duration_minutes }} min</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <div *ngIf="errorMessage" class="dashboard-error" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/></svg>
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <app-mobile-nav></app-mobile-nav>
+</div>

@@ -1,0 +1,140 @@
+﻿<div class="mobile-container">
+  <header class="profile-topbar">
+    <a class="brand-lockup" routerLink="/dashboard" aria-label="SIDRO, inicio">
+      <span class="brand-mark" aria-hidden="true"><img [src]="visuals.brandLogo" alt=""></span>
+      <span class="brand-copy"><strong>Carmita Villegas</strong><small>Estilistas · SIDRO</small></span>
+    </a>
+  </header>
+
+  <main class="profile-content">
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">Cuenta personal</span>
+        <h1>Mi perfil</h1>
+        <p>Consulta tus datos y el estado de vinculación con el salón.</p>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-state" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Cargando tu perfil...</p>
+    </div>
+
+    <section *ngIf="!isLoading && profile" class="profile-grid">
+      <article class="profile-identity">
+        <img class="identity-cover" [src]="visuals.dashboardFeature" alt="Interior del salón Carmita Villegas Estilistas">
+        <span class="identity-shade" aria-hidden="true"></span>
+        <div class="identity-orbit" aria-hidden="true"></div>
+        <div class="profile-avatar">{{ profileInitials }}</div>
+        <h2>{{ profile.nombre_completo }}</h2>
+        <span class="account-type">Clienta SIDRO</span>
+        <div class="link-status" [class.linked]="profile.linked">
+          <span aria-hidden="true">{{ profile.linked ? '✓' : '○' }}</span>
+          {{ profile.linked ? 'Expediente vinculado' : 'Vinculación pendiente' }}
+        </div>
+      </article>
+
+      <article class="profile-details surface-card">
+        <div class="details-heading">
+          <div><span class="eyebrow">Información</span><h2>Datos de tu cuenta</h2></div>
+          <span class="protected-label">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Protegidos
+          </span>
+        </div>
+
+        <dl class="details-list">
+          <div>
+            <dt>Nombre completo</dt>
+            <dd>{{ profile.nombre_completo }}</dd>
+          </div>
+          <div>
+            <dt>WhatsApp</dt>
+            <dd>{{ profile.telefono }}</dd>
+          </div>
+          <div *ngIf="profile.email">
+            <dt>Correo electrónico</dt>
+            <dd>{{ profile.email }}</dd>
+          </div>
+          <div>
+            <dt>Estado de vinculación</dt>
+            <dd [class.success-text]="profile.linked">
+              {{ profile.linked ? 'Verificado y vinculado' : 'Pendiente de revisión administrativa' }}
+            </dd>
+          </div>
+        </dl>
+
+        <section class="recovery-email-panel" aria-labelledby="recovery-email-title">
+          <div class="recovery-email-heading">
+            <div>
+              <span class="eyebrow">Recuperación de acceso</span>
+              <h3 id="recovery-email-title">{{ profile.email ? 'Actualiza tu correo' : 'Agrega un correo' }}</h3>
+            </div>
+            <span class="email-status" [class.ready]="profile.email_verified">{{ profile.email_verified ? 'Verificado' : 'Pendiente' }}</span>
+          </div>
+          <p>Es tu credencial de acceso y recuperación. El correo principal no cambiará hasta que confirmes el enlace enviado a la nueva dirección.</p>
+          <p *ngIf="profile.pending_email" class="pending-email">Verificación pendiente: <strong>{{ profile.pending_email }}</strong></p>
+          <form [formGroup]="recoveryEmailForm" (ngSubmit)="saveRecoveryEmail()" novalidate>
+            <div class="recovery-field">
+              <label for="recovery-email">Correo electrónico</label>
+              <input id="recovery-email" type="email" autocomplete="email" formControlName="email" placeholder="nombre@correo.com">
+              <small *ngIf="recoveryEmailForm.controls.email.touched && recoveryEmailForm.controls.email.invalid">Ingresa un correo válido.</small>
+            </div>
+            <div class="recovery-field">
+              <label for="current-password">Confirma tu contraseña actual</label>
+              <input id="current-password" type="password" autocomplete="current-password" formControlName="current_password" placeholder="Tu contraseña actual">
+              <small *ngIf="recoveryEmailForm.controls.current_password.touched && recoveryEmailForm.controls.current_password.invalid">Necesitamos tu contraseña actual.</small>
+            </div>
+            <p *ngIf="emailSuccessMessage" class="form-message success" role="status">{{ emailSuccessMessage }}</p>
+            <p *ngIf="emailErrorMessage" class="form-message error" role="alert">{{ emailErrorMessage }}</p>
+            <button type="submit" class="btn-primary recovery-save" [disabled]="isSavingEmail">
+              {{ isSavingEmail ? 'Enviando verificación...' : (profile.email ? 'Verificar nuevo correo' : 'Agregar y verificar correo') }}
+            </button>
+          </form>
+        </section>
+
+        <section class="recovery-email-panel" aria-labelledby="whatsapp-title">
+          <div class="recovery-email-heading"><div><span class="eyebrow">Contacto</span><h3 id="whatsapp-title">Actualiza tu WhatsApp</h3></div></div>
+          <p>Este número es solo de tu cuenta SIDRO. No modifica automáticamente tu ficha histórica ni la vinculación del POS.</p>
+          <form [formGroup]="whatsappForm" (ngSubmit)="saveWhatsapp()" novalidate>
+            <div class="recovery-field"><label for="profile-whatsapp">WhatsApp</label><input id="profile-whatsapp" type="tel" inputmode="tel" autocomplete="tel" formControlName="whatsapp" placeholder="+593 99 123 4567"><small *ngIf="whatsappForm.controls.whatsapp.touched && whatsappForm.controls.whatsapp.invalid">Ingresa un número ecuatoriano o internacional válido.</small></div>
+            <div class="recovery-field" *ngIf="profile.legacy_account"><label for="whatsapp-password">Contraseña actual</label><input id="whatsapp-password" type="password" autocomplete="current-password" formControlName="current_password" placeholder="Obligatoria para cuentas antiguas"></div>
+            <p *ngIf="whatsappMessage" class="form-message success" role="status">{{ whatsappMessage }}</p>
+            <p *ngIf="whatsappError" class="form-message error" role="alert">{{ whatsappError }}</p>
+            <button type="submit" class="btn-primary recovery-save" [disabled]="isSavingWhatsapp">{{ isSavingWhatsapp ? 'Guardando...' : 'Guardar WhatsApp' }}</button>
+          </form>
+        </section>
+
+        <section class="recovery-email-panel" aria-labelledby="password-title">
+          <div class="recovery-email-heading"><div><span class="eyebrow">Seguridad</span><h3 id="password-title">Cambiar contraseña</h3></div></div>
+          <p>Al cambiarla se cerrarán las sesiones anteriores y deberás ingresar nuevamente.</p>
+          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" novalidate>
+            <div class="recovery-field"><label for="password-current">Contraseña actual</label><input id="password-current" type="password" autocomplete="current-password" formControlName="current_password"></div>
+            <div class="recovery-field"><label for="password-new">Nueva contraseña</label><input id="password-new" type="password" autocomplete="new-password" formControlName="new_password"><small>Mínimo 8 caracteres.</small></div>
+            <div class="recovery-field"><label for="password-confirm">Repite la nueva contraseña</label><input id="password-confirm" type="password" autocomplete="new-password" formControlName="confirmation"></div>
+            <p *ngIf="passwordMessage" class="form-message success" role="status">{{ passwordMessage }}</p>
+            <p *ngIf="passwordError" class="form-message error" role="alert">{{ passwordError }}</p>
+            <button type="submit" class="btn-primary recovery-save" [disabled]="isSavingPassword">{{ isSavingPassword ? 'Actualizando...' : 'Cambiar contraseña' }}</button>
+          </form>
+        </section>
+
+        <div class="profile-note" *ngIf="!profile.linked">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <p>La vinculación permite conectar tu cuenta digital con tu historial anterior. El equipo la realizará desde el POS.</p>
+        </div>
+
+        <button type="button" class="btn-danger logout-button" (click)="logout()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>
+          Cerrar sesión
+        </button>
+      </article>
+    </section>
+
+    <div *ngIf="errorMessage" class="empty-state error-state" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/></svg>
+      <p>{{ errorMessage }}</p>
+    </div>
+  </main>
+
+  <app-mobile-nav></app-mobile-nav>
+</div>

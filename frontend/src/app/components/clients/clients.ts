@@ -270,8 +270,12 @@ export class ClientsComponent implements OnInit {
   private openDialog() {
     this.formError.set(null);
     this.dialogRef = this.dialog.open(this.formDialog, {
-      width: '600px',
-      autoFocus: true
+      width: '680px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+      panelClass: 'client-form-dialog'
     });
   }
 

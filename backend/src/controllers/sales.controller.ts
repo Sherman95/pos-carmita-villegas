@@ -5,10 +5,10 @@ import {
     FinancialError,
     fromCents,
     parseReceiptMethod,
-    requireOpenRegister,
     requireUuid,
     toCents
 } from '../services/financialIntegrity.service';
+import { enforceCashPolicyForFinancialOperation } from '../services/cashControl.service';
 import { getBusinessDateRange, getBusinessNow, localMinutesToInstant } from '../utils/businessTime';
 
 const getWeekRange = (date: Date) => {
@@ -31,6 +31,7 @@ export const createSale = async (req: Request, res: Response) => {
     const client = await pool.connect();
     const requestedOperationId = req.body?.operation_id;
     try {
+        if (!req.userId) throw new FinancialError(401, 'Usuario no autenticado');
         const { total, items, tipo_pago, client_id, tax_rate, abono_inicial, operation_id } = req.body;
         const operationId = requireUuid(operation_id, 'operation_id');
         if (!Array.isArray(items) || items.length === 0 || items.length > 500) {
@@ -82,7 +83,7 @@ export const createSale = async (req: Request, res: Response) => {
             await client.query('COMMIT');
             return res.status(200).json({ message: 'Venta ya registrada', saleId: duplicate.rows[0].id, client_nombre: duplicate.rows[0].client_nombre, idempotent: true });
         }
-        await requireOpenRegister(client);
+        await enforceCashPolicyForFinancialOperation(client);
 
         let clientNombre: string | null = null;
         let clientCedula: string | null = null;
@@ -102,14 +103,14 @@ export const createSale = async (req: Request, res: Response) => {
         const saleQuery = `
             INSERT INTO sales (
                 total, tipo_pago, metodo_pago, client_id, client_nombre, client_cedula,
-                tax_rate, estado_pago, saldo_pendiente, monto_pagado, total_pagado, operation_id
+                tax_rate, estado_pago, saldo_pendiente, monto_pagado, total_pagado, operation_id, usuario_id
             ) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11, $12)
             RETURNING id
         `;
         const saleValues = [
             fromCents(totalCents), method, method, validClientId, clientNombre, clientCedula,
-            taxRate, paymentStatus, fromCents(balanceCents), fromCents(initialPaymentCents), operationId
+            taxRate, paymentStatus, fromCents(balanceCents), fromCents(initialPaymentCents), operationId, req.userId
         ];
         const saleResult = await client.query(saleQuery, saleValues);
         const saleId = saleResult.rows[0].id;
@@ -123,9 +124,9 @@ export const createSale = async (req: Request, res: Response) => {
         if (initialPaymentCents > 0) {
             const receiptMethod = method === 'CREDITO' ? 'EFECTIVO' : parseReceiptMethod(method);
             await client.query(`
-                INSERT INTO payment_history (sale_id, monto, metodo_pago, notas)
-                VALUES ($1, $2, $3, $4)
-            `, [saleId, fromCents(initialPaymentCents), receiptMethod, method === 'CREDITO' ? 'Abono Inicial' : 'Pago al contado']);
+                INSERT INTO payment_history (sale_id, monto, metodo_pago, notas, usuario_id)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [saleId, fromCents(initialPaymentCents), receiptMethod, method === 'CREDITO' ? 'Abono Inicial' : 'Pago al contado', req.userId]);
         }
         await client.query('COMMIT');
         res.status(201).json({ message: 'Venta registrada', saleId, client_nombre: clientNombre, idempotent: false });
@@ -526,9 +527,10 @@ export const registerPayment = async (req: Request, res: Response) => {
     const { saleId, monto, metodo_pago, operation_id } = req.body;
     const client = await pool.connect();
     try {
+        if (!req.userId) throw new FinancialError(401, 'Usuario no autenticado');
         await client.query('BEGIN');
-        await requireOpenRegister(client);
-        const result = await applyPayment(client, { saleId, amount: monto, method: metodo_pago, operationId: operation_id });
+        await enforceCashPolicyForFinancialOperation(client);
+        const result = await applyPayment(client, { saleId, amount: monto, method: metodo_pago, operationId: operation_id, userId: req.userId });
         await client.query('COMMIT');
         res.status(200).json({ message: result.idempotent ? 'Abono ya registrado' : 'Abono registrado correctamente', ...result });
     } catch (error) {

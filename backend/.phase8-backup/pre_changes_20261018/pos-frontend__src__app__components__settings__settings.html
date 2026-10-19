@@ -1,0 +1,213 @@
+<main class="settings-page animate-fade-in">
+  <section class="settings-hero" aria-labelledby="settings-title">
+    <div class="hero-copy">
+      <span class="eyebrow"><mat-icon>tune</mat-icon> Integraciones del negocio</span>
+      <h1 id="settings-title">Configuración</h1>
+      <p>Conecta las agendas del equipo y mantén las citas organizadas desde un solo lugar.</p>
+    </div>
+
+    <div class="hero-calendar" aria-hidden="true">
+      <span><mat-icon>calendar_month</mat-icon></span>
+      <small>Agenda conectada</small>
+    </div>
+  </section>
+
+  <section class="summary-grid" aria-label="Resumen de calendarios">
+    <article class="summary-card">
+      <span class="summary-icon"><mat-icon>event_available</mat-icon></span>
+      <div><strong>{{ calendars.length }}</strong><span>Calendarios vinculados</span></div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon team"><mat-icon>badge</mat-icon></span>
+      <div><strong>{{ professionalCalendars }}</strong><span>Agendas profesionales</span></div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon general"><mat-icon>storefront</mat-icon></span>
+      <div><strong>{{ generalCalendars }}</strong><span>Agendas generales</span></div>
+    </article>
+  </section>
+
+  <section class="cash-settings-card" [class.enabled]="cashControlEnabled" aria-labelledby="cash-settings-title">
+    <div class="cash-settings-icon"><mat-icon>{{ cashControlEnabled ? 'point_of_sale' : 'money_off' }}</mat-icon></div>
+    <div class="cash-settings-copy">
+      <span class="panel-kicker">Operación financiera</span>
+      <h2 id="cash-settings-title">Control de caja</h2>
+      @if (cashControlLoading) {
+        <p>Consultando la configuración real del negocio...</p>
+      } @else if (cashControlError) {
+        <p class="cash-settings-error">{{ cashControlError }}</p>
+      } @else if (cashControlEnabled) {
+        <p>Las operaciones financieras sujetas a control requieren una caja abierta. Podrás realizar aperturas, arqueos y cierres para controlar los movimientos del salón.</p>
+      } @else {
+        <p>Podrás registrar ventas, abonos y gastos sin abrir una caja. Los movimientos, saldos e historiales financieros seguirán registrándose normalmente.</p>
+      }
+      <div class="cash-safety-note"><mat-icon>shield</mat-icon><span>El backend valida este modo y conserva la trazabilidad financiera en ambos estados.</span></div>
+    </div>
+    <div class="cash-settings-action">
+      <span class="mode-label" [class.on]="cashControlEnabled">{{ cashControlEnabled ? 'ACTIVADO' : 'DESACTIVADO' }}</span>
+      <button
+        type="button"
+        class="cash-toggle"
+        role="switch"
+        [attr.aria-checked]="cashControlEnabled"
+        [attr.aria-label]="cashControlEnabled ? 'Desactivar control de caja' : 'Activar control de caja'"
+        [disabled]="cashControlLoading || cashControlSaving"
+        (click)="requestCashControlChange()">
+        <span></span>
+      </button>
+      <small>{{ cashControlSaving ? 'Guardando...' : 'Exigir apertura para operar' }}</small>
+      @if (cashControlError) {
+        <button mat-button type="button" class="retry-setting" (click)="loadCashControlSetting()">Reintentar</button>
+      }
+    </div>
+  </section>
+
+  <section class="setup-grid">
+    <aside class="guide-panel" aria-labelledby="guide-title">
+      <header class="panel-heading">
+        <span class="panel-icon"><mat-icon>integration_instructions</mat-icon></span>
+        <div>
+          <span class="panel-kicker">Antes de vincular</span>
+          <h2 id="guide-title">Prepara Google Calendar</h2>
+        </div>
+      </header>
+
+      <ol class="steps-list">
+        <li><span>1</span><div><strong>Abre el calendario</strong><p>En Google Calendar, entra a la configuración del calendario que deseas conectar.</p></div></li>
+        <li><span>2</span><div><strong>Comparte el acceso</strong><p>Agrega el correo técnico que aparece debajo en “Compartir con personas específicas”.</p></div></li>
+        <li><span>3</span><div><strong>Asigna el permiso</strong><p>Selecciona el permiso “Hacer cambios en eventos” y guarda.</p></div></li>
+      </ol>
+
+      <div class="service-account-box">
+        <div>
+          <span>Correo técnico del POS</span>
+          <code>{{ serviceAccountEmail }}</code>
+        </div>
+        <button type="button" class="copy-button" (click)="copyServiceEmail()" aria-label="Copiar correo técnico">
+          <mat-icon>content_copy</mat-icon><span>Copiar</span>
+        </button>
+      </div>
+
+      <div class="privacy-note">
+        <mat-icon>verified_user</mat-icon>
+        <p>El POS solo utiliza este acceso para crear y mantener sincronizados los eventos de citas.</p>
+      </div>
+    </aside>
+
+    <section class="connect-panel" aria-labelledby="connect-title">
+      <header class="panel-heading">
+        <span class="panel-icon accent"><mat-icon>add_link</mat-icon></span>
+        <div>
+          <span class="panel-kicker">Nueva conexión</span>
+          <h2 id="connect-title">Vincular calendario</h2>
+          <p>Indica el correo del calendario y decide qué citas recibirá.</p>
+        </div>
+      </header>
+
+      <form class="calendar-form" (ngSubmit)="addCalendar()" autocomplete="off">
+        <label class="field full-field">
+          <span>Correo del calendario <b>Obligatorio</b></span>
+          <div class="input-shell">
+            <mat-icon>alternate_email</mat-icon>
+            <input type="email" name="calendarId" [(ngModel)]="newCalendarId" placeholder="ejemplo@gmail.com" [disabled]="loading" required>
+          </div>
+          <small>Debe ser el mismo calendario que compartiste con el correo técnico.</small>
+        </label>
+
+        <label class="field">
+          <span>Descripción <em>Opcional</em></span>
+          <div class="input-shell">
+            <mat-icon>edit_note</mat-icon>
+            <input type="text" name="description" [(ngModel)]="newDescription" placeholder="Ej. Agenda principal" [disabled]="loading" maxlength="120">
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Asignar citas de</span>
+          <div class="input-shell select-shell">
+            <mat-icon>person_pin</mat-icon>
+            <select name="employeeId" [(ngModel)]="newEmployeeId" [disabled]="loading">
+              <option [ngValue]="null">Todas las profesionales</option>
+              @for (emp of employees; track emp.id) {
+                <option [ngValue]="emp.id">Solo {{ emp.nombre }}</option>
+              }
+            </select>
+            <mat-icon class="select-arrow">expand_more</mat-icon>
+          </div>
+        </label>
+
+        <button mat-flat-button color="primary" type="submit" class="connect-button" [disabled]="loading || !newCalendarId.trim()">
+          <span class="button-content">
+            @if (loading) {
+              <span class="button-spinner" aria-hidden="true"></span>
+            } @else {
+              <mat-icon>add</mat-icon>
+            }
+            <span>{{ loading ? 'Procesando...' : 'Vincular calendario' }}</span>
+          </span>
+        </button>
+      </form>
+    </section>
+  </section>
+
+  <section class="calendars-panel" aria-labelledby="calendars-title">
+    <header class="list-heading">
+      <div>
+        <span class="panel-kicker">Conexiones activas</span>
+        <h2 id="calendars-title">Calendarios vinculados</h2>
+        <p>Revisa qué agenda recibe las citas de cada profesional.</p>
+      </div>
+      <button mat-stroked-button type="button" (click)="loadCalendars()" [disabled]="loading">
+        <mat-icon>refresh</mat-icon> Actualizar
+      </button>
+    </header>
+
+    @if (loading) {
+      <div class="state-panel" role="status">
+        <span class="loader" aria-hidden="true"></span>
+        <h3>Cargando calendarios</h3>
+        <p>Estamos consultando las conexiones configuradas.</p>
+      </div>
+    } @else if (loadError) {
+      <div class="state-panel error-state" role="alert">
+        <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
+        <h3>No se pudieron cargar</h3>
+        <p>{{ loadError }}</p>
+        <button mat-stroked-button type="button" (click)="loadCalendars()"><mat-icon>refresh</mat-icon> Reintentar</button>
+      </div>
+    } @else if (calendars.length === 0) {
+      <div class="state-panel empty-state">
+        <span class="state-icon"><mat-icon>event_busy</mat-icon></span>
+        <h3>Aún no hay calendarios vinculados</h3>
+        <p>Completa el formulario anterior para conectar la primera agenda.</p>
+      </div>
+    } @else {
+      <div class="calendars-grid">
+        @for (cal of calendars; track cal.id) {
+          <article class="calendar-card">
+            <div class="calendar-card-icon" aria-hidden="true"><mat-icon>calendar_today</mat-icon></div>
+            <div class="calendar-info">
+              <span class="calendar-type" [class.professional]="cal.employee_id">
+                <mat-icon>{{ cal.employee_id ? 'person' : 'groups' }}</mat-icon>
+                {{ cal.employee_id ? 'Agenda profesional' : 'Agenda general' }}
+              </span>
+              <h3>{{ cal.calendar_id }}</h3>
+              <p>{{ cal.employee_id ? cal.employee_nombre : 'Recibe las citas de todo el equipo' }}</p>
+              @if (cal.description) {
+                <small><mat-icon>notes</mat-icon>{{ cal.description }}</small>
+              }
+            </div>
+            <div class="calendar-actions">
+              <button mat-stroked-button type="button" (click)="syncCalendar(cal.id)" [disabled]="loading">
+                <mat-icon>sync</mat-icon> Sincronizar citas
+              </button>
+              <button mat-icon-button type="button" class="delete-button" (click)="deleteCalendar(cal.id)" [disabled]="loading" aria-label="Eliminar vinculación">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>

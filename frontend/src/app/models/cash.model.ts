@@ -12,7 +12,14 @@ export interface CashSession {
 
 export interface CashStatus {
   isOpen: boolean;
+  controlEnabled: boolean;
   session?: CashSession;
+  message?: string;
+}
+
+export interface CashControlSetting {
+  controlEnabled: boolean;
+  changed?: boolean;
   message?: string;
 }
 

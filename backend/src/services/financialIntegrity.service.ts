@@ -143,6 +143,7 @@ export interface PaymentInput {
     amount: unknown;
     method?: unknown;
     operationId: string;
+    userId?: string | null;
 }
 
 export const applyPayment = async (client: PoolClient, input: PaymentInput) => {
@@ -151,6 +152,7 @@ export const applyPayment = async (client: PoolClient, input: PaymentInput) => {
     const amountCents = toCents(input.amount, 'monto');
     if (amountCents <= 0) throw new FinancialError(400, 'El abono debe ser mayor que cero');
     const method = parseReceiptMethod(input.method);
+    const userId = input.userId ? requireUuid(input.userId, 'usuario responsable') : null;
 
     const duplicate = await client.query(
         `SELECT sale_id, monto, metodo_pago FROM payment_history WHERE operation_id = $1 LIMIT 1`,
@@ -189,9 +191,9 @@ export const applyPayment = async (client: PoolClient, input: PaymentInput) => {
     const status = newBalanceCents === 0 ? 'PAGADO' : 'PARCIAL';
 
     await client.query(
-        `INSERT INTO payment_history (sale_id, monto, metodo_pago, notas, operation_id)
-         VALUES ($1, $2, $3, 'Abono de Deuda', $4)`,
-        [saleId, fromCents(amountCents), method, operationId]
+        `INSERT INTO payment_history (sale_id, monto, metodo_pago, notas, operation_id, usuario_id)
+         VALUES ($1, $2, $3, 'Abono de Deuda', $4, $5)`,
+        [saleId, fromCents(amountCents), method, operationId, userId]
     );
     await client.query(
         `UPDATE sales

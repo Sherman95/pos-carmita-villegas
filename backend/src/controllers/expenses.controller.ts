@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 // ⚠️ IMPORTANTE: Verifica que esta ruta a tu base de datos sea correcta.
 // Si tu archivo se llama db.ts o database.ts, ajusta la ruta si es necesario.
 import pool from '../database/db';
-import { FinancialError, fromCents, parseReceiptMethod, requireOpenRegister, toCents } from '../services/financialIntegrity.service';
+import { FinancialError, fromCents, parseReceiptMethod, toCents } from '../services/financialIntegrity.service';
+import { enforceCashPolicyForFinancialOperation } from '../services/cashControl.service';
 import { getBusinessDateRange } from '../utils/businessTime';
 
 export const createExpense = async (req: Request, res: Response) => {
@@ -19,7 +20,7 @@ export const createExpense = async (req: Request, res: Response) => {
         const method = parseReceiptMethod(metodo_pago);
 
         await client.query('BEGIN');
-        await requireOpenRegister(client);
+        await enforceCashPolicyForFinancialOperation(client);
         const result = await client.query(
             `INSERT INTO expenses (descripcion, monto, categoria, metodo_pago, fecha, usuario_id)
              VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING *`,

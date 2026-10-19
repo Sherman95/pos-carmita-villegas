@@ -29,6 +29,16 @@
     </div>
   </section>
 
+  @if (mustChangePassword()) {
+    <div class="security-banner" role="alert">
+      <mat-icon>lock_reset</mat-icon>
+      <div>
+        <strong>Debes cambiar tu contraseña temporal</strong>
+        <p>Tu cuenta fue creada o restablecida con una contraseña temporal. Cambia la contraseña en la sección "Seguridad de la cuenta" para poder operar en el POS.</p>
+      </div>
+    </div>
+  }
+
   <div class="profile-workspace">
     <aside class="account-card">
       @if (user(); as u) {
@@ -40,7 +50,7 @@
           <div>
             <span class="account-label">Cuenta conectada</span>
             <h2>{{ u.username }}</h2>
-            <span class="role-pill"><mat-icon>admin_panel_settings</mat-icon>{{ u.role || 'Admin' }}</span>
+            <span class="role-pill"><mat-icon>admin_panel_settings</mat-icon>{{ roleLabel() }}</span>
           </div>
         </div>
 
@@ -51,8 +61,14 @@
             <span class="success-dot"></span>
           </div>
           <div class="detail-row">
-            <span class="detail-icon"><mat-icon>location_on</mat-icon></span>
-            <div><small>Ubicación</small><strong>Piñas, El Oro</strong></div>
+            <span class="detail-icon"><mat-icon>mail</mat-icon></span>
+            <div>
+              <small>Correo de recuperación</small>
+              <strong>{{ u.email || 'No registrado' }}</strong>
+            </div>
+            @if (u.email) {
+              <span class="success-dot" [class.pending]="!emailVerified()" [attr.title]="emailVerified() ? 'Correo verificado' : 'Correo pendiente de verificación'"></span>
+            }
           </div>
           <div class="detail-row">
             <span class="detail-icon"><mat-icon>percent</mat-icon></span>
@@ -62,7 +78,7 @@
 
         <div class="security-note">
           <mat-icon>shield</mat-icon>
-          <p><strong>Acceso administrativo</strong><span>Los cambios se sincronizan con la cuenta del POS.</span></p>
+          <p><strong>Acceso del personal</strong><span>La administración de usuarios y roles la controla la propietaria del negocio.</span></p>
         </div>
 
         <button mat-stroked-button class="logout-btn" type="button" (click)="logout()">
@@ -72,117 +88,135 @@
     </aside>
 
     <div class="settings-column">
-      <section class="settings-card" aria-labelledby="business-data-title">
+      <section class="settings-card compact-card" aria-labelledby="account-security-title">
         <header class="card-heading">
-          <div class="heading-icon"><mat-icon>domain</mat-icon></div>
+          <div class="heading-icon account"><mat-icon>password</mat-icon></div>
           <div>
-            <span class="step-label">Sección 01</span>
-            <h2 id="business-data-title">Información del negocio</h2>
-            <p>Estos datos aparecerán en recibos y comprobantes.</p>
-          </div>
-          <span class="card-badge">Comercial</span>
-        </header>
-
-        <form class="settings-form" (ngSubmit)="saveBusiness()" autocomplete="off">
-          <div class="field-grid">
-            <mat-form-field appearance="outline" class="field-full polished-field">
-              <mat-label>Nombre comercial</mat-label>
-              <mat-icon matPrefix>store</mat-icon>
-              <input matInput [(ngModel)]="business().name" name="bizName" placeholder="Carmita Villegas">
-              <mat-hint>Nombre visible en los comprobantes</mat-hint>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="polished-field">
-              <mat-label>RUC / Cédula</mat-label>
-              <mat-icon matPrefix>fingerprint</mat-icon>
-              <input matInput [(ngModel)]="business().ruc" name="bizRuc" inputmode="numeric">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="polished-field">
-              <mat-label>Teléfono</mat-label>
-              <mat-icon matPrefix>phone</mat-icon>
-              <input matInput [(ngModel)]="business().phone" name="bizPhone" type="tel" inputmode="tel">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="field-full polished-field">
-              <mat-label>Dirección</mat-label>
-              <mat-icon matPrefix>location_on</mat-icon>
-              <input matInput [(ngModel)]="business().address" name="bizAddress" placeholder="Piñas, El Oro">
-            </mat-form-field>
-          </div>
-
-          <div class="tax-setting">
-            <div class="tax-copy">
-              <span class="tax-icon"><mat-icon>receipt_long</mat-icon></span>
-              <div>
-                <strong>Impuesto (IVA)</strong>
-                <p>Ingresa el valor decimal. Por ejemplo: 0.15 corresponde al 15%.</p>
-              </div>
-            </div>
-            <div class="tax-control">
-              <input
-                type="number"
-                min="0"
-                max="1"
-                step="0.01"
-                inputmode="decimal"
-                aria-label="Tasa de IVA en decimal"
-                [ngModel]="taxRateInput()"
-                (ngModelChange)="taxRateInput.set($event)"
-                name="bizIva"
-              >
-              <span>decimal</span>
-            </div>
-          </div>
-
-          <div class="form-footer">
-            <div class="sync-caption"><mat-icon>cloud_sync</mat-icon> Sincronización segura</div>
-            <button mat-flat-button color="primary" type="submit" class="save-button" [disabled]="savingBusiness()">
-              <mat-icon [class.icon-spin]="savingBusiness()">{{ savingBusiness() ? 'sync' : 'save' }}</mat-icon>
-              {{ savingBusiness() ? 'Guardando...' : 'Guardar negocio' }}
-            </button>
-          </div>
-
-          @if (businessMessage()) {
-            <div class="feedback-msg {{ businessMessageType() }}" aria-live="polite">
-              <mat-icon>{{ businessMessageType() === 'success' ? 'check_circle' : businessMessageType() === 'error' ? 'error_outline' : 'sync' }}</mat-icon>
-              {{ businessMessage() }}
-            </div>
-          }
-        </form>
-      </section>
-
-      <section class="settings-card compact-card" aria-labelledby="account-data-title">
-        <header class="card-heading">
-          <div class="heading-icon account"><mat-icon>manage_accounts</mat-icon></div>
-          <div>
-            <span class="step-label">Sección 02</span>
-            <h2 id="account-data-title">Datos de acceso</h2>
-            <p>Actualiza el nombre utilizado para identificar tu cuenta.</p>
+            <span class="step-label">Seguridad</span>
+            <h2 id="account-security-title">Cambiar mi contraseña</h2>
+            <p>Cambia tu contraseña personal validando la contraseña actual.</p>
           </div>
           <span class="card-badge">Cuenta</span>
         </header>
 
-        <form class="settings-form account-form" (ngSubmit)="save()" autocomplete="off">
-          <mat-form-field appearance="outline" class="polished-field account-input">
-            <mat-label>Nombre de usuario</mat-label>
-            <mat-icon matPrefix>person</mat-icon>
-            <input matInput [(ngModel)]="username" name="username" required autocomplete="username">
+        <form class="settings-form account-form" (ngSubmit)="changePassword()" autocomplete="off">
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Contraseña actual</mat-label>
+            <mat-icon matPrefix>lock</mat-icon>
+            <input matInput type="password" [(ngModel)]="currentPassword" name="currentPassword" required autocomplete="current-password">
           </mat-form-field>
 
-          <button mat-stroked-button color="primary" type="submit" class="account-save" [disabled]="savingAccount()">
-            <mat-icon [class.icon-spin]="savingAccount()">{{ savingAccount() ? 'sync' : 'person_check' }}</mat-icon>
-            {{ savingAccount() ? 'Actualizando...' : 'Actualizar usuario' }}
-          </button>
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Nueva contraseña</mat-label>
+            <mat-icon matPrefix>lock_reset</mat-icon>
+            <input matInput type="password" [(ngModel)]="newPassword" name="newPassword" required minlength="10" autocomplete="new-password">
+            <mat-hint>Mínimo 10 caracteres. No puede repetir la actual.</mat-hint>
+          </mat-form-field>
 
-          @if (accountMessage()) {
-            <div class="feedback-msg account-feedback {{ accountMessageType() }}" aria-live="polite">
-              <mat-icon>{{ accountMessageType() === 'success' ? 'check_circle' : accountMessageType() === 'error' ? 'error_outline' : 'info' }}</mat-icon>
-              {{ accountMessage() }}
+          <mat-form-field appearance="outline" class="polished-field">
+            <mat-label>Confirmar nueva contraseña</mat-label>
+            <mat-icon matPrefix>check_circle</mat-icon>
+            <input matInput type="password" [(ngModel)]="passwordConfirmation" name="passwordConfirmation" required minlength="10" autocomplete="new-password">
+          </mat-form-field>
+
+          <div class="form-footer">
+            <div class="sync-caption"><mat-icon>security</mat-icon> Las demás sesiones se cerrarán automáticamente</div>
+            <button mat-flat-button color="primary" type="submit" class="save-button" [disabled]="savingPassword()">
+              <mat-icon [class.icon-spin]="savingPassword()">{{ savingPassword() ? 'sync' : 'lock_reset' }}</mat-icon>
+              {{ savingPassword() ? 'Actualizando...' : 'Cambiar contraseña' }}
+            </button>
+          </div>
+
+          @if (passwordMessage()) {
+            <div class="feedback-msg {{ passwordMessageType() }}" aria-live="polite">
+              <mat-icon>{{ passwordMessageType() === 'success' ? 'check_circle' : passwordMessageType() === 'error' ? 'error_outline' : 'sync' }}</mat-icon>
+              {{ passwordMessage() }}
             </div>
           }
         </form>
       </section>
+
+      @if (canManageBusiness()) {
+        <section class="settings-card" aria-labelledby="business-data-title">
+          <header class="card-heading">
+            <div class="heading-icon"><mat-icon>domain</mat-icon></div>
+            <div>
+              <span class="step-label">Sección 01</span>
+              <h2 id="business-data-title">Información del negocio</h2>
+              <p>Estos datos aparecerán en recibos y comprobantes.</p>
+            </div>
+            <span class="card-badge">Comercial</span>
+          </header>
+
+          <form class="settings-form" (ngSubmit)="saveBusiness()" autocomplete="off">
+            <div class="field-grid">
+              <mat-form-field appearance="outline" class="field-full polished-field">
+                <mat-label>Nombre comercial</mat-label>
+                <mat-icon matPrefix>store</mat-icon>
+                <input matInput [(ngModel)]="business().name" name="bizName" placeholder="Carmita Villegas">
+                <mat-hint>Nombre visible en los comprobantes</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="polished-field">
+                <mat-label>RUC / Cédula</mat-label>
+                <mat-icon matPrefix>fingerprint</mat-icon>
+                <input matInput [(ngModel)]="business().ruc" name="bizRuc" inputmode="numeric">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="polished-field">
+                <mat-label>Teléfono</mat-label>
+                <mat-icon matPrefix>phone</mat-icon>
+                <input matInput [(ngModel)]="business().phone" name="bizPhone" type="tel" inputmode="tel">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-full polished-field">
+                <mat-label>Dirección</mat-label>
+                <mat-icon matPrefix>location_on</mat-icon>
+                <input matInput [(ngModel)]="business().address" name="bizAddress" placeholder="Piñas, El Oro">
+              </mat-form-field>
+            </div>
+
+            <div class="tax-setting">
+              <div class="tax-copy">
+                <span class="tax-icon"><mat-icon>receipt_long</mat-icon></span>
+                <div>
+                  <strong>Impuesto (IVA)</strong>
+                  <p>Ingresa el valor decimal. Por ejemplo: 0.15 corresponde al 15%.</p>
+                </div>
+              </div>
+              <div class="tax-control">
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  inputmode="decimal"
+                  aria-label="Tasa de IVA en decimal"
+                  [ngModel]="taxRateInput()"
+                  (ngModelChange)="taxRateInput.set($event)"
+                  name="bizIva"
+                >
+                <span>decimal</span>
+              </div>
+            </div>
+
+            <div class="form-footer">
+              <div class="sync-caption"><mat-icon>cloud_sync</mat-icon> Sincronización segura</div>
+              <button mat-flat-button color="primary" type="submit" class="save-button" [disabled]="savingBusiness()">
+                <mat-icon [class.icon-spin]="savingBusiness()">{{ savingBusiness() ? 'sync' : 'save' }}</mat-icon>
+                {{ savingBusiness() ? 'Guardando...' : 'Guardar negocio' }}
+              </button>
+            </div>
+
+            @if (businessMessage()) {
+              <div class="feedback-msg {{ businessMessageType() }}" aria-live="polite">
+                <mat-icon>{{ businessMessageType() === 'success' ? 'check_circle' : businessMessageType() === 'error' ? 'error_outline' : 'sync' }}</mat-icon>
+                {{ businessMessage() }}
+              </div>
+            }
+          </form>
+        </section>
+      }
     </div>
   </div>
 </main>

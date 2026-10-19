@@ -1,0 +1,95 @@
+﻿<div class="mobile-container">
+  <header class="app-topbar">
+    <a class="brand-lockup" routerLink="/dashboard" aria-label="SIDRO, inicio">
+      <span class="brand-mark" aria-hidden="true"><img src="a8f7a518-54ab-4d33-9d93-e98ca5b0b987.ico" alt=""></span>
+      <span class="brand-copy"><strong>SIDRO</strong><small>Carmita Villegas</small></span>
+    </a>
+    <a class="profile-shortcut" routerLink="/profile" aria-label="Abrir mi perfil">
+      {{ profileInitials }}
+    </a>
+  </header>
+
+  <div *ngIf="isLoading" class="loading-state" role="status">
+    <span class="spinner" aria-hidden="true"></span>
+    <p>Preparando tu espacio...</p>
+  </div>
+
+  <main *ngIf="!isLoading && profile" class="dashboard-content">
+    <section class="welcome-banner">
+      <div class="banner-copy">
+        <span class="banner-eyebrow">Hola, {{ firstName }}</span>
+        <h1>¿Lista para tu próximo momento de cuidado?</h1>
+        <p>Encuentra un horario que funcione para ti y envía tu solicitud en pocos pasos.</p>
+        <a class="banner-button" routerLink="/booking">
+          Reservar una cita
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+      <div class="banner-art" aria-hidden="true">
+        <span class="art-caption">Carmita Villegas</span>
+        <span class="art-logo"><img src="a8f7a518-54ab-4d33-9d93-e98ca5b0b987.ico" alt=""></span>
+        <span class="art-location">Piñas · El Oro</span>
+      </div>
+    </section>
+
+    <div *ngIf="!profile.linked" class="alert alert-info linking-alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.15 1.15"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.15-1.15"/></svg>
+      <div>
+        <strong>Tu cuenta está pendiente de vinculación</strong>
+        <p>Puedes reservar desde ahora. Tu historial completo aparecerá cuando el equipo vincule tu expediente.</p>
+      </div>
+    </div>
+
+    <section class="quick-actions" aria-labelledby="quick-actions-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Accesos rápidos</span>
+          <h2 id="quick-actions-title">Todo lo que necesitas</h2>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <a routerLink="/booking" class="action-card primary-action">
+          <span class="action-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 14v4M10 16h4"/></svg>
+          </span>
+          <div>
+            <h3>Nueva reserva</h3>
+            <p>Elige servicio, profesional y horario.</p>
+          </div>
+          <span class="action-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a routerLink="/my-requests" class="action-card">
+          <span class="action-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+          </span>
+          <div>
+            <h3>Mis solicitudes</h3>
+            <p>Revisa confirmaciones y propuestas.</p>
+          </div>
+          <span class="action-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="how-it-works surface-card">
+      <div>
+        <span class="eyebrow">Simple y transparente</span>
+        <h2>Así funciona tu reserva</h2>
+      </div>
+      <ol>
+        <li><span>1</span><p><strong>Solicita</strong> un horario disponible.</p></li>
+        <li><span>2</span><p><strong>Espera</strong> la revisión del equipo.</p></li>
+        <li><span>3</span><p><strong>Recibe</strong> tu confirmación o una propuesta.</p></li>
+      </ol>
+    </section>
+  </main>
+
+  <div *ngIf="errorMessage" class="empty-state error-state" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/></svg>
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <app-mobile-nav></app-mobile-nav>
+</div>

@@ -3,7 +3,7 @@
     <div class="hero-copy">
       <span class="eyebrow"><mat-icon>admin_panel_settings</mat-icon> Seguridad del POS</span>
       <h1 id="users-title">Usuarios y permisos</h1>
-      <p>Decide quién puede administrar la configuración y quién utiliza el sistema como colaborador.</p>
+      <p>Administra las cuentas del personal, sus roles y la seguridad de cada acceso.</p>
     </div>
 
     <div class="hero-lock" aria-hidden="true">
@@ -22,15 +22,15 @@
     </article>
     <article class="summary-card">
       <span class="summary-icon admin"><mat-icon>workspace_premium</mat-icon></span>
-      <div><strong>{{ adminUsers }}</strong><span>Administradores</span></div>
+      <div><strong>{{ ownerOrAdminUsers }}</strong><span>Propietaria y administración</span></div>
     </article>
   </section>
 
   <section class="security-note">
     <span class="note-icon"><mat-icon>lock</mat-icon></span>
     <div>
-      <strong>La cuenta <code>admin</code> es la administradora principal</strong>
-      <p>Su rol y acceso están protegidos. Ningún cambio de esta pantalla puede desactivarla ni quitarle permisos.</p>
+      <strong>La jerarquía siempre se valida en el backend</strong>
+      <p>La propietaria administra todas las cuentas. La administración solo puede gestionar cuentas de recepción y profesionales. Nadie puede modificar su propia cuenta desde esta pantalla ni degradar al último propietario activo.</p>
     </div>
   </section>
 
@@ -38,25 +38,18 @@
     <header class="panel-header">
       <div>
         <span class="panel-kicker">Control de acceso</span>
-        <h2 id="accounts-title">Cuentas del equipo</h2>
+        <h2 id="accounts-title">{{ tab === 'accounts' ? 'Cuentas del equipo' : 'Auditoría administrativa' }}</h2>
         <p>Los cambios se aplican en el backend inmediatamente.</p>
       </div>
 
-      <label class="search-box">
-        <span class="sr-only">Buscar cuenta o profesional</span>
-        <mat-icon>search</mat-icon>
-        <input
-          type="search"
-          [(ngModel)]="query"
-          placeholder="Buscar cuenta"
-          autocomplete="off"
-        >
-        @if (query) {
-          <button type="button" aria-label="Limpiar búsqueda" (click)="query = ''">
-            <mat-icon>close</mat-icon>
-          </button>
-        }
-      </label>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" [class.active]="tab === 'accounts'" [attr.aria-selected]="tab === 'accounts'" (click)="selectTab('accounts')">
+          <mat-icon>manage_accounts</mat-icon> Cuentas
+        </button>
+        <button type="button" role="tab" [class.active]="tab === 'audit'" [attr.aria-selected]="tab === 'audit'" (click)="selectTab('audit')">
+          <mat-icon>history</mat-icon> Auditoría
+        </button>
+      </div>
     </header>
 
     @if (actionMessage) {
@@ -73,98 +66,293 @@
       </div>
     }
 
-    @if (loading) {
-      <div class="state-panel" role="status">
-        <mat-spinner diameter="38"></mat-spinner>
-        <h3>Cargando usuarios</h3>
-        <p>Consultando las cuentas autorizadas del POS.</p>
-      </div>
-    } @else if (loadError) {
-      <div class="state-panel error-state" role="alert">
-        <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
-        <h3>No se pudieron cargar las cuentas</h3>
-        <p>{{ loadError }}</p>
-        <button mat-stroked-button type="button" (click)="loadUsers()"><mat-icon>refresh</mat-icon> Reintentar</button>
-      </div>
-    } @else if (!filteredUsers.length) {
-      <div class="state-panel">
-        <span class="state-icon"><mat-icon>person_search</mat-icon></span>
-        <h3>Sin coincidencias</h3>
-        <p>Prueba con otro usuario o nombre de profesional.</p>
-      </div>
-    } @else {
-      <div class="users-grid">
-        @for (user of filteredUsers; track user.id) {
-          <article class="user-card" [class.protected]="isProtected(user)" [class.inactive]="!user.active">
-            <header class="user-identity">
-              <span class="avatar">{{ initials(user) }}</span>
-              <div class="identity-copy">
-                <div class="name-row">
-                  <h3>{{ user.username }}</h3>
-                  @if (isCurrentUser(user)) { <span class="you-badge">Tu cuenta</span> }
-                </div>
-                <p>{{ user.employee_name || 'Cuenta sin profesional vinculado' }}</p>
-              </div>
-              <span class="status" [class.off]="!user.active">
-                <i></i>{{ user.active ? 'Activa' : 'Inactiva' }}
-              </span>
-            </header>
+    @if (tab === 'accounts') {
+      @if (oneTimeCredential) {
+        <div class="credential-banner" role="status">
+          <span class="credential-icon"><mat-icon>key</mat-icon></span>
+          <div class="credential-copy">
+            <strong>{{ oneTimeCredential.title }}</strong>
+            <p>Usuario: <code>{{ oneTimeCredential.username }}</code> · Contraseña temporal: <code>{{ oneTimeCredential.password }}</code></p>
+            <small>Guárdala ahora: no volverá a mostrarse y deberá cambiarse en el primer ingreso.</small>
+          </div>
+          <div class="credential-actions">
+            <button mat-stroked-button type="button" (click)="copyCredential()">
+              <mat-icon>{{ copied ? 'check' : 'content_copy' }}</mat-icon>{{ copied ? 'Copiado' : 'Copiar' }}
+            </button>
+            <button mat-icon-button type="button" aria-label="Cerrar credencial temporal" (click)="dismissCredential()"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      }
 
-            <div class="access-fields">
+      @if (assignableRoles().length) {
+        <div class="create-row">
+          <button mat-flat-button class="create-button" type="button" (click)="showCreate = !showCreate">
+            <mat-icon>{{ showCreate ? 'expand_less' : 'person_add' }}</mat-icon>
+            {{ showCreate ? 'Ocultar formulario' : 'Nueva cuenta de personal' }}
+          </button>
+        </div>
+
+        @if (showCreate) {
+          <form class="create-panel" (ngSubmit)="createUser()" autocomplete="off">
+            <div class="create-grid">
+              <label>
+                <span>Usuario</span>
+                <input type="text" name="newUsername" [(ngModel)]="createForm.username" required minlength="3" maxlength="40" placeholder="recepcion.carmita" autocomplete="off">
+              </label>
+
+              <label>
+                <span>Correo de recuperación (opcional)</span>
+                <input type="email" name="newEmail" [(ngModel)]="createForm.email" placeholder="persona@correo.com" autocomplete="off">
+              </label>
+
               <label>
                 <span>Rol</span>
-                <select
-                  [ngModel]="draftFor(user).role"
-                  (ngModelChange)="setRole(user, $event)"
-                  [disabled]="isProtected(user) || isSaving(user)"
-                >
-                  <option value="admin">Administrador</option>
-                  <option value="user">Colaborador</option>
+                <select name="newRole" [(ngModel)]="createForm.role" required>
+                  <option value="" disabled>Selecciona un rol</option>
+                  @for (role of assignableRoles(); track role) {
+                    <option [value]="role">{{ roleLabel(role) }}</option>
+                  }
                 </select>
               </label>
 
               <label>
-                <span>Acceso</span>
-                <select
-                  [ngModel]="draftFor(user).active ? 'active' : 'inactive'"
-                  (ngModelChange)="setActive(user, $event)"
-                  [disabled]="isProtected(user) || isSaving(user)"
-                >
-                  <option value="active">Permitido</option>
-                  <option value="inactive">Bloqueado</option>
+                <span>Profesional vinculado (requerido para profesionales)</span>
+                <select name="newEmployee" [(ngModel)]="createForm.employee_id">
+                  <option value="">Sin vincular</option>
+                  @for (employee of employees; track employee.id) {
+                    <option [value]="employee.id">{{ employee.nombre }}</option>
+                  }
                 </select>
               </label>
             </div>
 
-            <div class="role-explanation">
-              <mat-icon>{{ draftFor(user).role === 'admin' ? 'admin_panel_settings' : 'badge' }}</mat-icon>
-              <p>
-                @if (draftFor(user).role === 'admin') {
-                  Puede gestionar usuarios, permisos y la configuración de SIDRO.
-                } @else {
-                  Puede trabajar en el POS sin administrar usuarios ni la configuración de SIDRO.
-                }
-              </p>
+            <div class="create-footer">
+              <p><mat-icon>info</mat-icon> El sistema generará una contraseña temporal de un solo uso que deberá cambiarse al primer ingreso.</p>
+              <button mat-flat-button class="create-button" type="submit" [disabled]="createSaving">
+                @if (createSaving) { <mat-spinner diameter="18"></mat-spinner> } @else { <mat-icon>person_add</mat-icon> }
+                Crear cuenta
+              </button>
             </div>
-
-            <footer class="card-actions">
-              @if (isPrimaryAdmin(user)) {
-                <span class="protected-label"><mat-icon>lock</mat-icon> Administradora principal</span>
-              } @else if (isCurrentUser(user)) {
-                <span class="protected-label"><mat-icon>verified_user</mat-icon> Protegida durante tu sesión</span>
-              } @else {
-                <button mat-button type="button" (click)="reset(user)" [disabled]="!hasChanges(user) || isSaving(user)">
-                  Cancelar
-                </button>
-                <button mat-flat-button class="save-button" type="button" (click)="save(user)" [disabled]="!hasChanges(user) || isSaving(user)">
-                  @if (isSaving(user)) { <mat-spinner diameter="18"></mat-spinner> } @else { <mat-icon>save</mat-icon> }
-                  Guardar cambios
-                </button>
-              }
-            </footer>
-          </article>
+          </form>
         }
+      }
+
+      <div class="list-toolbar">
+        <label class="search-box">
+          <span class="sr-only">Buscar cuenta, correo o profesional</span>
+          <mat-icon>search</mat-icon>
+          <input type="search" [(ngModel)]="query" placeholder="Buscar cuenta, correo o profesional" autocomplete="off">
+          @if (query) {
+            <button type="button" aria-label="Limpiar búsqueda" (click)="query = ''"><mat-icon>close</mat-icon></button>
+          }
+        </label>
+
+        <div class="toolbar-filters">
+          <span class="results-count">{{ filteredUsers.length }} de {{ users.length }}</span>
+
+          <label class="filter-select">
+            <span>Rol</span>
+            <select [(ngModel)]="roleFilter">
+              <option value="all">Todos</option>
+              @for (role of availableRoles; track role) {
+                <option [value]="role">{{ roleLabel(role) }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="filter-select">
+            <span>Estado</span>
+            <select [(ngModel)]="statusFilter">
+              <option value="all">Todos</option>
+              <option value="active">Activas</option>
+              <option value="inactive">Inactivas</option>
+            </select>
+          </label>
+        </div>
       </div>
+
+      @if (loading) {
+        <div class="state-panel" role="status">
+          <mat-spinner diameter="38"></mat-spinner>
+          <h3>Cargando usuarios</h3>
+          <p>Consultando las cuentas autorizadas del POS.</p>
+        </div>
+      } @else if (loadError) {
+        <div class="state-panel error-state" role="alert">
+          <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
+          <h3>No se pudieron cargar las cuentas</h3>
+          <p>{{ loadError }}</p>
+          <button mat-stroked-button type="button" (click)="loadUsers()"><mat-icon>refresh</mat-icon> Reintentar</button>
+        </div>
+      } @else if (!filteredUsers.length) {
+        <div class="state-panel">
+          <span class="state-icon"><mat-icon>person_search</mat-icon></span>
+          <h3>Sin coincidencias</h3>
+          <p>Prueba con otro usuario, correo o filtro.</p>
+        </div>
+      } @else {
+        <div class="users-grid">
+          @for (user of filteredUsers; track user.id) {
+            <article class="user-card" [class.protected]="isCurrentUser(user) || isOwner(user)" [class.inactive]="!user.active">
+              <header class="user-identity">
+                <span class="avatar">{{ initials(user) }}</span>
+                <div class="identity-copy">
+                  <div class="name-row">
+                    <h3>{{ user.username }}</h3>
+                    @if (isCurrentUser(user)) { <span class="you-badge">Tu cuenta</span> }
+                    @if (isOwner(user)) { <span class="owner-badge">Propietaria</span> }
+                    @if (user.must_change_password) { <span class="temp-badge">Contraseña temporal</span> }
+                  </div>
+                  <p>{{ user.employee_name || 'Cuenta sin profesional vinculado' }} · {{ roleLabel(user.role) }}</p>
+                </div>
+                <span class="status" [class.off]="!user.active">
+                  <i></i>{{ statusLabel(user.active) }}
+                </span>
+              </header>
+
+              <div class="meta-row">
+                <div class="meta-item">
+                  <span class="meta-icon"><mat-icon>mail_outline</mat-icon></span>
+                  <div class="meta-copy">
+                    <small>Correo de recuperación</small>
+                    <strong [title]="user.email || 'Sin correo registrado'">{{ user.email || 'Sin correo registrado' }}</strong>
+                    @if (user.email) {
+                      <em [class.verified]="user.email_verified_at">
+                        <i></i>{{ user.email_verified_at ? 'Verificado' : 'Pendiente de verificar' }}
+                      </em>
+                    }
+                  </div>
+                </div>
+
+                <div class="meta-item">
+                  <span class="meta-icon"><mat-icon>schedule</mat-icon></span>
+                  <div class="meta-copy">
+                    <small>Último acceso</small>
+                    <strong>{{ user.last_login_at ? (user.last_login_at | date: 'dd/MM/yyyy · HH:mm') : 'Todavía no ha ingresado' }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              @if (canManage(user)) {
+                <div class="card-section-title">
+                  <span><mat-icon>tune</mat-icon> Acceso y vinculación</span>
+                  @if (hasChanges(user)) { <small>Cambios sin guardar</small> }
+                </div>
+                <div class="access-fields account-fields">
+                  <label>
+                    <span>Usuario</span>
+                    <input type="text" [ngModel]="draftFor(user).username" (ngModelChange)="updateDraft(user, { username: $event })" name="username-{{ user.id }}" [disabled]="isBusy(user)" maxlength="40">
+                  </label>
+
+                  <label>
+                    <span>Correo de recuperación</span>
+                    <input type="email" [ngModel]="draftFor(user).email" (ngModelChange)="updateDraft(user, { email: $event })" name="email-{{ user.id }}" [disabled]="isBusy(user)" placeholder="Sin correo">
+                  </label>
+
+                  <label>
+                    <span>Rol</span>
+                    <select [ngModel]="draftFor(user).role" (ngModelChange)="updateDraft(user, { role: $event })" [disabled]="isBusy(user)">
+                      @if (!assignableRoles().includes(draftFor(user).role)) {
+                        <option [value]="draftFor(user).role">{{ roleLabel(draftFor(user).role) }}</option>
+                      }
+                      @for (role of assignableRoles(); track role) {
+                        <option [value]="role">{{ roleLabel(role) }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Profesional vinculado</span>
+                    <select [ngModel]="draftFor(user).employee_id" (ngModelChange)="updateDraft(user, { employee_id: $event })" [disabled]="isBusy(user)">
+                      <option value="">Sin vincular</option>
+                      @for (employee of employeeOptionsFor(user); track employee.id) {
+                        <option [value]="employee.id">{{ employee.nombre }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Acceso</span>
+                    <select [ngModel]="draftFor(user).active ? 'active' : 'inactive'" (ngModelChange)="updateDraft(user, { active: $event === 'active' })" [disabled]="isBusy(user)">
+                      <option value="active">Permitido</option>
+                      <option value="inactive">Bloqueado</option>
+                    </select>
+                  </label>
+                </div>
+
+                <footer class="card-actions">
+                  <button mat-button type="button" (click)="reset(user)" [disabled]="!hasChanges(user) || isBusy(user)">Cancelar</button>
+                  <button mat-flat-button class="save-button" type="button" (click)="save(user)" [disabled]="!hasChanges(user) || isBusy(user)">
+                    @if (isSaving(user)) { <mat-spinner diameter="18"></mat-spinner> } @else { <mat-icon>save</mat-icon> }
+                    Guardar cambios
+                  </button>
+                </footer>
+
+                <footer class="card-actions secondary-actions">
+                  <button mat-stroked-button type="button" (click)="resetPassword(user, 'temporary')" [disabled]="isBusy(user)" title="Genera una contraseña temporal que se muestra una sola vez">
+                    <mat-icon>key</mat-icon> Restablecer temporal
+                  </button>
+                  <button mat-stroked-button type="button" (click)="resetPassword(user, 'email')" [disabled]="isBusy(user) || !canResetByEmail(user)" [attr.title]="canResetByEmail(user) ? 'Envía un enlace de un solo uso al correo verificado' : 'La cuenta no tiene correo verificado'">
+                    <mat-icon>outgoing_mail</mat-icon> Enviar enlace
+                  </button>
+                  <button mat-stroked-button class="danger-ghost" type="button" (click)="revokeSessions(user)" [disabled]="isBusy(user)" title="Invalida todas las sesiones activas de esta cuenta">
+                    <mat-icon>logout</mat-icon> Revocar sesiones
+                  </button>
+                </footer>
+              } @else {
+                <div class="role-explanation">
+                  <mat-icon>lock</mat-icon>
+                  <p>
+                    @if (isCurrentUser(user)) {
+                      Tu propia cuenta se protege aquí: usa la sección de perfil para cambiar tu contraseña.
+                    } @else {
+                      Esta cuenta tiene igual o mayor jerarquía que la tuya; solo la propietaria puede administrarla.
+                    }
+                  </p>
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    } @else {
+      @if (auditLoading) {
+        <div class="state-panel" role="status">
+          <mat-spinner diameter="38"></mat-spinner>
+          <h3>Cargando auditoría</h3>
+          <p>Consultando las últimas acciones administrativas.</p>
+        </div>
+      } @else if (auditError) {
+        <div class="state-panel error-state" role="alert">
+          <span class="state-icon"><mat-icon>cloud_off</mat-icon></span>
+          <h3>No se pudo cargar la auditoría</h3>
+          <p>{{ auditError }}</p>
+          <button mat-stroked-button type="button" (click)="loadAudit()"><mat-icon>refresh</mat-icon> Reintentar</button>
+        </div>
+      } @else if (!auditEntries.length) {
+        <div class="state-panel">
+          <span class="state-icon"><mat-icon>history_toggle_off</mat-icon></span>
+          <h3>Sin acciones registradas</h3>
+          <p>Las operaciones administrativas aparecerán aquí.</p>
+        </div>
+      } @else {
+        <ul class="audit-list">
+          @for (entry of auditEntries; track entry.id) {
+            <li class="audit-item">
+              <span class="audit-icon"><mat-icon>history</mat-icon></span>
+              <div class="audit-copy">
+                <strong>{{ auditLabel(entry.action) }}</strong>
+                <p>
+                  {{ entry.actor_username || 'Sistema' }}
+                  @if (entry.target_username) { → <b>{{ entry.target_username }}</b> }
+                  @if (auditDetail(entry)) { · {{ auditDetail(entry) }} }
+                </p>
+              </div>
+              <time>{{ entry.created_at | date: 'dd/MM/yyyy HH:mm' }}</time>
+            </li>
+          }
+        </ul>
+      }
     }
   </section>
 </main>

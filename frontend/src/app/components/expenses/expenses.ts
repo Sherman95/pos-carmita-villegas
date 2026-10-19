@@ -184,7 +184,7 @@ export class ExpensesComponent implements OnInit {
   // Abrir diálogo de nuevo gasto (Verifica caja primero)
   openAddDialog() {
     this.cashService.getStatus().subscribe(status => {
-      if (!status.isOpen) {
+      if (status.controlEnabled !== false && !status.isOpen) {
         Swal.fire({
           title: '⛔ Caja Cerrada',
           text: 'Debes abrir turno para registrar salidas de dinero.',

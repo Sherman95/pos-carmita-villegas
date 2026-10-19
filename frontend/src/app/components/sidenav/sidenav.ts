@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { NotificationsBellComponent } from '../notifications-bell/notifications-bell';
 
 @Component({
   selector: 'app-sidenav',
@@ -15,7 +16,8 @@ import { MatDividerModule } from '@angular/material/divider';
     RouterModule,
     MatListModule,
     MatIconModule,
-    MatDividerModule
+    MatDividerModule,
+    NotificationsBellComponent
 ],
   templateUrl: './sidenav.html',
   styleUrls: ['./sidenav.scss']
@@ -27,13 +29,18 @@ export class SidenavComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
-  // Datos del usuario (Idealmente vendrían de un AuthService)
-  user = {
-    name: 'Carmita Villegas',
-    email: 'admin@poscarmita.com',
-    role: 'Administrador',
-    initial: 'C'
-  };
+  get user() {
+    const current = this.auth.currentUser();
+    const labels: Record<string, string> = {
+      owner: 'Propietaria', admin: 'Administración', reception: 'Recepción / Caja', professional: 'Profesional'
+    };
+    return {
+      name: current?.username || 'Cuenta POS',
+      email: current?.email || 'Personal autorizado',
+      role: labels[current?.role || ''] || 'Personal',
+      initial: (current?.username || 'P').charAt(0).toUpperCase()
+    };
+  }
 
   // Función auxiliar para emitir el cierre
   onClose() {
@@ -43,6 +50,8 @@ export class SidenavComponent {
   get isAdmin(): boolean {
     return this.auth.isAdmin();
   }
+
+  can(permission: string): boolean { return this.auth.hasPermission(permission); }
 
   logout() {
     console.log('Cerrando sesión...');

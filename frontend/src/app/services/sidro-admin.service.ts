@@ -15,8 +15,11 @@ export interface SidroRequest {
   client_notes?: string | null;
   status: SidroRequestStatus;
   client_name: string;
+  client_phone?: string | null;
+  client_phone_normalized?: string | null;
   service_name: string;
   employee_name: string;
+  sidro_account_id?: string | null;
   linked_client_id?: string | null;
   official_appointment_id?: string | null;
 }
@@ -34,6 +37,56 @@ export interface SidroServiceImageReference {
   id: string;
   sidro_image_url: string | null;
   sidro_image_public_id: string | null;
+}
+
+export interface SidroAccountDetail {
+  id: string;
+  nombre_completo: string;
+  telefono: string | null;
+  email: string | null;
+  documento: string | null;
+  direccion: string | null;
+  is_active: boolean | null;
+  linked_client_id: string | null;
+  linked_client_name: string | null;
+  documento_checksum_valid?: boolean | null;
+  documento_verification_level?: 'algorithmic' | 'structure_only' | null;
+  documento_official_verification?: 'not_performed';
+}
+
+export interface ClientMatch {
+  id: string;
+  nombre: string;
+  cedula: string | null;
+  telefono: string | null;
+  email: string | null;
+  direccion: string | null;
+  match_reasons: Array<'documento' | 'correo' | 'telefono'>;
+  linked_to_other: boolean;
+}
+
+export interface LinkRequestSummary {
+  request_id: number;
+  date: string;
+  time: string;
+}
+
+export interface CreateClientAndLinkResult {
+  message: string;
+  client: {
+    id: string;
+    nombre: string;
+    cedula: string | null;
+    telefono: string | null;
+    email: string | null;
+    direccion: string | null;
+  };
+  link_id: string;
+  confirmed_requests: Array<LinkRequestSummary & { appointment_id: string | number }>;
+  conflicts: LinkRequestSummary[];
+  documento_checksum_valid?: boolean | null;
+  documento_verification_level?: 'algorithmic' | 'structure_only' | null;
+  documento_official_verification?: 'not_performed';
 }
 
 interface CloudinaryUploadSignature {
@@ -66,6 +119,27 @@ export class SidroAdminService {
 
   linkAccount(sidro_account_id: string, client_id: string, force = false): Observable<any> {
     return this.http.post(`${this.apiUrl}/link`, { sidro_account_id, client_id, force });
+  }
+
+  getAccountDetail(accountId: string): Observable<{ account: SidroAccountDetail }> {
+    return this.http.get<{ account: SidroAccountDetail }>(`${this.apiUrl}/accounts/${accountId}/detail`);
+  }
+
+  getAccountMatches(accountId: string): Observable<{ matches: ClientMatch[]; linked_client_id: string | null }> {
+    return this.http.get<{ matches: ClientMatch[]; linked_client_id: string | null }>(
+      `${this.apiUrl}/accounts/${accountId}/matches`
+    );
+  }
+
+  createClientAndLink(payload: {
+    sidro_account_id: string;
+    nombre: string;
+    cedula: string;
+    telefono: string;
+    email: string;
+    direccion: string;
+  }): Observable<CreateClientAndLinkResult> {
+    return this.http.post<CreateClientAndLinkResult>(`${this.apiUrl}/link/create-client`, payload);
   }
 
   getRequests(): Observable<SidroRequest[]> {

@@ -1,73 +1,71 @@
-<div class="login-shell">
+<main class="login-shell">
+  <section class="brand-panel" aria-label="Carmita Villegas Estilistas">
+    <div class="brand-glow glow-one"></div>
+    <div class="brand-glow glow-two"></div>
 
-  <div class="decorative-bg">
-    <div class="circle circle-1"></div>
-    <div class="circle circle-2"></div>
-  </div>
+    <div class="brand-lockup">
+      <div class="brand-logo">
+        <img src="/assets/imghome.png" alt="Carmita Villegas Estilistas" [hidden]="!logoLoaded" (error)="onLogoError()">
+        @if (!logoLoaded) { <mat-icon>spa</mat-icon> }
+      </div>
+      <div><strong>Carmita Villegas</strong><span>Estilistas</span></div>
+    </div>
 
-  <div class="card elevation-z8">
+    <div class="brand-message">
+      <span class="eyebrow">Sistema de gestión</span>
+      <h1>La belleza en cada detalle. El control en un solo lugar.</h1>
+      <p>Administra citas, clientes, ventas y operación diaria desde una experiencia diseñada para tu salón.</p>
+    </div>
 
-    <div class="brand">
-      <div class="logo-container">
-        <img class="logo"
-          src="/assets/imghome.png"
-          alt="Logo"
-          [hidden]="!logoLoaded"
-          (error)="onLogoError()">
+    <div class="brand-features">
+      <span><mat-icon>calendar_month</mat-icon> Agenda organizada</span>
+      <span><mat-icon>shield</mat-icon> Acceso seguro</span>
+      <span><mat-icon>insights</mat-icon> Gestión clara</span>
+    </div>
+  </section>
 
-          @if (!logoLoaded) {
-            <mat-icon class="fallback-icon">storefront</mat-icon>
-          }
-        </div>
-
-        <div class="brand-text">
-          <h1>Bienvenido 👋</h1>
-          <p>Inicia sesión en tu punto de venta</p>
-        </div>
+  <section class="access-panel">
+    <div class="access-card">
+      <div class="mobile-brand">
+        <img src="/assets/imghome.png" alt="Carmita Villegas Estilistas" [hidden]="!logoLoaded">
+        @if (!logoLoaded) { <mat-icon>spa</mat-icon> }
+        <span>Carmita Villegas <small>Estilistas</small></span>
       </div>
 
-      <form (ngSubmit)="submit()" autocomplete="off" class="login-form">
+      <header class="access-heading">
+        <span class="eyebrow">Acceso administrativo</span>
+        <h2>Bienvenida de nuevo</h2>
+        <p>Ingresa tus credenciales para continuar al punto de venta.</p>
+      </header>
 
+      <form (ngSubmit)="submit()" class="login-form">
+        <label class="field-label" for="pos-username">Usuario</label>
         <mat-form-field appearance="outline" class="full-width custom-field">
-          <mat-label>Usuario</mat-label>
-          <mat-icon matPrefix>person</mat-icon>
-          <input matInput name="username" [(ngModel)]="username" required placeholder="Ej. admin">
+          <mat-icon matPrefix>person_outline</mat-icon>
+          <input id="pos-username" matInput name="username" [(ngModel)]="username" autocomplete="username" required placeholder="Escribe tu usuario">
         </mat-form-field>
 
+        <div class="password-label"><label class="field-label" for="pos-password">Contraseña</label><span>Acceso personal</span></div>
         <mat-form-field appearance="outline" class="full-width custom-field">
-          <mat-label>Contraseña</mat-label>
-          <mat-icon matPrefix>lock</mat-icon>
-          <input matInput
-            name="password"
-            [type]="hidePassword ? 'password' : 'text'"
-            [(ngModel)]="password"
-            required
-            placeholder="••••••">
-            <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
-              <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-            </button>
-          </mat-form-field>
-
-          @if (error) {
-            <div class="error-box">
-              <mat-icon>error_outline</mat-icon>
-              <span>{{ error }}</span>
-            </div>
-          }
-
-          <button mat-flat-button class="btn-login" type="submit" [disabled]="loading">
-            @if (!loading) {
-              <span>INGRESAR</span>
-            }
-            @if (loading) {
-              <div class="loader"></div>
-            }
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input id="pos-password" matInput name="password" [type]="hidePassword ? 'password' : 'text'" [(ngModel)]="password" autocomplete="current-password" required placeholder="Ingresa tu contraseña">
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [attr.aria-label]="hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña'">
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
+        </mat-form-field>
 
-        </form>
+        @if (error) {
+          <div class="error-box" role="alert"><mat-icon>error_outline</mat-icon><span>{{ error }}</span></div>
+        }
 
-        <div class="footer-copy">
-          © 2026 Sistema POS
-        </div>
-      </div>
+        <button mat-flat-button class="login-button" type="submit" [disabled]="loading">
+          @if (!loading) { <span class="button-content"><span>Ingresar al sistema</span><mat-icon>arrow_forward</mat-icon></span> }
+          @if (loading) { <span class="loader" aria-label="Iniciando sesión"></span> }
+        </button>
+      </form>
+
+      <div class="security-note"><mat-icon>verified_user</mat-icon><span>Sesión protegida para el equipo autorizado.</span></div>
+      <footer>© 2026 Carmita Villegas Estilistas · Piñas, El Oro</footer>
     </div>
+  </section>
+</main>

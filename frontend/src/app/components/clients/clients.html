@@ -1,33 +1,34 @@
-<div class="page-container fade-in">
-
-  <header class="header-section">
-    <div class="header-content">
-      <h1>Clientes 👥</h1>
-      <p>Gestiona tu base de datos de clientes</p>
-
-      <div class="search-wrapper">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input
-          type="text"
-          placeholder="Buscar por nombre, cédula o email..."
-          [ngModel]="searchTerm()"
-          (ngModelChange)="setSearch($event)"
-        />
-        @if (searchTerm()) {
-          <button mat-icon-button (click)="setSearch('')" class="clear-btn">
-            <mat-icon>close</mat-icon>
-          </button>
-        }
-      </div>
+<main class="clients-page fade-in">
+  <section class="clients-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Directorio del salón</span>
+      <h1>Clientes</h1>
+      <p>Información de contacto y facturación en un solo lugar.</p>
     </div>
-  </header>
+    <div class="hero-stat" aria-label="Total de clientes registrados">
+      <span class="stat-icon"><mat-icon>groups</mat-icon></span>
+      <span><strong>{{ clients().length }}</strong><small>registrados</small></span>
+    </div>
+  </section>
 
-  <div class="clients-wrapper">
-    
-    <div class="actions-bar">
-      <button mat-flat-button class="btn-new" (click)="showCreateForm()">
-        <mat-icon>person_add</mat-icon> NUEVO CLIENTE
+  <section class="clients-content">
+    <div class="directory-toolbar">
+      <label class="search-control">
+        <mat-icon>search</mat-icon>
+        <span class="sr-only">Buscar clientes</span>
+        <input type="search" placeholder="Buscar por nombre, cédula o correo" [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)" />
+        @if (searchTerm()) {
+          <button type="button" mat-icon-button (click)="setSearch('')" aria-label="Limpiar búsqueda"><mat-icon>close</mat-icon></button>
+        }
+      </label>
+      <button type="button" mat-flat-button class="new-client-button" (click)="showCreateForm()">
+        <mat-icon>person_add</mat-icon><span>Nuevo cliente</span>
       </button>
+    </div>
+
+    <div class="results-heading">
+      <div><span class="eyebrow">Base de clientes</span><h2>{{ searchTerm() ? 'Resultados de búsqueda' : 'Todos los clientes' }}</h2></div>
+      <span class="result-count">{{ filteredClients().length }} {{ filteredClients().length === 1 ? 'cliente' : 'clientes' }}</span>
     </div>
 
     <div class="clients-grid">
@@ -35,119 +36,114 @@
       @if (loading()) {
         <div class="loading-state">
           <div class="spinner"></div>
-          <p>Cargando agenda...</p>
+          <h3>Preparando el directorio</h3>
+          <p>Cargando la información de clientes…</p>
         </div>
-
       } @else if (filteredClients().length === 0) {
         <div class="empty-state">
-          <div class="icon-circle"><mat-icon>group_off</mat-icon></div>
-          <h3>No se encontraron clientes</h3>
-          <p>Intenta con otro nombre o registra uno nuevo.</p>
-          <button mat-stroked-button color="primary" (click)="setSearch('')">Limpiar búsqueda</button>
+          <span class="empty-icon"><mat-icon>person_search</mat-icon></span>
+          <h3>{{ searchTerm() ? 'No encontramos coincidencias' : 'Aún no hay clientes registrados' }}</h3>
+          <p>{{ searchTerm() ? 'Prueba con otro nombre, identificación o correo.' : 'Registra el primer cliente para comenzar.' }}</p>
+          @if (searchTerm()) {
+            <button type="button" mat-stroked-button (click)="setSearch('')">Limpiar búsqueda</button>
+          } @else {
+            <button type="button" mat-flat-button class="new-client-button compact" (click)="showCreateForm()">Crear cliente</button>
+          }
         </div>
-
       } @else {
         @for (c of filteredClients(); track c.id) {
-          <div class="client-card elevation-z2" (click)="editClient(c)">
-            
-            <div class="card-left">
-              <div class="avatar-circle" [style.background-color]="getColor(c.nombre)">
-                {{ c.nombre.charAt(0).toUpperCase() }}
+          <article class="client-card" (click)="editClient(c)" tabindex="0" (keydown.enter)="editClient(c)">
+            <div class="client-main">
+              <div class="avatar" [style.background]="getColor(c.nombre)">{{ c.nombre.charAt(0).toUpperCase() }}</div>
+              <div class="client-identity">
+                <span class="record-label">Ficha de cliente</span>
+                <h3>{{ c.nombre }}</h3>
+                <span class="record-status" [class.complete]="c.cedula && c.telefono">
+                  <i></i>{{ c.cedula && c.telefono ? 'Datos principales completos' : 'Información por completar' }}
+                </span>
               </div>
-            </div>
-
-            <div class="card-center">
-              <h3 class="name">{{ c.nombre }}</h3>
-              
-              <div class="details-row">
-                @if(c.cedula) {
-                  <span class="badge"><mat-icon>badge</mat-icon> {{ c.cedula }}</span>
-                }
-                @if(c.telefono) {
-                  <span class="badge"><mat-icon>phone</mat-icon> {{ c.telefono }}</span>
-                }
-              </div>
-              
-              @if(c.email) {
-                <span class="email-text">{{ c.email }}</span>
-              }
-            </div>
-
-            <div class="card-right">
-              <button mat-icon-button color="warn" class="delete-btn" 
-                      (click)="deleteClient(c.id); $event.stopPropagation()"
-                      matTooltip="Eliminar cliente">
+              <button type="button" mat-icon-button class="delete-button"
+                      (click)="deleteClient(c.id); $event.stopPropagation()" matTooltip="Eliminar cliente"
+                      [attr.aria-label]="'Eliminar a ' + c.nombre">
                 <mat-icon>delete_outline</mat-icon>
               </button>
-              <mat-icon class="edit-icon">chevron_right</mat-icon>
             </div>
 
-          </div>
+            <div class="client-details">
+              <div class="detail-item"><mat-icon>badge</mat-icon><span><small>Identificación</small><strong>{{ c.cedula || 'Sin registrar' }}</strong></span></div>
+              <div class="detail-item"><mat-icon>phone</mat-icon><span><small>Teléfono</small><strong>{{ c.telefono || 'Sin registrar' }}</strong></span></div>
+              <div class="detail-item full"><mat-icon>mail_outline</mat-icon><span><small>Correo</small><strong>{{ c.email || 'Sin registrar' }}</strong></span></div>
+            </div>
+
+            <div class="card-footer"><span>Ver y editar información</span><mat-icon>arrow_forward</mat-icon></div>
+          </article>
         }
       }
     </div>
-  </div>
+  </section>
 
   <ng-template #clientFormDialog>
-    <div class="modern-dialog">
-      
-      <div class="dialog-header">
-        <h2>{{ selectedClientId() ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
-        <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
-      </div>
+    <div class="client-dialog">
+      <header class="dialog-header">
+        <div class="dialog-heading">
+          <span class="dialog-icon"><mat-icon>{{ selectedClientId() ? 'manage_accounts' : 'person_add' }}</mat-icon></span>
+          <div>
+            <span class="eyebrow">{{ selectedClientId() ? 'Actualizar ficha' : 'Nuevo registro' }}</span>
+            <h2>{{ selectedClientId() ? 'Editar cliente' : 'Agregar cliente' }}</h2>
+            <p>Datos para atención, contacto y facturación.</p>
+          </div>
+        </div>
+        <button type="button" mat-icon-button mat-dialog-close class="close-button" aria-label="Cerrar formulario"><mat-icon>close</mat-icon></button>
+      </header>
 
       <div class="dialog-body">
-        <p class="dialog-subtitle">Ingresa los datos para facturación y contacto.</p>
-
         @if (formError()) {
-          <div class="error-box">
-            <mat-icon>error</mat-icon> {{ formError() }}
-          </div>
+          <div class="error-box" role="alert"><mat-icon>error_outline</mat-icon><span>{{ formError() }}</span></div>
         }
 
-        <div class="form-grid">
-          
-          <mat-form-field appearance="outline" class="col-full custom-field">
-            <mat-label>Apellidos y Nombres (Razón Social)</mat-label>
-            <mat-icon matPrefix class="prefix-icon">person</mat-icon>
-            <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event.toUpperCase())" required />
-          </mat-form-field>
+        <section class="form-section">
+          <div class="section-heading"><span>01</span><div><strong>Identificación</strong><small>Nombre e identificación tributaria</small></div></div>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full-field">
+              <mat-label>Apellidos y nombres / Razón social</mat-label><mat-icon matPrefix>person_outline</mat-icon>
+              <input matInput autocomplete="name" [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event.toUpperCase())" required />
+              <mat-hint>Campo obligatorio</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Cédula o RUC</mat-label><mat-icon matPrefix>badge</mat-icon>
+              <input matInput inputmode="numeric" [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" maxlength="13" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label><mat-icon matPrefix>phone</mat-icon>
+              <input matInput type="tel" inputmode="tel" autocomplete="tel" [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" maxlength="10" />
+            </mat-form-field>
+          </div>
+        </section>
 
-          <mat-form-field appearance="outline" class="col-half custom-field">
-            <mat-label>Cédula / RUC</mat-label>
-            <mat-icon matPrefix class="prefix-icon">badge</mat-icon>
-            <input matInput [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" maxlength="13" />
-          </mat-form-field>
+        <section class="form-section">
+          <div class="section-heading"><span>02</span><div><strong>Contacto</strong><small>Canales y dirección de la clienta</small></div></div>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full-field">
+              <mat-label>Correo electrónico</mat-label><mat-icon matPrefix>mail_outline</mat-icon>
+              <input matInput type="email" autocomplete="email" [ngModel]="form().email" (ngModelChange)="updateField('email', $event.toLowerCase())" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-field">
+              <mat-label>Dirección</mat-label><mat-icon matPrefix>location_on</mat-icon>
+              <input matInput autocomplete="street-address" [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event.toUpperCase())" />
+            </mat-form-field>
+          </div>
+        </section>
+      </div>
 
-          <mat-form-field appearance="outline" class="col-half custom-field">
-            <mat-label>Teléfono</mat-label>
-            <mat-icon matPrefix class="prefix-icon">phone</mat-icon>
-            <input matInput type="tel" [ngModel]="form().telefono" (ngModelChange)="updateField('telefono', $event)" maxlength="10" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="col-full custom-field">
-            <mat-label>Correo Electrónico</mat-label>
-            <mat-icon matPrefix class="prefix-icon">mail</mat-icon>
-            <input matInput type="email" [ngModel]="form().email" (ngModelChange)="updateField('email', $event.toLowerCase())" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="col-full custom-field">
-            <mat-label>Dirección</mat-label>
-            <mat-icon matPrefix class="prefix-icon">place</mat-icon>
-            <input matInput [ngModel]="form().direccion" (ngModelChange)="updateField('direccion', $event.toUpperCase())" />
-          </mat-form-field>
-
+      <footer class="dialog-actions">
+        <p><mat-icon>lock_outline</mat-icon> La información se utiliza únicamente para la operación del salón.</p>
+        <div>
+          <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
+          <button type="button" mat-flat-button class="save-button" (click)="guardar()" [disabled]="!form().nombre.trim()">
+            <mat-icon>{{ selectedClientId() ? 'save' : 'person_add' }}</mat-icon>{{ selectedClientId() ? 'Guardar cambios' : 'Agregar cliente' }}
+          </button>
         </div>
-      </div>
-
-      <div class="dialog-actions">
-        <button mat-stroked-button mat-dialog-close (click)="cancelar()">Cancelar</button>
-        <button mat-flat-button color="primary" class="save-btn" (click)="guardar()" [disabled]="!form().nombre">
-          {{ selectedClientId() ? 'ACTUALIZAR' : 'GUARDAR' }}
-        </button>
-      </div>
-
+      </footer>
     </div>
   </ng-template>
-
-</div>
+</main>

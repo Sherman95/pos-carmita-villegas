@@ -84,7 +84,7 @@ const client = new Client({ connectionString: process.env.DATABASE_URL });
       );
       CREATE TABLE ${schema}.payment_history (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(), sale_id uuid NOT NULL REFERENCES ${schema}.sales(id),
-        monto numeric NOT NULL, metodo_pago text NOT NULL, notas text, operation_id uuid UNIQUE
+        monto numeric NOT NULL, metodo_pago text NOT NULL, notas text, operation_id uuid UNIQUE, usuario_id uuid
       );
     `);
     await client.query(`SET search_path TO ${schema}`);

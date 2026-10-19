@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { requirePermission, requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { PERMISSIONS } from '../security/rbac';
 
 // 👇 ASEGÚRATE DE IMPORTAR 'getClosingReport' AQUÍ
 import {
@@ -15,14 +16,14 @@ const router = Router();
 router.use(verifyToken, requireStaff);
 
 // Rutas
-router.get('/status', getStatus);
-router.post('/open', openRegister);
-router.get('/details', getClosingDetails);
-router.post('/close/:id', closeRegister);
-router.get('/history', getCashHistory);
+router.get('/status', requirePermission(PERMISSIONS.cashOperate), getStatus);
+router.post('/open', requirePermission(PERMISSIONS.cashOperate), openRegister);
+router.get('/details', requirePermission(PERMISSIONS.cashOperate), getClosingDetails);
+router.post('/close/:id', requirePermission(PERMISSIONS.cashOperate), closeRegister);
+router.get('/history', requirePermission(PERMISSIONS.cashHistory), getCashHistory);
 
 
 // 👇 ESTA ES LA LÍNEA QUE SUELE FALTAR. ¿LA TIENES?
-router.get('/report/:id', getClosingReport);
+router.get('/report/:id', requirePermission(PERMISSIONS.cashHistory), getClosingReport);
 
 export default router;

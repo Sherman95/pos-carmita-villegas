@@ -1,0 +1,16 @@
+{
+  "name": "POS Carmita Villegas",
+  "short_name": "POS Carmita",
+  "description": "Administración segura del salón Carmita Villegas.",
+  "lang": "es",
+  "theme_color": "#4b1735",
+  "background_color": "#fbf6f8",
+  "display": "standalone",
+  "id": "/",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

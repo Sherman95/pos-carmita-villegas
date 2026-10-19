@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import pool from '../database/db';
 import { FinancialError, fromCents, getMovementTotals, requireUuid, toCents } from '../services/financialIntegrity.service';
 import { getBusinessDateRange } from '../utils/businessTime';
+import { getCashControlEnabled, requireCashControlEnabled } from '../services/cashControl.service';
 
 const sendError = (res: Response, error: unknown, fallback: string) => {
     console.error(error);
@@ -12,8 +13,13 @@ const sendError = (res: Response, error: unknown, fallback: string) => {
 
 export const getStatus = async (_req: Request, res: Response) => {
     try {
-        const result = await pool.query(`SELECT * FROM cash_registers WHERE estado = 'ABIERTA' ORDER BY fecha_apertura DESC LIMIT 1`);
-        return result.rows[0] ? res.json({ isOpen: true, session: result.rows[0] }) : res.json({ isOpen: false, message: 'Caja cerrada' });
+        const [result, controlEnabled] = await Promise.all([
+            pool.query(`SELECT * FROM cash_registers WHERE estado = 'ABIERTA' ORDER BY fecha_apertura DESC LIMIT 1`),
+            getCashControlEnabled()
+        ]);
+        return result.rows[0]
+            ? res.json({ isOpen: true, controlEnabled, session: result.rows[0] })
+            : res.json({ isOpen: false, controlEnabled, message: controlEnabled ? 'Caja cerrada' : 'Control de caja desactivado' });
     } catch (error) {
         return sendError(res, error, 'Error al verificar caja');
     }
@@ -26,6 +32,7 @@ export const openRegister = async (req: Request, res: Response) => {
         if (initialCents < 0) throw new FinancialError(400, 'El monto inicial no puede ser negativo');
         if (!req.userId) throw new FinancialError(401, 'Usuario no autenticado');
         await client.query('BEGIN');
+        await requireCashControlEnabled(client);
         await client.query(`SELECT pg_advisory_xact_lock(hashtext('cash_register_single_open'))`);
         const open = await client.query(`SELECT id FROM cash_registers WHERE estado = 'ABIERTA' LIMIT 1`);
         if (open.rows[0]) throw new FinancialError(409, 'Ya existe una caja abierta. Cierrala primero.');
@@ -63,6 +70,9 @@ const buildClosingDetails = async (queryable: any, session: any, end: string | D
 
 export const getClosingDetails = async (_req: Request, res: Response) => {
     try {
+        if (!await getCashControlEnabled()) {
+            return res.status(409).json({ error: 'El control de caja está desactivado. El historial de sesiones anteriores continúa disponible.' });
+        }
         const result = await pool.query(`SELECT * FROM cash_registers WHERE estado = 'ABIERTA' ORDER BY fecha_apertura DESC LIMIT 1`);
         if (!result.rows[0]) return res.status(404).json({ error: 'No hay caja abierta.' });
         return res.json(await buildClosingDetails(pool, result.rows[0], new Date()));
@@ -78,11 +88,12 @@ export const closeRegister = async (req: Request, res: Response) => {
         const realCents = toCents(req.body?.monto_real, 'monto_real');
         if (realCents < 0) throw new FinancialError(400, 'El monto real no puede ser negativo');
         await client.query('BEGIN');
+        await requireCashControlEnabled(client);
         const registerResult = await client.query(`SELECT * FROM cash_registers WHERE id = $1 FOR UPDATE`, [id]);
         const session = registerResult.rows[0];
         if (!session) throw new FinancialError(404, 'Caja no encontrada');
         if (session.estado !== 'ABIERTA') throw new FinancialError(409, 'La caja ya fue cerrada');
-        if (req.userRole !== 'admin' && String(session.usuario_id || '') !== String(req.userId || '')) {
+        if (!['owner', 'admin'].includes(req.userRole || '') && String(session.usuario_id || '') !== String(req.userId || '')) {
             throw new FinancialError(403, 'Solo quien abrio la caja o un administrador puede cerrarla');
         }
         const timeResult = await client.query('SELECT clock_timestamp() AS now');

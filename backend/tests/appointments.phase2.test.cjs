@@ -90,17 +90,22 @@ test('5. 15:00 Ecuador se convierte en 20:00Z al crear cita oficial', () => {
 const officialClient = (segments) => {
   let nextId = 100;
   const inserted = [];
+  const appointmentRows = new Map();
   return {
     inserted,
     async query(sql, params = []) {
       if (/FROM sidro_appointment_request_services/i.test(sql)) return { rows: segments };
       if (/SELECT id FROM employees/i.test(sql)) return { rows: [{ id: params[0] }] };
+      if (/SELECT a\.id, a\.employee_id/i.test(sql) && /WHERE a\.id = \$1/i.test(sql)) return { rows: appointmentRows.has(params[0]) ? [appointmentRows.get(params[0])] : [] };
+      if (/SELECT DISTINCT c\.id/i.test(sql)) return { rows: [] };
       if (/FROM appointments a/i.test(sql)) return { rows: [] };
       if (/FROM sidro_appointment_requests r/i.test(sql)) return { rows: [] };
       if (/SELECT\s+\(SELECT nombre FROM employees/i.test(sql)) return { rows: [{ emp_name: 'E', item_name: 'S', client_name: 'C' }] };
       if (/INSERT INTO appointments/i.test(sql)) {
         inserted.push(params);
-        return { rows: [{ id: nextId++, fecha_inicio: params[3], fecha_fin: params[4] }], rowCount: 1 };
+        const row = { id: nextId++, client_id: params[0], item_id: params[1], employee_id: params[2], fecha_inicio: params[3], fecha_fin: params[4], estado: params[5], notas: params[6], emp_name: 'E', item_name: 'S', client_name: 'C' };
+        appointmentRows.set(row.id, row);
+        return { rows: [row], rowCount: 1 };
       }
       return { rows: [], rowCount: 1 };
     }

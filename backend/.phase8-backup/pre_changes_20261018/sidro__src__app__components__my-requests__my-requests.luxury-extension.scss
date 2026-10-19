@@ -1,0 +1,46 @@
+:host { display: block; }
+
+.requests-page { background: #fbf6f2; }
+.requests-topbar { background: rgba(251,246,242,.92); border-color: rgba(90,32,63,.08); }
+.requests-topbar .brand-mark { background: linear-gradient(145deg, #efcbc8, #c98694); border-radius: 11px; box-shadow: 0 7px 18px rgba(74,28,49,.13); }
+.requests-topbar .brand-copy strong { color: #4a2132; font-family: var(--font-heading); font-size: .88rem; letter-spacing: .1em; text-transform: uppercase; }
+.requests-topbar .brand-copy small { color: #8f6d78; font-size: .43rem; letter-spacing: .24em; text-transform: uppercase; }
+.page-header .eyebrow { color: #a24b67; letter-spacing: .16em; }
+.page-header h1 { color: #321723; font-size: clamp(2.8rem,7vw,5rem); letter-spacing: -.045em; }
+.page-header .btn-primary { background: linear-gradient(110deg, #68102f, #981844); border-radius: 999px; }
+.request-overview article { background: rgba(255,255,255,.76); border-color: rgba(117,74,88,.1); box-shadow: 0 8px 22px rgba(62,24,40,.05); }
+.filter-tabs { background: rgba(255,255,255,.78); border-color: rgba(117,74,88,.12); }
+.filter-tabs button.active { background: #79183b; }
+
+.request-card {
+  background: rgba(255,255,255,.84);
+  border: 1px solid rgba(117,74,88,.1);
+  border-radius: 24px;
+  box-shadow: 0 14px 34px rgba(62,24,40,.08);
+}
+
+.request-card::before { background: linear-gradient(90deg, #79183b, #d18498); width: 110px; }
+.request-service-photo { border-radius: 17px; display: block; flex: 0 0 auto; height: 76px; overflow: hidden; width: 76px; }
+.request-service-photo img { height: 100%; object-fit: cover; transition: transform 450ms cubic-bezier(.2,0,0,1); width: 100%; }
+.service-heading { align-items: center; }
+.service-heading h2 { color: #3d2630; font-size: 1.5rem; }
+.status-badge { border-radius: 999px; }
+.client-notes { background: #f9e9eb; border-left-color: #a94666; }
+.proposal-panel { background: linear-gradient(135deg, #f7eff6, #fff); border-color: #e3cad9; border-radius: 18px; box-shadow: inset 3px 0 0 #8d3158; }
+.proposal-icon { background: #f0dce6; color: #7d2348; }
+.empty-state { background: rgba(255,255,255,.78); border-radius: 24px; }
+
+@media (hover: hover) {
+  .request-card:hover .request-service-photo img { transform: scale(1.05); }
+}
+
+@media (max-width: 520px) {
+  .page-header h1 { font-size: clamp(2.45rem,12vw,3.6rem); }
+  .page-header .btn-primary { width: 100%; }
+  .request-card { border-radius: 21px; }
+  .request-card-header { flex-direction: row; flex-wrap: wrap; }
+  .service-heading { flex: 1 1 230px; }
+  .request-service-photo { height: 70px; width: 70px; }
+  .service-heading h2 { font-size: 1.18rem; }
+  .status-badge { margin-left: 82px; margin-top: -1rem; }
+}

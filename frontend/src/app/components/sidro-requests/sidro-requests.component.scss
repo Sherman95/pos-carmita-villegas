@@ -282,6 +282,24 @@
   font-size: 0.78rem;
 }
 
+.whatsapp-action {
+  color: #1f9d55;
+
+  &:disabled {
+    color: rgba(31, 157, 85, 0.35);
+  }
+}
+
+.whatsapp-button {
+  border-color: rgba(31, 157, 85, 0.45) !important;
+  color: #1f9d55 !important;
+
+  &:disabled {
+    border-color: var(--ui-border) !important;
+    color: var(--ui-text-muted) !important;
+  }
+}
+
 .mobile-list {
   display: none;
 }
@@ -320,6 +338,86 @@
   margin: 0.75rem auto 0;
   max-width: 70%;
   text-align: left;
+}
+
+::ng-deep .swal-hint {
+  color: #6b7280;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0 auto 0.6rem;
+  max-width: 88%;
+}
+
+::ng-deep .client-option-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.35rem auto 0;
+  max-height: 260px;
+  max-width: 88%;
+  overflow-y: auto;
+  text-align: left;
+}
+
+::ng-deep .client-option {
+  background: #fff;
+  border: 1px solid #e5cfe0;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+
+  &:hover {
+    border-color: #822143;
+  }
+
+  &.selected {
+    background: #fdf2f7;
+    border-color: #822143;
+    box-shadow: 0 0 0 3px rgba(130, 33, 67, 0.12);
+  }
+
+  strong {
+    color: #3b202c;
+    font-size: 0.92rem;
+  }
+
+  small {
+    color: #6b7280;
+    font-size: 0.76rem;
+  }
+}
+
+::ng-deep .match-badge {
+  background: #fef3c7;
+  border-radius: 999px;
+  color: #92400e;
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+  padding: 0.15rem 0.55rem;
+  width: fit-content;
+
+  &.warning {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+::ng-deep .match-list {
+  color: #4b5563;
+  font-size: 0.86rem;
+  margin: 0.6rem auto 0;
+  max-width: 85%;
+  text-align: left;
+
+  li {
+    margin-bottom: 0.25rem;
+  }
 }
 
 @media (max-width: 980px) {
@@ -483,6 +581,10 @@
       min-height: 46px;
     }
 
+    .whatsapp-button:only-child {
+      grid-column: 1 / -1;
+    }
+
     .reject-button {
       color: #9f2d24;
       grid-column: 1 / -1;
@@ -502,4 +604,11 @@
       grid-column: auto;
     }
   }
+}
+
+.highlighted-row {
+  background: #fff6df;
+  box-shadow: inset 0 0 0 2px #f2b53a;
+  border-radius: 10px;
+  transition: background 0.4s ease;
 }

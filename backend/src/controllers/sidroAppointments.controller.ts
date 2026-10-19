@@ -1,8 +1,31 @@
 import { Request, Response } from 'express';
+import { PoolClient } from 'pg';
 import pool from '../database/db';
 import { AvailabilityEngine } from '../services/availability.engine';
 import { SidroRequestAppointmentsService } from '../services/sidroRequestAppointments.service';
+import { NotificationsService } from '../services/notifications.service';
+import { SidroNotificationTemplates } from '../services/notificationTemplates';
 import { minutesToTime, normalizeDateOnly, timeToMinutes } from '../utils/businessTime';
+
+interface SidroNotificationNames {
+  clientName: string;
+  serviceName: string;
+}
+
+const loadSidroNotificationNames = async (
+  client: PoolClient,
+  sidroAccountId: string | number,
+  serviceId: string
+): Promise<SidroNotificationNames> => {
+  const [clientRow, serviceRow] = await Promise.all([
+    client.query('SELECT nombre_completo FROM sidro_client_accounts WHERE id = $1', [sidroAccountId]),
+    client.query('SELECT nombre FROM items WHERE id = $1', [serviceId])
+  ]);
+  return {
+    clientName: clientRow.rows[0]?.nombre_completo || 'Una clienta',
+    serviceName: serviceRow.rows[0]?.nombre || 'tu servicio'
+  };
+};
 
 const isUuid = (value: unknown): value is string =>
     typeof value === 'string' &&
@@ -111,6 +134,17 @@ export const createRequest = async (req: Request, res: Response) => {
                 ]
             );
         }
+
+        const names = await loadSidroNotificationNames(client, sidroAccountId, normalizedServiceIds[0]);
+        const notification = SidroNotificationTemplates.requestCreated({
+            requestId: result.rows[0].id,
+            clientName: names.clientName,
+            serviceName: names.serviceName,
+            date: request_date,
+            time: requestedSlot
+        });
+        await NotificationsService.notifyPosStaff(client, notification);
+        await NotificationsService.notifyAssignedProfessional(client, normalizedEmployeeId, notification);
 
         await client.query('COMMIT');
         return res.status(201).json({ ...result.rows[0], services: servicePlan });
@@ -336,6 +370,17 @@ export const acceptProposal = async (req: Request, res: Response) => {
                  WHERE id = $2`,
                 [appointmentIds[0], id]
             );
+            const names = await loadSidroNotificationNames(client, request.sidro_account_id, request.service_id);
+            await NotificationsService.notifyPosStaff(
+                client,
+                SidroNotificationTemplates.proposalAccepted({
+                    requestId: request.id,
+                    clientName: names.clientName,
+                    serviceName: names.serviceName,
+                    date: request.proposed_date,
+                    time: request.proposed_start_time
+                })
+            );
             await client.query('COMMIT');
             return res.json({ message: 'Citas confirmadas', appointment_ids: appointmentIds });
         }
@@ -357,6 +402,17 @@ export const acceptProposal = async (req: Request, res: Response) => {
              WHERE id = $1`,
             [id]
         );
+        const names = await loadSidroNotificationNames(client, request.sidro_account_id, request.service_id);
+        await NotificationsService.notifyPosStaff(
+            client,
+            SidroNotificationTemplates.proposalAccepted({
+                requestId: request.id,
+                clientName: names.clientName,
+                serviceName: names.serviceName,
+                date: request.proposed_date,
+                time: request.proposed_start_time
+            })
+        );
         await client.query('COMMIT');
         return res.json({ message: 'Propuesta aceptada, pendiente de vinculación' });
     } catch (error: any) {
@@ -370,26 +426,54 @@ export const acceptProposal = async (req: Request, res: Response) => {
 export const rejectProposal = async (req: Request, res: Response) => {
     const sidroAccountId = req.userId;
     const { id } = req.params;
+    let client;
     try {
-        const check = await pool.query(
-            `SELECT id FROM sidro_appointment_requests
-             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'`,
+        client = await pool.connect();
+        await client.query('BEGIN');
+        const check = await client.query(
+            `SELECT * FROM sidro_appointment_requests
+             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'
+             FOR UPDATE`,
             [id, sidroAccountId]
         );
         if (check.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(403).json({ error: 'No autorizado' });
         }
-        await pool.query(
+        const request = check.rows[0];
+
+        const updated = await client.query(
             `UPDATE sidro_appointment_requests
              SET status = 'CANCELADA',
                  proposed_date = NULL,
                  proposed_start_time = NULL,
                  proposed_end_time = NULL
-             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'`,
+             WHERE id = $1 AND sidro_account_id = $2 AND status = 'PROPUESTA'
+             RETURNING id`,
             [id, sidroAccountId]
         );
+        if (updated.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'La propuesta cambió de estado; vuelve a cargar tus solicitudes' });
+        }
+
+        const names = await loadSidroNotificationNames(client, request.sidro_account_id, request.service_id);
+        await NotificationsService.notifyPosStaff(
+            client,
+            SidroNotificationTemplates.proposalRejected({
+                requestId: request.id,
+                clientName: names.clientName,
+                serviceName: names.serviceName,
+                date: request.proposed_date,
+                time: request.proposed_start_time
+            })
+        );
+        await client.query('COMMIT');
         return res.json({ message: 'Propuesta rechazada y cancelada' });
     } catch (error) {
+        if (client) await client.query('ROLLBACK').catch(() => undefined);
         return res.status(500).json({ error: 'Error' });
+    } finally {
+        if (client) client.release();
     }
 };

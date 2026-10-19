@@ -6,17 +6,18 @@ import {
     updateAppointment,
     deleteAppointment
 } from '../controllers/appointments.controller';
-import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { requireAnyPermission, requirePermission, requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { PERMISSIONS } from '../security/rbac';
 
 const router = Router();
 
 // Aplicar middleware de autenticación a todas las rutas de citas
 router.use(verifyToken, requireStaff);
 
-router.get('/', getAppointments);
-router.get('/:id', getAppointmentById);
-router.post('/', createAppointment);
-router.put('/:id', updateAppointment);
-router.delete('/:id', deleteAppointment);
+router.get('/', requireAnyPermission(PERMISSIONS.appointmentsRead, PERMISSIONS.appointmentsReadOwn), getAppointments);
+router.get('/:id', requireAnyPermission(PERMISSIONS.appointmentsRead, PERMISSIONS.appointmentsReadOwn), getAppointmentById);
+router.post('/', requirePermission(PERMISSIONS.appointmentsCreate), createAppointment);
+router.put('/:id', requireAnyPermission(PERMISSIONS.appointmentsUpdate, PERMISSIONS.appointmentsUpdateOwn), updateAppointment);
+router.delete('/:id', requirePermission(PERMISSIONS.appointmentsCancel), deleteAppointment);
 
 export default router;

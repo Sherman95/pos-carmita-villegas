@@ -10,6 +10,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { CashService } from '../../services/cash'; 
 import { ClosingDetails } from '../../models/cash.model';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -28,6 +29,8 @@ export class CashControlComponent implements OnInit {
 
   loading = true;
   isOpen = false;
+  controlEnabled = true;
+  loadError = '';
   
   // PARA ABRIR
   initialAmount = 0;
@@ -40,6 +43,7 @@ export class CashControlComponent implements OnInit {
   constructor(
     private cashService: CashService, 
     private router: Router,
+    private authService: AuthService,
     private cd: ChangeDetectorRef // 👈 2. Inyectado aquí
   ) {}
 
@@ -50,10 +54,16 @@ export class CashControlComponent implements OnInit {
   // 1. Verificar cómo está la caja
   checkStatus() {
     this.loading = true;
+    this.loadError = '';
     this.cashService.getStatus().subscribe({
       next: (res) => {
         this.isOpen = res.isOpen;
-        if (this.isOpen) {
+        this.controlEnabled = res.controlEnabled !== false;
+        if (!this.controlEnabled) {
+          this.closingData = null;
+          this.loading = false;
+          this.cd.detectChanges();
+        } else if (this.isOpen) {
           // Si está abierta, traemos los detalles para pre-calcular el cierre
           this.loadClosingDetails();
         } else {
@@ -63,6 +73,7 @@ export class CashControlComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
+        this.loadError = err.error?.error || 'No pudimos consultar el estado de caja.';
         this.loading = false;
         this.cd.detectChanges(); // 👈 3. ¡Actualizar pantalla YA!
       }
@@ -87,6 +98,7 @@ export class CashControlComponent implements OnInit {
 
   // 3. ACCIÓN: ABRIR CAJA 🔓
   openBox() {
+    if (!this.controlEnabled) return;
     this.loading = true;
     this.cashService.openRegister(this.initialAmount).subscribe({
       next: () => {
@@ -103,7 +115,7 @@ export class CashControlComponent implements OnInit {
 
   // 4. ACCIÓN: CERRAR CAJA 🔐
   async closeBox() {
-    if (!this.closingData) return;
+    if (!this.controlEnabled || !this.closingData) return;
 
     const diff = this.realAmount - this.closingData.monto_esperado;
     let htmlMsg = `El sistema espera: <b>$${this.closingData.monto_esperado}</b><br>Tú contaste: <b>$${this.realAmount}</b><br><br>Diferencia: <b>$${diff}</b>`;
@@ -148,5 +160,13 @@ export class CashControlComponent implements OnInit {
   get difference() {
     if (!this.closingData) return 0;
     return this.realAmount - this.closingData.monto_esperado;
+  }
+
+  get canViewHistory(): boolean {
+    return this.authService.hasPermission('cash.history');
+  }
+
+  goToHistory(): void {
+    this.router.navigate(['/cash-history']);
   }
 }

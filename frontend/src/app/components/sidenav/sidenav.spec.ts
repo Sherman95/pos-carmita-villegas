@@ -1,6 +1,9 @@
 import { signal } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { SwPush } from '@angular/service-worker';
+import { of } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { SidenavComponent } from './sidenav';
@@ -8,23 +11,27 @@ import { SidenavComponent } from './sidenav';
 describe('Sidenav', () => {
   let component: SidenavComponent;
   let fixture: ComponentFixture<SidenavComponent>;
-  const currentUser = signal({ id: 'admin-1', username: 'admin', role: 'admin' });
+  const currentUser = signal({ id: 'admin-1', username: 'admin', role: 'owner', permissions: ['sidro_services.configure', 'users.read'] });
   const authMock = {
     currentUser,
     isAdmin: () => {
-      const user = currentUser();
-      return user.role.trim().toLowerCase() === 'admin';
+      const role = currentUser().role.trim().toLowerCase();
+      return role === 'owner' || role === 'admin';
     },
+    hasPermission: (permission: string) => currentUser().permissions.includes(permission),
+    getToken: () => null,
     logout: vi.fn()
   };
 
   beforeEach(async () => {
-    currentUser.set({ id: 'admin-1', username: 'admin', role: 'admin' });
+    currentUser.set({ id: 'admin-1', username: 'admin', role: 'owner', permissions: ['sidro_services.configure', 'users.read'] });
     vi.clearAllMocks();
     await TestBed.configureTestingModule({
       imports: [SidenavComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        { provide: SwPush, useValue: { isEnabled: false, subscription: of(null) } },
         { provide: AuthService, useValue: authMock }
       ]
     })
@@ -39,7 +46,7 @@ describe('Sidenav', () => {
     expect(component).toBeTruthy();
   });
 
-  it('muestra Configurar SIDRO al usuario con rol admin', () => {
+  it('muestra Configurar SIDRO a la jerarquía administrativa', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
@@ -47,7 +54,7 @@ describe('Sidenav', () => {
   });
 
   it('oculta Configurar SIDRO a una cuenta colaboradora', () => {
-    currentUser.set({ id: 'user-1', username: 'profesional', role: 'user' });
+    currentUser.set({ id: 'user-1', username: 'profesional', role: 'professional', permissions: ['appointments.read_own'] });
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 

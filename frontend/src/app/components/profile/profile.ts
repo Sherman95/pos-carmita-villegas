@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +10,13 @@ import { AuthService } from '../../services/auth.service';
 import { SettingsService, BusinessSettings } from '../../services/settings.service';
 import { Router } from '@angular/router';
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Propietaria',
+  admin: 'Administración',
+  reception: 'Recepción / Caja',
+  professional: 'Profesional'
+};
+
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,15 +26,17 @@ import { Router } from '@angular/router';
   styleUrl: './profile.scss'
 })
 export class ProfileComponent implements OnInit {
-  user = signal<{ id: string; username: string; role: string; tax_rate?: number } | null>(null);
-  username = signal('');
-  role = signal('');
+  user = signal<{ id: string; username: string; role: string; tax_rate?: number; email?: string | null; email_verified_at?: string | null } | null>(null);
+  roleLabel = signal('');
   businessMessage = signal('');
   businessMessageType = signal<'success' | 'error' | 'info'>('info');
-  accountMessage = signal('');
-  accountMessageType = signal<'success' | 'error' | 'info'>('info');
+  passwordMessage = signal('');
+  passwordMessageType = signal<'success' | 'error' | 'info'>('info');
   savingBusiness = signal(false);
-  savingAccount = signal(false);
+  savingPassword = signal(false);
+  currentPassword = signal('');
+  newPassword = signal('');
+  passwordConfirmation = signal('');
 
   // Datos del negocio (Visuales)
   business = signal<BusinessSettings>({
@@ -51,21 +60,15 @@ export class ProfileComponent implements OnInit {
   }
 
   cargarDatos() {
-    // 1. Cargar Usuario (Desde la memoria del Auth - Base de Datos)
-    const currentUser: any = this.auth.currentUser(); // Tipado any para acceder a campos nuevos
+    const currentUser: any = this.auth.currentUser();
 
     if (currentUser) {
       this.user.set(currentUser);
-      this.username.set(currentUser.username);
-      this.role.set(currentUser.role);
+      this.roleLabel.set(ROLE_LABELS[currentUser.role] || 'Personal');
 
-      // Cargamos el IVA de la BD
       const taxFromDB = Number(currentUser.tax_rate || 0);
       this.taxRateInput.set(taxFromDB);
 
-      // 🔥 CAMBIO CRÍTICO:
-      // Si la BD trae datos del negocio, úsalos. Si no, usa valores vacíos.
-      // Ya no dependemos solo del localStorage.
       this.business.set({
         name: currentUser.business_name || 'Carmita Villegas',
         ruc: currentUser.business_ruc || '',
@@ -76,44 +79,23 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  // Guardar Nombre de Usuario
-  save() {
-    const nextUsername = this.username().trim();
-
-    if (!nextUsername) {
-      this.accountMessageType.set('error');
-      this.accountMessage.set('Completa el nombre de usuario.');
-      return;
-    }
-
-    this.savingAccount.set(true);
-    this.accountMessageType.set('info');
-    this.accountMessage.set('Guardando nombre de usuario...');
-
-    this.auth.updateProfile({
-      username: nextUsername,
-      tax_rate: this.taxRateInput()
-    }).subscribe({
-      next: () => {
-        this.savingAccount.set(false);
-        this.accountMessageType.set('success');
-        this.accountMessage.set('Nombre de usuario actualizado correctamente.');
-      },
-      error: (err) => {
-        console.error(err);
-        this.savingAccount.set(false);
-        this.accountMessageType.set('error');
-        this.accountMessage.set('No se pudo guardar el nombre. Intenta nuevamente.');
-      }
-    });
+  canManageBusiness(): boolean {
+    return this.auth.hasPermission('business_settings.manage');
   }
 
-  // Guardar Datos del Negocio e IVA
+  mustChangePassword(): boolean {
+    return Boolean(this.auth.currentUser()?.must_change_password);
+  }
+
+  emailVerified(): boolean {
+    return Boolean(this.user()?.email && this.user()?.email_verified_at);
+  }
+
+  // Guardar Datos del Negocio e IVA (solo propietaria)
   saveBusiness() {
     const current = this.business();
     const nuevaTasa = this.taxRateInput();
 
-    // 1. Guardamos configuración visual en Local (SettingsService)
     const nextSettings: BusinessSettings = {
       name: current.name?.trim() || 'Carmita Villegas',
       ruc: current.ruc?.trim() || '9999999999001',
@@ -123,15 +105,12 @@ export class ProfileComponent implements OnInit {
     };
     this.settings.update(nextSettings);
 
-    // 2. 🔥 EL GRAN FIX: Enviamos TODO a la Base de Datos
     this.savingBusiness.set(true);
     this.businessMessageType.set('info');
     this.businessMessage.set('Sincronizando los datos del negocio...');
 
-    // Mapeamos los nombres del formulario (name, ruc) a los de la BD (business_name, business_ruc)
     const payload = {
       tax_rate: nuevaTasa,
-      username: this.username(),
       business_name: nextSettings.name,
       business_ruc: nextSettings.ruc,
       business_address: nextSettings.address,
@@ -139,17 +118,58 @@ export class ProfileComponent implements OnInit {
     };
 
     this.auth.updateProfile(payload).subscribe({
-      next: (resp) => {
-        console.log('✅ Respuesta del servidor:', resp);
+      next: () => {
         this.savingBusiness.set(false);
         this.businessMessageType.set('success');
         this.businessMessage.set('Datos guardados y sincronizados correctamente.');
       },
-      error: (err) => {
-        console.error('Error guardando en nube', err);
+      error: () => {
         this.savingBusiness.set(false);
         this.businessMessageType.set('error');
         this.businessMessage.set('No se pudo sincronizar. Revisa tu conexión e intenta nuevamente.');
+      }
+    });
+  }
+
+  // Cambio de la propia contraseña (todos los roles)
+  changePassword() {
+    const current = this.currentPassword();
+    const next = this.newPassword();
+    const confirmation = this.passwordConfirmation();
+
+    if (next.length < 10) {
+      this.passwordMessageType.set('error');
+      this.passwordMessage.set('La nueva contraseña debe tener al menos 10 caracteres.');
+      return;
+    }
+    if (next !== confirmation) {
+      this.passwordMessageType.set('error');
+      this.passwordMessage.set('La confirmación no coincide con la nueva contraseña.');
+      return;
+    }
+    if (next === current) {
+      this.passwordMessageType.set('error');
+      this.passwordMessage.set('La nueva contraseña debe ser diferente a la actual.');
+      return;
+    }
+
+    this.savingPassword.set(true);
+    this.passwordMessageType.set('info');
+    this.passwordMessage.set('Actualizando tu contraseña...');
+
+    this.auth.changePassword({ current_password: current, new_password: next, confirmation }).subscribe({
+      next: () => {
+        this.savingPassword.set(false);
+        this.currentPassword.set('');
+        this.newPassword.set('');
+        this.passwordConfirmation.set('');
+        this.passwordMessageType.set('success');
+        this.passwordMessage.set('Contraseña actualizada. Las demás sesiones fueron cerradas.');
+      },
+      error: (err) => {
+        this.savingPassword.set(false);
+        this.passwordMessageType.set('error');
+        this.passwordMessage.set(err?.error?.error || 'No se pudo cambiar la contraseña.');
       }
     });
   }
@@ -175,10 +195,9 @@ export class ProfileComponent implements OnInit {
       current.name,
       current.ruc,
       current.address,
-      current.phone,
-      this.username()
+      current.phone
     ].filter(value => String(value || '').trim()).length;
 
-    return Math.round((completed / 5) * 100);
+    return Math.round((completed / 4) * 100);
   }
 }

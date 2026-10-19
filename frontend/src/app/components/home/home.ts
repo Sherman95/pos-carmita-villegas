@@ -43,6 +43,7 @@ export class HomeComponent implements OnInit {
   searchText = signal('');
   clients = signal<any[]>([]);
   isBoxOpen = signal(false); // 👈 Nueva señal para saber si está abierta
+  cashControlEnabled = signal(true);
   
   // Filtro automático
   filteredClients = computed(() => {
@@ -63,6 +64,7 @@ export class HomeComponent implements OnInit {
     this.cashService.getStatus().subscribe({
       next: (res) => {
         this.isBoxOpen.set(res.isOpen);
+        this.cashControlEnabled.set(res.controlEnabled !== false);
       },
       error: (err) => console.error('Error verificando caja', err)
     });
@@ -95,7 +97,7 @@ export class HomeComponent implements OnInit {
     } else {
       
       // 👇 BLOQUEO DE SEGURIDAD AQUÍ TAMBIÉN
-      if (!this.isBoxOpen()) {
+      if (!this.canOperateWithoutOpening()) {
         this.mostrarAlertaCajaCerrada();
         this.searchText.set(''); // Limpiamos para que no parezca que seleccionó
         return;
@@ -114,7 +116,7 @@ export class HomeComponent implements OnInit {
 
   irAVenta() {
     // 👇 BLOQUEO DE SEGURIDAD
-    if (!this.isBoxOpen()) {
+    if (!this.canOperateWithoutOpening()) {
       this.mostrarAlertaCajaCerrada();
       return;
     }
@@ -148,7 +150,7 @@ export class HomeComponent implements OnInit {
 
   irAGastos() {
     // Verificamos si la caja está abierta antes de ir (Opcional, pero recomendado)
-    if (!this.isBoxOpen()) {
+    if (!this.canOperateWithoutOpening()) {
         this.mostrarAlertaCajaCerrada();
         return;
     }
@@ -170,5 +172,9 @@ export class HomeComponent implements OnInit {
         this.router.navigate(['/cash-control']);
       }
     });
+  }
+
+  private canOperateWithoutOpening(): boolean {
+    return !this.cashControlEnabled() || this.isBoxOpen();
   }
 }

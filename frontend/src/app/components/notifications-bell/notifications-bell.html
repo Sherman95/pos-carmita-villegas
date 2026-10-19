@@ -1,0 +1,61 @@
+<div class="bell-wrapper">
+  <button
+    type="button"
+    mat-icon-button
+    class="bell-button"
+    [attr.aria-label]="'Notificaciones'"
+    (click)="togglePanel()"
+  >
+    <mat-icon [class.has-unread]="notifications.unreadCount() > 0">notifications</mat-icon>
+    @if (notifications.unreadCount() > 0) {
+      <span class="bell-badge">{{ unreadLabel() }}</span>
+    }
+  </button>
+
+  @if (panelOpen()) {
+    <div class="bell-panel">
+      <div class="bell-panel-header">
+        <strong>Notificaciones</strong>
+        <span class="bell-panel-count">
+          {{ notifications.unreadCount() }} sin leer
+        </span>
+      </div>
+
+      @if (notifications.items().length === 0) {
+        <p class="bell-empty">No tienes notificaciones por ahora.</p>
+      } @else {
+        <ul class="bell-list">
+          @for (item of notifications.items(); track item.id) {
+            <li>
+              <button
+                type="button"
+                class="bell-item"
+                [class.unread]="!item.read_at"
+                (click)="openNotification(item)"
+              >
+                <span class="bell-item-title">{{ item.title }}</span>
+                <span class="bell-item-body">{{ item.body }}</span>
+                <span class="bell-item-when">{{ formatWhen(item.created_at) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (notifications.lastError()) {
+        <p class="bell-error">{{ notifications.lastError() }}</p>
+      }
+      <div class="bell-push">
+        @if (pushNotifications.state() === 'enabled') {
+          <span><mat-icon>notifications_active</mat-icon> Push activo en este dispositivo</span>
+          <button type="button" [disabled]="pushNotifications.busy()" (click)="pushNotifications.disable()">Desactivar</button>
+        } @else if (pushNotifications.state() === 'prompt' || pushNotifications.state() === 'error') {
+          <span><mat-icon>notifications_none</mat-icon> Recibe avisos fuera del POS</span>
+          <button type="button" [disabled]="pushNotifications.busy() || (pushNotifications.isIos && !pushNotifications.isStandalone)" (click)="pushNotifications.enable()">Activar</button>
+        } @else if (pushNotifications.state() === 'unsupported' || pushNotifications.state() === 'unavailable') {
+          <small>Push no disponible; la campana continúa activa.</small>
+        }
+      </div>
+    </div>
+  }
+</div>

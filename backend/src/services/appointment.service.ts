@@ -1,4 +1,5 @@
 import { PoolClient } from 'pg';
+import { GoogleCalendarOutboxService } from './googleCalendarOutbox.service';
 import { assertAbsoluteInterval } from '../utils/businessTime';
 
 export class AppointmentService {
@@ -118,11 +119,9 @@ export class AppointmentService {
         );
         const newAppointment = rows[0];
 
-        // 5. Encolar para Google Calendar (fuera de la transacción de red)
-        await client.query(
-            `INSERT INTO google_calendar_sync_queue (appointment_id, employee_id) VALUES ($1, $2)`,
-            [newAppointment.id, employee_id]
-        );
+        // 5. Crear un trabajo independiente por calendario dentro de la misma
+        // transacción. La red se procesa después del COMMIT mediante el worker.
+        await GoogleCalendarOutboxService.enqueueForAppointment(client, newAppointment.id);
 
         return newAppointment;
     }

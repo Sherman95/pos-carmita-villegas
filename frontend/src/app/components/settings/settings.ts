@@ -6,6 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { EmployeeService, Employee } from '../../services/employee.service';
 import Swal from 'sweetalert2';
+import { CashService } from '../../services/cash';
+import {
+  WhatsappContactSetting,
+  WhatsappSettingsService
+} from '../../services/whatsapp-settings.service';
+import { PushNotificationsService } from '../../services/push-notifications.service';
 
 @Component({
   selector: 'app-settings',
@@ -21,6 +27,17 @@ export class SettingsComponent implements OnInit {
   employees: Employee[] = [];
   loading = true;
   loadError = '';
+  cashControlEnabled = true;
+  cashControlLoading = true;
+  cashControlSaving = false;
+  cashControlError = '';
+  whatsappContact: WhatsappContactSetting | null = null;
+  whatsappContactLoading = true;
+  whatsappContactSaving = false;
+  whatsappContactError = '';
+  whatsappNumberInput = '';
+  whatsappEnabled = true;
+  whatsappMessageInput = '';
 
   newCalendarId = '';
   newEmployeeId: number | null = null;
@@ -29,7 +46,10 @@ export class SettingsComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private employeeService: EmployeeService
+    private employeeService: EmployeeService,
+    private cashService: CashService,
+    private whatsappSettingsService: WhatsappSettingsService,
+    readonly pushNotifications: PushNotificationsService
   ) {}
 
   ngOnInit() {
@@ -37,7 +57,136 @@ export class SettingsComponent implements OnInit {
       this.employees = res;
       this.cdr.detectChanges();
     });
+    this.loadCashControlSetting();
+    this.loadWhatsappContactSetting();
+    this.pushNotifications.initialize();
     setTimeout(() => this.loadCalendars(), 0);
+  }
+
+  loadWhatsappContactSetting(): void {
+    this.whatsappContactLoading = true;
+    this.whatsappContactError = '';
+    this.whatsappSettingsService.getContactSetting().subscribe({
+      next: (setting) => {
+        this.whatsappContact = setting;
+        this.whatsappNumberInput = setting.whatsapp || '';
+        this.whatsappEnabled = setting.enabled;
+        this.whatsappMessageInput = setting.message;
+        this.whatsappContactLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.whatsappContactLoading = false;
+        this.whatsappContactError =
+          error.error?.error || 'No pudimos consultar la configuración de WhatsApp.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  async saveWhatsappContact(): Promise<void> {
+    if (this.whatsappContactLoading || this.whatsappContactSaving) return;
+    this.whatsappContactSaving = true;
+    this.whatsappContactError = '';
+    this.cdr.markForCheck();
+    this.whatsappSettingsService
+      .updateContactSetting({
+        whatsapp: this.whatsappNumberInput.trim(),
+        enabled: this.whatsappEnabled,
+        message: this.whatsappMessageInput.trim()
+      })
+      .subscribe({
+        next: async (setting) => {
+          this.whatsappContact = setting;
+          this.whatsappNumberInput = setting.whatsapp || '';
+          this.whatsappEnabled = setting.enabled;
+          this.whatsappMessageInput = setting.message;
+          this.whatsappContactSaving = false;
+          this.cdr.markForCheck();
+          await Swal.fire({
+            icon: 'success',
+            title: 'WhatsApp actualizado',
+            text: setting.active
+              ? 'El botón de contacto estará visible en la app de clientas.'
+              : 'La configuración se guardó; el botón se mostrará cuando exista un número válido y esté activado.',
+            confirmButtonColor: 'var(--brand-base)'
+          });
+        },
+        error: async (error) => {
+          this.whatsappContactSaving = false;
+          this.whatsappContactError =
+            error.error?.error || 'No se pudo guardar la configuración de WhatsApp.';
+          this.cdr.markForCheck();
+          await Swal.fire({
+            icon: 'error',
+            title: 'No se pudo guardar',
+            text: this.whatsappContactError,
+            confirmButtonColor: 'var(--brand-base)'
+          });
+        }
+      });
+  }
+
+  loadCashControlSetting(): void {
+    this.cashControlLoading = true;
+    this.cashControlError = '';
+    this.cashService.getControlSetting().subscribe({
+      next: (setting) => {
+        this.cashControlEnabled = setting.controlEnabled;
+        this.cashControlLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.cashControlLoading = false;
+        this.cashControlError = error.error?.error || 'No pudimos consultar la configuración de caja.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  async requestCashControlChange(): Promise<void> {
+    if (this.cashControlLoading || this.cashControlSaving) return;
+    const nextEnabled = !this.cashControlEnabled;
+    const confirmation = await Swal.fire({
+      icon: 'warning',
+      title: nextEnabled ? '¿Activar control de caja?' : '¿Desactivar control de caja?',
+      text: nextEnabled
+        ? 'Después del cambio deberás abrir una nueva caja antes de registrar operaciones financieras.'
+        : 'Ventas, abonos y gastos seguirán registrándose, pero no pertenecerán a una sesión de caja.',
+      showCancelButton: true,
+      confirmButtonText: nextEnabled ? 'Sí, activar' : 'Sí, desactivar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--brand-base)'
+    });
+    if (!confirmation.isConfirmed) return;
+
+    this.cashControlSaving = true;
+    this.cashControlError = '';
+    this.cdr.markForCheck();
+    this.cashService.updateControlSetting(nextEnabled).subscribe({
+      next: async (setting) => {
+        this.cashControlEnabled = setting.controlEnabled;
+        this.cashControlSaving = false;
+        this.cdr.markForCheck();
+        await Swal.fire({
+          icon: 'success',
+          title: setting.controlEnabled ? 'Control activado' : 'Control desactivado',
+          text: setting.message,
+          confirmButtonColor: 'var(--brand-base)'
+        });
+      },
+      error: async (error) => {
+        this.cashControlSaving = false;
+        this.cashControlError = error.error?.error || 'No se pudo cambiar la configuración de caja.';
+        this.cdr.markForCheck();
+        await Swal.fire({
+          icon: 'error',
+          title: 'No se pudo realizar el cambio',
+          text: this.cashControlError,
+          confirmButtonColor: 'var(--brand-base)'
+        });
+      }
+    });
   }
 
   get professionalCalendars(): number {

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import pool from '../database/db';
+import { canonicalRole, Permission, permissionsForRole, roleHasPermission } from '../security/rbac';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -21,6 +22,7 @@ declare global {
       userRole?: string;
       authIdentity?: AuthIdentity;
       user?: Record<string, unknown>;
+      permissions?: Permission[];
     }
   }
 }
@@ -103,26 +105,37 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     const { rows } = await pool.query(
-      'SELECT id, username, role, active FROM users WHERE id = $1 LIMIT 1',
+      `SELECT id, username, role, active, employee_id,
+              COALESCE(token_version, 0) AS token_version,
+              COALESCE(must_change_password, false) AS must_change_password
+       FROM users WHERE id = $1 LIMIT 1`,
       [userId]
     );
     const currentUser = rows[0];
     if (!currentUser?.active) {
       return res.status(401).json({ error: 'La cuenta está inactiva o ya no existe' });
     }
-    if (currentUser.role !== 'admin' && currentUser.role !== 'user') {
+    const role = canonicalRole(currentUser.role);
+    if (!role) {
       return res.status(403).json({ error: 'La cuenta no tiene un rol POS válido' });
+    }
+    if (Number(decoded.token_version ?? 0) !== Number(currentUser.token_version ?? 0)) {
+      return res.status(401).json({ error: 'La sesión expiró. Inicia sesión nuevamente' });
     }
 
     req.userId = String(currentUser.id);
-    req.userRole = currentUser.role;
+    req.userRole = role;
     req.authIdentity = 'pos_staff';
+    req.permissions = permissionsForRole(role);
     req.user = {
       ...decoded,
       id: String(currentUser.id),
       sub: String(currentUser.id),
       username: currentUser.username,
-      role: currentUser.role
+      role,
+      employee_id: currentUser.employee_id === null ? null : String(currentUser.employee_id),
+      token_version: Number(currentUser.token_version || 0),
+      must_change_password: Boolean(currentUser.must_change_password)
     };
     return next();
   } catch (error) {
@@ -146,8 +159,43 @@ export const requireSidroClient = (req: Request, res: Response, next: NextFuncti
 };
 
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.authIdentity !== 'pos_staff' || req.userRole?.trim().toLowerCase() !== 'admin') {
+  if (req.authIdentity !== 'pos_staff' || !['owner', 'admin'].includes(req.userRole || '')) {
     return res.status(403).json({ error: 'Acceso denegado: se requiere rol de administrador' });
   }
   return next();
 };
+
+export const requireOwner = (req: Request, res: Response, next: NextFunction) => {
+  if (req.authIdentity !== 'pos_staff' || req.userRole !== 'owner') {
+    return res.status(403).json({ error: 'Acceso exclusivo para la cuenta propietaria' });
+  }
+  return next();
+};
+
+export const requirePermission = (permission: Permission) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.authIdentity !== 'pos_staff' || !roleHasPermission(req.userRole, permission)) {
+      return res.status(403).json({ error: 'No tienes permiso para realizar esta acción', permission });
+    }
+    if (req.user?.must_change_password && permission !== 'profile.password.change') {
+      return res.status(403).json({
+        error: 'Debes cambiar tu contraseña temporal antes de continuar',
+        code: 'PASSWORD_CHANGE_REQUIRED'
+      });
+    }
+    return next();
+  };
+
+export const requireAnyPermission = (...permissions: Permission[]) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.authIdentity !== 'pos_staff' || !permissions.some(permission => roleHasPermission(req.userRole, permission))) {
+      return res.status(403).json({ error: 'No tienes permiso para realizar esta acción' });
+    }
+    if (req.user?.must_change_password) {
+      return res.status(403).json({
+        error: 'Debes cambiar tu contraseña temporal antes de continuar',
+        code: 'PASSWORD_CHANGE_REQUIRED'
+      });
+    }
+    return next();
+  };

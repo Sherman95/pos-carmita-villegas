@@ -1,0 +1,334 @@
+<section class="requests-container" aria-labelledby="sidro-requests-title">
+  <div class="requests-heading">
+    <div>
+      <h2 id="sidro-requests-title">
+        <mat-icon>inbox</mat-icon>
+        Solicitudes SIDRO
+      </h2>
+      <p>Revisa y gestiona las reservas enviadas por las clientas.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="loadRequests()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <div class="summary-grid" aria-label="Resumen por estado">
+    <button
+      type="button"
+      class="summary-card pending"
+      [class.active]="statusFilter === 'PENDIENTE'"
+      (click)="setStatusFilter('PENDIENTE')"
+    >
+      <span>Pendientes</span>
+      <strong>{{ countByStatus('PENDIENTE') }}</strong>
+    </button>
+    <button
+      type="button"
+      class="summary-card proposed"
+      [class.active]="statusFilter === 'PROPUESTA'"
+      (click)="setStatusFilter('PROPUESTA')"
+    >
+      <span>Propuestas</span>
+      <strong>{{ countByStatus('PROPUESTA') }}</strong>
+    </button>
+    <button
+      type="button"
+      class="summary-card confirmed"
+      [class.active]="statusFilter === 'CONFIRMADA'"
+      (click)="setStatusFilter('CONFIRMADA')"
+    >
+      <span>Confirmadas</span>
+      <strong>{{ countByStatus('CONFIRMADA') }}</strong>
+    </button>
+  </div>
+
+  @if (hasLinkingPending) {
+    <div class="linking-notice" role="status">
+      <mat-icon>link</mat-icon>
+      <div>
+        <strong>Vinculación de clientas</strong>
+        <p>
+          Las solicitudes aprobadas sin cliente POS quedan pendientes hasta completar la vinculación.
+        </p>
+      </div>
+      @if (isAdmin) {
+        <a mat-stroked-button routerLink="/sidro/settings">Gestionar vínculos</a>
+      }
+    </div>
+  }
+
+  <div class="filters" aria-label="Filtros de solicitudes">
+    <label class="filter-field search-field">
+      <span>Buscar</span>
+      <div class="input-with-icon">
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Clienta, servicio o profesional"
+          autocomplete="off"
+        />
+      </div>
+    </label>
+
+    <label class="filter-field">
+      <span>Estado</span>
+      <select [(ngModel)]="statusFilter">
+        @for (option of statusOptions; track option.value) {
+          <option [ngValue]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>Profesional</span>
+      <select [(ngModel)]="professionalFilter">
+        <option value="ALL">Todos los profesionales</option>
+        @for (professional of professionals; track professional) {
+          <option [value]="professional">{{ professional }}</option>
+        }
+      </select>
+    </label>
+
+    <button mat-button type="button" class="clear-button" (click)="clearFilters()">
+      Limpiar filtros
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="state-panel" role="status">
+      <mat-spinner diameter="38"></mat-spinner>
+      <p>Cargando solicitudes...</p>
+    </div>
+  } @else if (loadError) {
+    <div class="state-panel error-state" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ loadError }}</p>
+      <button mat-stroked-button type="button" (click)="loadRequests()">Reintentar</button>
+    </div>
+  } @else if (filteredRequests.length === 0) {
+    <div class="state-panel">
+      <mat-icon>inbox</mat-icon>
+      <p>No hay solicitudes que coincidan con los filtros.</p>
+      <button mat-button type="button" (click)="clearFilters()">Ver todas</button>
+    </div>
+  } @else {
+    <div class="desktop-table">
+      <table mat-table [dataSource]="filteredRequests" aria-label="Solicitudes SIDRO">
+        <ng-container matColumnDef="client_name">
+          <th mat-header-cell *matHeaderCellDef>Clienta</th>
+          <td mat-cell *matCellDef="let request">
+            <strong>{{ request.client_name }}</strong>
+            <small [class.linked]="request.linked_client_id">
+              {{ request.linked_client_id ? 'Vinculada al POS' : 'Sin vincular' }}
+            </small>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="service_name">
+          <th mat-header-cell *matHeaderCellDef>Servicio</th>
+          <td mat-cell *matCellDef="let request">
+            <strong>{{ request.service_name }}</strong>
+            @if (request.client_notes) {
+              <small class="client-request-note">{{ request.client_notes }}</small>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employee_name">
+          <th mat-header-cell *matHeaderCellDef>Profesional</th>
+          <td mat-cell *matCellDef="let request">{{ request.employee_name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
+          <td mat-cell *matCellDef="let request">
+            <span class="schedule-line">
+              {{ formatDate(request.request_date) }} · {{ formatTime(request.start_time) }}–{{ formatTime(request.end_time) }}
+            </span>
+            @if (request.proposed_date && request.proposed_start_time) {
+              <small class="proposed-schedule">
+                Propuesta: {{ formatDate(request.proposed_date) }} ·
+                {{ formatTime(request.proposed_start_time) }}–{{ formatTime(request.proposed_end_time) }}
+              </small>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let request">
+            <span class="status-badge" [ngClass]="statusClass(request.status)">
+              {{ statusLabel(request.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let request">
+            <div class="table-actions">
+              <button
+                mat-icon-button
+                type="button"
+                class="whatsapp-action"
+                (click)="openWhatsapp(request)"
+                [disabled]="!hasWhatsapp(request)"
+                [attr.aria-label]="whatsappUnavailableMessage(request)"
+                [title]="whatsappUnavailableMessage(request)"
+              >
+                <mat-icon>chat</mat-icon>
+              </button>
+              @if (canManage(request)) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="primary"
+                  (click)="accept(request)"
+                  [disabled]="processingId !== null"
+                  [attr.aria-label]="'Aprobar solicitud de ' + request.client_name"
+                  title="Aprobar"
+                >
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="propose(request)"
+                  [disabled]="processingId !== null"
+                  [attr.aria-label]="'Proponer otro horario a ' + request.client_name"
+                  title="Proponer otro horario"
+                >
+                  <mat-icon>edit_calendar</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  (click)="reject(request)"
+                  [disabled]="processingId !== null"
+                  [attr.aria-label]="'Rechazar solicitud de ' + request.client_name"
+                  title="Rechazar"
+                >
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              }
+            </div>
+            @if (!canManage(request) && !hasWhatsapp(request)) {
+              <span class="no-actions">Sin acciones pendientes</span>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [id]="'sidro-request-' + row.id"
+          [class.highlighted-row]="row.id === highlightedRequestId"
+        ></tr>
+      </table>
+    </div>
+
+    <div class="mobile-list" aria-label="Solicitudes SIDRO">
+      @for (request of filteredRequests; track request.id) {
+        <article
+          class="request-card"
+          [id]="'sidro-request-' + request.id"
+          [class.highlighted-row]="request.id === highlightedRequestId"
+        >
+          <div class="card-heading">
+            <div>
+              <h3>{{ request.client_name }}</h3>
+              <span class="link-state" [class.linked]="request.linked_client_id">
+                {{ request.linked_client_id ? 'Vinculada al POS' : 'Sin vincular' }}
+              </span>
+            </div>
+            <span class="status-badge" [ngClass]="statusClass(request.status)">
+              {{ statusLabel(request.status) }}
+            </span>
+          </div>
+
+          <dl class="request-details">
+            <div>
+              <dt><mat-icon>design_services</mat-icon> Servicio</dt>
+              <dd>{{ request.service_name }}</dd>
+            </div>
+            @if (request.client_notes) {
+              <div class="client-notes-detail">
+                <dt><mat-icon>notes</mat-icon> Lo que desea la clienta</dt>
+                <dd>{{ request.client_notes }}</dd>
+              </div>
+            }
+            <div>
+              <dt><mat-icon>person</mat-icon> Profesional</dt>
+              <dd>{{ request.employee_name }}</dd>
+            </div>
+            <div>
+              <dt><mat-icon>event</mat-icon> Fecha y hora</dt>
+              <dd>
+                {{ formatDate(request.request_date) }} ·
+                {{ formatTime(request.start_time) }}–{{ formatTime(request.end_time) }}
+              </dd>
+            </div>
+            @if (request.proposed_date && request.proposed_start_time) {
+              <div class="proposal-detail">
+                <dt><mat-icon>update</mat-icon> Horario propuesto</dt>
+                <dd>
+                  {{ formatDate(request.proposed_date) }} ·
+                  {{ formatTime(request.proposed_start_time) }}–{{ formatTime(request.proposed_end_time) }}
+                </dd>
+              </div>
+            }
+          </dl>
+
+          <div class="card-actions">
+            <button
+              mat-stroked-button
+              type="button"
+              class="whatsapp-button"
+              (click)="openWhatsapp(request)"
+              [disabled]="!hasWhatsapp(request)"
+              [title]="whatsappUnavailableMessage(request)"
+            >
+              <mat-icon>chat</mat-icon>
+              WhatsApp
+            </button>
+            @if (canManage(request)) {
+              <button
+                mat-flat-button
+                type="button"
+                color="primary"
+                (click)="accept(request)"
+                [disabled]="processingId !== null"
+              >
+                <mat-icon>check</mat-icon>
+                Aprobar
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="propose(request)"
+                [disabled]="processingId !== null"
+              >
+                <mat-icon>edit_calendar</mat-icon>
+                Proponer
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                class="reject-button"
+                (click)="reject(request)"
+                [disabled]="processingId !== null"
+              >
+                <mat-icon>close</mat-icon>
+                Rechazar
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

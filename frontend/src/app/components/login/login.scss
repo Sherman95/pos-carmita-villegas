@@ -187,3 +187,213 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+// Rediseño editorial del acceso POS
+.login-shell {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.08fr) minmax(430px, .92fr);
+  width: 100%;
+  min-height: 100dvh;
+  height: auto;
+  overflow: auto;
+  background: #f9f5f6;
+}
+
+.brand-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100dvh;
+  padding: clamp(32px, 5vw, 72px);
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(145deg, rgba(34, 8, 22, .97), rgba(90, 22, 54, .94)),
+    radial-gradient(circle at 80% 20%, #aa5478, transparent 40%);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .2;
+    background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+    background-size: 52px 52px;
+    mask-image: linear-gradient(to bottom right, black, transparent 72%);
+  }
+
+  &::after {
+    content: 'CV';
+    position: absolute;
+    right: -24px;
+    bottom: -72px;
+    color: rgba(255,255,255,.04);
+    font: 500 clamp(15rem, 31vw, 31rem)/1 Georgia, serif;
+    letter-spacing: -.12em;
+  }
+}
+
+.brand-glow { position: absolute; border-radius: 50%; filter: blur(1px); pointer-events: none; }
+.glow-one { width: 420px; height: 420px; top: -210px; right: -150px; border: 1px solid rgba(255,255,255,.15); box-shadow: 0 0 90px rgba(229,150,181,.12); }
+.glow-two { width: 210px; height: 210px; right: 13%; bottom: 15%; border: 1px solid rgba(255,255,255,.1); }
+
+.brand-lockup,
+.brand-message,
+.brand-features { position: relative; z-index: 2; }
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  .brand-logo { display: grid; place-items: center; width: 58px; height: 58px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 17px; background: rgba(255,255,255,.1); backdrop-filter: blur(12px); }
+  img { width: 54px; height: 54px; object-fit: contain; }
+  > div:last-child { display: grid; }
+  strong { font: 600 1.1rem/1.1 Georgia, serif; letter-spacing: .04em; }
+  span { margin-top: 4px; color: #e6b5c8; font-size: .58rem; font-weight: 800; letter-spacing: .28em; text-transform: uppercase; }
+}
+
+.brand-message {
+  max-width: 650px;
+  margin: auto 0;
+  padding: 60px 0;
+
+  .eyebrow { color: #dfa6bd; }
+  h1 { max-width: 620px; margin: 13px 0 22px; font: 500 clamp(2.8rem, 6vw, 5.6rem)/.96 Georgia, 'Times New Roman', serif; letter-spacing: -.045em; }
+  p { max-width: 570px; margin: 0; color: rgba(255,255,255,.67); font-size: clamp(.92rem, 1.35vw, 1.08rem); line-height: 1.7; }
+}
+
+.eyebrow { display: block; color: #9b4a6d; font-size: .65rem; font-weight: 850; letter-spacing: .17em; text-transform: uppercase; }
+
+.brand-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  color: rgba(255,255,255,.72);
+  font-size: .75rem;
+  font-weight: 650;
+  span { display: flex; align-items: center; gap: 7px; }
+  mat-icon { width: 17px; height: 17px; color: #dfa6bd; font-size: 17px; }
+}
+
+.access-panel {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: clamp(28px, 6vw, 80px);
+  background:
+    radial-gradient(circle at 90% 12%, rgba(148, 64, 99, .11), transparent 31%),
+    linear-gradient(160deg, #fffdfc 0%, #f8f2f4 100%);
+}
+
+.access-card { width: min(100%, 470px); animation: loginReveal .55s ease-out; }
+
+.mobile-brand { display: none; }
+
+.access-heading {
+  margin-bottom: 30px;
+  h2 { margin: 9px 0 10px; color: #351426; font: 600 clamp(2rem, 4vw, 2.8rem)/1 Georgia, serif; letter-spacing: -.035em; }
+  p { margin: 0; color: #806d78; font-size: .9rem; line-height: 1.55; }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  text-align: left;
+
+  .custom-field {
+    width: 100%;
+    margin: 7px 0 13px;
+
+    ::ng-deep .mat-mdc-text-field-wrapper { min-height: 56px; border-radius: 13px !important; background: rgba(255,255,255,.8) !important; }
+    ::ng-deep .mdc-notched-outline__leading { border-radius: 13px 0 0 13px !important; }
+    ::ng-deep .mdc-notched-outline__trailing { border-radius: 0 13px 13px 0 !important; }
+    ::ng-deep .mdc-notched-outline > * { border-color: #d9cbd2 !important; }
+    &.mat-focused ::ng-deep .mdc-notched-outline > * { border-color: #7d234b !important; border-width: 1px !important; }
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+    mat-icon { color: #9a627b; }
+  }
+}
+
+.field-label { color: #4c2b3d; font-size: .76rem; font-weight: 800; }
+.password-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 3px; }
+.password-label span { color: #a58e99; font-size: .68rem; }
+
+.error-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 1px 0 14px;
+  padding: 11px 13px;
+  border: 1px solid #efc1ca;
+  border-radius: 11px;
+  background: #fff0f3;
+  color: #a42846;
+  font-size: .79rem;
+  font-weight: 700;
+  mat-icon { flex: 0 0 auto; width: 19px; height: 19px; font-size: 19px; }
+}
+
+.login-button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 7px;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #7f234b, #4d112d) !important;
+  color: white !important;
+  font-size: .9rem;
+  font-weight: 850;
+  box-shadow: 0 13px 28px rgba(86, 22, 53, .22);
+  transition: transform .2s, box-shadow .2s;
+
+  &:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 17px 32px rgba(86,22,53,.28); }
+  ::ng-deep .mdc-button__label { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; }
+  .button-content { display: flex; align-items: center; justify-content: center; gap: 11px; }
+  mat-icon { width: 19px; height: 19px; font-size: 19px; }
+}
+
+.loader { width: 21px; height: 21px; border: 3px solid rgba(255,255,255,.28); border-top-color: #fff; border-radius: 50%; animation: spin .75s linear infinite; }
+
+.security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 20px;
+  color: #8e7c86;
+  font-size: .7rem;
+  mat-icon { width: 16px; height: 16px; color: #7d9b87; font-size: 16px; }
+}
+
+.access-card footer { margin-top: 36px; color: #ad9da5; font-size: .66rem; text-align: center; }
+
+@keyframes loginReveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 900px) {
+  .login-shell { display: block; background: linear-gradient(145deg, #351020, #691f42); }
+  .brand-panel { display: none; }
+  .access-panel { min-height: 100dvh; padding: 22px; background: radial-gradient(circle at top right, rgba(255,255,255,.13), transparent 35%), linear-gradient(145deg, #351020, #691f42); }
+  .access-card { padding: 28px; border: 1px solid rgba(255,255,255,.45); border-radius: 25px; background: rgba(255,253,252,.98); box-shadow: 0 24px 60px rgba(29,7,19,.34); }
+  .mobile-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 31px; }
+  .mobile-brand img { width: 44px; height: 44px; border-radius: 13px; object-fit: contain; }
+  .mobile-brand > span { display: grid; color: #43182e; font: 700 .86rem Georgia, serif; }
+  .mobile-brand small { margin-top: 3px; color: #986079; font: 800 .48rem sans-serif; letter-spacing: .2em; text-transform: uppercase; }
+}
+
+@media (max-width: 520px) {
+  .access-panel { place-items: center; padding: 12px; }
+  .access-card { width: 100%; padding: 25px 19px 21px; border-radius: 21px; }
+  .access-heading { margin-bottom: 24px; }
+  .access-heading h2 { font-size: 2rem; }
+  .access-card footer { margin-top: 27px; }
+}
+
+@media (max-height: 680px) and (min-width: 901px) {
+  .brand-message { padding: 30px 0; }
+  .brand-message h1 { font-size: 3.1rem; }
+  .access-panel { padding-top: 25px; padding-bottom: 25px; }
+}

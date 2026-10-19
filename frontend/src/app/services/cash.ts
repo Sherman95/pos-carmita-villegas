@@ -1,20 +1,38 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs';
-import { CashStatus, ClosingDetails } from '../models/cash.model';
+import { Observable, tap } from 'rxjs';
+import { CashControlSetting, CashStatus, ClosingDetails } from '../models/cash.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CashService {
   private apiUrl = `${environment.apiBaseUrl}/api/cash`;
+  private settingsUrl = `${environment.apiBaseUrl}/api/settings/cash-control`;
+  private controlEnabledSig = signal(true);
+
+  readonly controlEnabled = this.controlEnabledSig.asReadonly();
 
   constructor(private http: HttpClient) { }
 
   // 1. Verificar estado
   getStatus(): Observable<CashStatus> {
-    return this.http.get<CashStatus>(`${this.apiUrl}/status`);
+    return this.http.get<CashStatus>(`${this.apiUrl}/status`).pipe(
+      tap(status => this.controlEnabledSig.set(status.controlEnabled !== false))
+    );
+  }
+
+  getControlSetting(): Observable<CashControlSetting> {
+    return this.http.get<CashControlSetting>(this.settingsUrl).pipe(
+      tap(setting => this.controlEnabledSig.set(setting.controlEnabled !== false))
+    );
+  }
+
+  updateControlSetting(controlEnabled: boolean): Observable<CashControlSetting> {
+    return this.http.put<CashControlSetting>(this.settingsUrl, { controlEnabled }).pipe(
+      tap(setting => this.controlEnabledSig.set(setting.controlEnabled !== false))
+    );
   }
 
   // 2. Abrir caja

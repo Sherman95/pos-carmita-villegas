@@ -50,14 +50,33 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
     ::ng-deep .sidro-publish-option { padding: 12px; border-radius: 11px; background: #f9f1f5; color: #4b1e3a; font-weight: 700; }
     ::ng-deep .sidro-professionals-fieldset { display: grid; gap: 9px; margin: 0; padding: 13px; border: 1px solid #e2e6eb; border-radius: 11px; }
     ::ng-deep .sidro-professionals-fieldset legend { padding: 0 5px; color: #697386; font-size: .75rem; font-weight: 700; }
-    ::ng-deep .sidro-schedule-help { margin: -4px 0 16px; color: #697386; font-size: .82rem; }
-    ::ng-deep .sidro-schedule-editor { display: grid; gap: 8px; text-align: left; }
-    ::ng-deep .sidro-schedule-row { display: grid; grid-template-columns: minmax(120px, 1fr) 120px 120px; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid #e2e6eb; border-radius: 12px; background: #fcfbfc; }
-    ::ng-deep .sidro-day-toggle { display: flex; align-items: center; gap: 9px; color: #4b1e3a; font-weight: 750; cursor: pointer; }
-    ::ng-deep .sidro-schedule-row > label:not(.sidro-day-toggle) { display: grid; gap: 3px; color: #697386; font-size: .65rem; font-weight: 700; text-transform: uppercase; }
-    ::ng-deep .sidro-schedule-row input[type='time'] { min-width: 0; height: 38px; padding: 0 8px; border: 1px solid #cbd3dc; border-radius: 9px; background: white; color: #211923; font: inherit; }
-    ::ng-deep .sidro-schedule-row input[type='time']:disabled { background: #eef0f3; color: #9aa1ad; }
-    @media (max-width: 600px) { ::ng-deep .sidro-schedule-row { grid-template-columns: 1fr 1fr; } ::ng-deep .sidro-day-toggle { grid-column: 1 / -1; } }
+    ::ng-deep .sidro-schedule-popup { width: min(760px, calc(100vw - 24px)) !important; max-height: calc(100dvh - 24px); padding: 0 0 18px !important; overflow: hidden; border-radius: 26px !important; background: #fffdfc !important; box-shadow: 0 28px 80px rgba(57, 14, 40, .28) !important; }
+    ::ng-deep .sidro-schedule-popup .swal2-title { margin: 0 !important; padding: 26px 30px 8px !important; color: #351127 !important; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.45rem, 3vw, 2rem) !important; text-align: left !important; }
+    ::ng-deep .sidro-schedule-popup .swal2-html-container { max-height: min(610px, calc(100dvh - 205px)); margin: 0 !important; padding: 0 30px 8px !important; overflow: auto; }
+    ::ng-deep .sidro-schedule-intro { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; color: #6f5b68; font-size: .86rem; line-height: 1.45; text-align: left; }
+    ::ng-deep .sidro-schedule-intro .material-icons { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 12px; background: #f8eaf0; color: #8a234c; font-size: 20px; }
+    ::ng-deep .sidro-schedule-column-head { display: grid; grid-template-columns: minmax(170px, 1fr) 130px 130px; gap: 12px; padding: 0 14px 7px; color: #9a7c8d; font-size: .66rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; text-align: left; }
+    ::ng-deep .sidro-schedule-editor { display: grid; gap: 9px; text-align: left; }
+    ::ng-deep .sidro-schedule-row { display: grid; grid-template-columns: minmax(170px, 1fr) 130px 130px; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #eadde4; border-radius: 15px; background: #faf7f8; transition: border-color .2s, background .2s, box-shadow .2s; }
+    ::ng-deep .sidro-schedule-row.is-enabled { border-color: #d9aabd; background: #fff; box-shadow: 0 5px 16px rgba(86, 25, 57, .07); }
+    ::ng-deep .sidro-day-toggle { display: flex; align-items: center; gap: 11px; min-width: 0; color: #482033; font-weight: 800; cursor: pointer; }
+    ::ng-deep .sidro-day-toggle input { position: relative; flex: 0 0 42px; width: 42px; height: 24px; margin: 0; appearance: none; border-radius: 999px; background: #d8cdd3; cursor: pointer; transition: background .2s; }
+    ::ng-deep .sidro-day-toggle input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.18); transition: transform .2s; }
+    ::ng-deep .sidro-day-toggle input:checked { background: linear-gradient(135deg, #8d2853, #5a1738); }
+    ::ng-deep .sidro-day-toggle input:checked::after { transform: translateX(18px); }
+    ::ng-deep .sidro-day-copy { display: grid; min-width: 0; }
+    ::ng-deep .sidro-day-copy small { color: #9a7c8d; font-size: .68rem; font-weight: 600; }
+    ::ng-deep .sidro-time-field { display: grid; gap: 4px; color: #876f7d; font-size: .64rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    ::ng-deep .sidro-schedule-row input[type='time'] { width: 100%; min-width: 0; height: 42px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8c9d1; border-radius: 10px; outline: none; background: white; color: #2e1422; font: 700 .86rem/1 inherit; transition: border-color .2s, box-shadow .2s; color-scheme: light; }
+    ::ng-deep .sidro-schedule-row input[type='time']:focus { border-color: #8d2853; box-shadow: 0 0 0 3px rgba(141,40,83,.11); }
+    ::ng-deep .sidro-schedule-row input[type='time']:disabled { border-color: transparent; background: #eee9ec; color: #aaa0a6; opacity: .72; }
+    ::ng-deep .sidro-schedule-note { display: flex; gap: 8px; margin: 14px 2px 0; color: #806b77; font-size: .76rem; line-height: 1.4; text-align: left; }
+    ::ng-deep .sidro-schedule-note .material-icons { color: #a34a70; font-size: 17px; }
+    ::ng-deep .sidro-schedule-popup .swal2-actions { width: calc(100% - 60px); margin: 14px 30px 0 !important; gap: 10px; }
+    ::ng-deep .sidro-schedule-popup .swal2-confirm, ::ng-deep .sidro-schedule-popup .swal2-cancel { min-height: 46px; margin: 0 !important; padding: 0 22px !important; border-radius: 12px !important; font-weight: 800 !important; }
+    ::ng-deep .sidro-schedule-popup .swal2-confirm { background: linear-gradient(135deg, #7f234b, #51132f) !important; box-shadow: 0 9px 20px rgba(94, 24, 59, .22) !important; }
+    ::ng-deep .sidro-schedule-popup .swal2-cancel { border: 1px solid #dacbd3 !important; background: #fff !important; color: #5c3449 !important; }
+    @media (max-width: 600px) { ::ng-deep .sidro-schedule-popup { border-radius: 20px !important; } ::ng-deep .sidro-schedule-popup .swal2-title { padding: 21px 18px 6px !important; font-size: 1.38rem !important; } ::ng-deep .sidro-schedule-popup .swal2-html-container { max-height: calc(100dvh - 190px); padding: 0 14px 6px !important; } ::ng-deep .sidro-schedule-column-head { display: none; } ::ng-deep .sidro-schedule-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; } ::ng-deep .sidro-day-toggle { grid-column: 1 / -1; } ::ng-deep .sidro-schedule-popup .swal2-actions { width: calc(100% - 28px); margin: 10px 14px 0 !important; display: grid !important; grid-template-columns: 1fr 1.25fr; } ::ng-deep .sidro-schedule-popup .swal2-confirm, ::ng-deep .sidro-schedule-popup .swal2-cancel { width: 100%; padding: 0 10px !important; } }
     @media (max-width: 720px) { .settings-container { padding: 12px; } .services-settings-panel { padding: 16px 4px; } .service-settings-grid { grid-template-columns: 1fr; } }
   `]
 })
@@ -368,13 +387,13 @@ export class SidroSettingsComponent implements OnInit {
          const schedule = scheduleByDay.get(day.value);
          const enabled = Boolean(schedule);
          return `
-           <div class="sidro-schedule-row" data-day="${day.value}">
+           <div class="sidro-schedule-row${enabled ? ' is-enabled' : ''}" data-day="${day.value}">
              <label class="sidro-day-toggle">
                <input id="schedule-enabled-${day.value}" type="checkbox" ${enabled ? 'checked' : ''}>
-               <span>${day.label}</span>
+               <span class="sidro-day-copy"><span>${day.label}</span><small>${enabled ? 'Disponible' : 'Día libre'}</small></span>
              </label>
-             <label><span>Entrada</span><input id="schedule-start-${day.value}" type="time" value="${String(schedule?.start_time || '09:00').slice(0, 5)}" ${enabled ? '' : 'disabled'}></label>
-             <label><span>Salida</span><input id="schedule-end-${day.value}" type="time" value="${String(schedule?.end_time || '18:00').slice(0, 5)}" ${enabled ? '' : 'disabled'}></label>
+             <label class="sidro-time-field"><span>Entrada</span><input id="schedule-start-${day.value}" type="time" value="${String(schedule?.start_time || '09:00').slice(0, 5)}" ${enabled ? '' : 'disabled'}></label>
+             <label class="sidro-time-field"><span>Salida</span><input id="schedule-end-${day.value}" type="time" value="${String(schedule?.end_time || '18:00').slice(0, 5)}" ${enabled ? '' : 'disabled'}></label>
            </div>
          `;
        }).join('');
@@ -382,8 +401,10 @@ export class SidroSettingsComponent implements OnInit {
        const { value: formSchedules } = await Swal.fire({
          title: `Horario de ${emp.nombre}`,
          html: `
-           <p class="sidro-schedule-help">Activa los días que atiende y define su hora de entrada y salida.</p>
-           <div class="sidro-schedule-editor">${rows}</div>
+            <div class="sidro-schedule-intro"><span class="material-icons">event_available</span><span>Activa los días que atiende y define su jornada. Los espacios ocupados en la agenda se bloquearán automáticamente.</span></div>
+            <div class="sidro-schedule-column-head"><span>Día de atención</span><span>Entrada</span><span>Salida</span></div>
+            <div class="sidro-schedule-editor">${rows}</div>
+            <p class="sidro-schedule-note"><span class="material-icons">info</span><span>Este es el horario base semanal; las citas y bloqueos existentes siguen teniendo prioridad.</span></p>
          `,
          showCancelButton: true,
          confirmButtonText: 'Guardar horario',
@@ -398,6 +419,10 @@ export class SidroSettingsComponent implements OnInit {
              enabledInput?.addEventListener('change', () => {
                startInput.disabled = !enabledInput.checked;
                endInput.disabled = !enabledInput.checked;
+               const row = enabledInput.closest('.sidro-schedule-row');
+               const status = row?.querySelector('.sidro-day-copy small');
+               row?.classList.toggle('is-enabled', enabledInput.checked);
+               if (status) status.textContent = enabledInput.checked ? 'Disponible' : 'Día libre';
              });
            });
          },

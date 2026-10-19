@@ -1,0 +1,46 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --exec \"ts-node --transpile-only src/index.ts\"",
+    "build": "tsc",
+    "test:security": "npm run build && node --test tests/security.phase1.test.cjs",
+    "test:appointments": "npm run build && node --test tests/appointments.phase2.test.cjs",
+    "test:financial": "npm run build && node --test tests/financial.phase3.test.cjs",
+    "test:financial:local": "npm run build && node tests/financial.phase3.local-smoke.cjs",
+    "test:sidro-auth": "npm run build && node --test tests/sidro-auth.phase4.test.cjs",
+    "test:calendar": "npm run build && node --test tests/google-calendar.phase5.test.cjs",
+    "test:rbac-phase6": "npm run build && node --test tests/rbac.phase6.test.cjs",
+    "test:rbac:local": "npm run build && node tests/rbac.phase6.local-smoke.cjs",
+    "test:calendar:local": "node tests/google-calendar.phase5.local-smoke.cjs",
+    "start": "node dist/index.js",
+    "db:check": "node scripts/check-database.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "argon2": "^0.45.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "googleapis": "^178.1.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^25.0.6",
+    "@types/pg": "^8.16.0",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

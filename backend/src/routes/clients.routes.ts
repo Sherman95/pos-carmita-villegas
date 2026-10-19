@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { requirePermission, requireStaff, verifyToken } from '../middlewares/auth.middleware';
+import { PERMISSIONS } from '../security/rbac';
 import {
     getClients,
     createClient,
@@ -11,10 +12,10 @@ import {
 const router = Router();
 router.use(verifyToken, requireStaff);
 
-router.get('/', getClients);
-router.get('/:id/deletion-impact', getClientDeletionImpact);
-router.post('/', createClient);
-router.put('/:id', updateClient);
-router.delete('/:id', deleteClient);
+router.get('/', requirePermission(PERMISSIONS.clientsRead), getClients);
+router.get('/:id/deletion-impact', requirePermission(PERMISSIONS.clientsDelete), getClientDeletionImpact);
+router.post('/', requirePermission(PERMISSIONS.clientsCreate), createClient);
+router.put('/:id', requirePermission(PERMISSIONS.clientsUpdate), updateClient);
+router.delete('/:id', requirePermission(PERMISSIONS.clientsDelete), deleteClient);
 
 export default router;

@@ -6,7 +6,30 @@
     </div>
   }
 
-  @if (!loading && !isOpen) {
+  @if (!loading && loadError) {
+    <mat-card class="box-card cash-info-state error-state" role="alert">
+      <div class="cash-info-icon"><mat-icon>cloud_off</mat-icon></div>
+      <span class="cash-kicker">Estado no disponible</span>
+      <h2>No pudimos consultar la caja</h2>
+      <p>{{ loadError }}</p>
+      <button mat-stroked-button type="button" (click)="checkStatus()"><mat-icon>refresh</mat-icon> Reintentar</button>
+    </mat-card>
+  }
+
+  @if (!loading && !loadError && !controlEnabled) {
+    <mat-card class="box-card cash-info-state disabled-state">
+      <div class="cash-info-icon"><mat-icon>point_of_sale</mat-icon></div>
+      <span class="cash-kicker">Operación flexible</span>
+      <h2>Control de caja desactivado</h2>
+      <p>Puedes continuar operando el POS sin abrir una sesión. Las ventas, abonos, gastos, saldos e historiales financieros seguirán registrándose normalmente.</p>
+      <div class="disabled-note"><mat-icon>verified_user</mat-icon><span>No se crearán cajas invisibles ni se asociarán movimientos a sesiones ficticias.</span></div>
+      @if (canViewHistory) {
+        <button mat-stroked-button type="button" (click)="goToHistory()"><mat-icon>history</mat-icon> Consultar cierres anteriores</button>
+      }
+    </mat-card>
+  }
+
+  @if (!loading && !loadError && controlEnabled && !isOpen) {
     <div class="fade-in">
       <mat-card class="box-card closed-state">
         <div class="icon-header">
@@ -28,7 +51,7 @@
     </div>
   }
 
-  @if (!loading && isOpen && closingData) {
+  @if (!loading && !loadError && controlEnabled && isOpen && closingData) {
     <div class="fade-in">
       <mat-card class="box-card open-state">
         <div class="header-open">

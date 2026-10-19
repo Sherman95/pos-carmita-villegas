@@ -23,6 +23,7 @@ Thumbs.db
 # Local database backups
 backup_*.sql
 **/backup_*.sql
+*.dump
 
 # Local one-off diagnostics and superseded migration drafts
 backend/scratch*

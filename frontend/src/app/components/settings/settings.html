@@ -27,6 +27,171 @@
     </article>
   </section>
 
+  <section class="cash-settings-card" [class.enabled]="cashControlEnabled" aria-labelledby="cash-settings-title">
+    <div class="cash-settings-icon"><mat-icon>{{ cashControlEnabled ? 'point_of_sale' : 'money_off' }}</mat-icon></div>
+    <div class="cash-settings-copy">
+      <span class="panel-kicker">Operación financiera</span>
+      <h2 id="cash-settings-title">Control de caja</h2>
+      @if (cashControlLoading) {
+        <p>Consultando la configuración real del negocio...</p>
+      } @else if (cashControlError) {
+        <p class="cash-settings-error">{{ cashControlError }}</p>
+      } @else if (cashControlEnabled) {
+        <p>Las operaciones financieras sujetas a control requieren una caja abierta. Podrás realizar aperturas, arqueos y cierres para controlar los movimientos del salón.</p>
+      } @else {
+        <p>Podrás registrar ventas, abonos y gastos sin abrir una caja. Los movimientos, saldos e historiales financieros seguirán registrándose normalmente.</p>
+      }
+      <div class="cash-safety-note"><mat-icon>shield</mat-icon><span>El backend valida este modo y conserva la trazabilidad financiera en ambos estados.</span></div>
+    </div>
+    <div class="cash-settings-action">
+      <span class="mode-label" [class.on]="cashControlEnabled">{{ cashControlEnabled ? 'ACTIVADO' : 'DESACTIVADO' }}</span>
+      <button
+        type="button"
+        class="cash-toggle"
+        role="switch"
+        [attr.aria-checked]="cashControlEnabled"
+        [attr.aria-label]="cashControlEnabled ? 'Desactivar control de caja' : 'Activar control de caja'"
+        [disabled]="cashControlLoading || cashControlSaving"
+        (click)="requestCashControlChange()">
+        <span></span>
+      </button>
+      <small>{{ cashControlSaving ? 'Guardando...' : 'Exigir apertura para operar' }}</small>
+      @if (cashControlError) {
+        <button mat-button type="button" class="retry-setting" (click)="loadCashControlSetting()">Reintentar</button>
+      }
+    </div>
+  </section>
+
+  <section class="cash-settings-card push-settings-card" [class.enabled]="pushNotifications.state() === 'enabled'" aria-labelledby="push-settings-title">
+    <div class="cash-settings-icon push-icon"><mat-icon>notifications_active</mat-icon></div>
+    <div class="cash-settings-copy">
+      <span class="panel-kicker">Avisos en este dispositivo</span>
+      <h2 id="push-settings-title">Notificaciones Push</h2>
+      @if (pushNotifications.state() === 'loading') {
+        <p>Comprobando compatibilidad y estado del dispositivo...</p>
+      } @else if (pushNotifications.state() === 'enabled') {
+        <p>Este dispositivo puede recibir avisos operativos aun cuando el POS no esté en primer plano.</p>
+      } @else if (pushNotifications.state() === 'denied') {
+        <p class="cash-settings-error">El navegador bloqueó las notificaciones. Debes habilitarlas desde los permisos del sitio.</p>
+      } @else if (pushNotifications.state() === 'unsupported') {
+        <p>Web Push no está disponible en esta ejecución. La campana y el polling interno continúan funcionando.</p>
+      } @else if (pushNotifications.state() === 'unavailable') {
+        <p>Push todavía no está habilitado en el servidor. Las notificaciones internas continúan funcionando.</p>
+      } @else {
+        <p>Recibe avisos privados de nuevas solicitudes y cambios de citas. El permiso se solicitará únicamente al pulsar Activar.</p>
+      }
+      @if (pushNotifications.isIos && !pushNotifications.isStandalone) {
+        <div class="cash-safety-note"><mat-icon>ios_share</mat-icon><span>En iPhone: abre Compartir, elige “Agregar a inicio” y entra al POS desde su icono.</span></div>
+      } @else {
+        <div class="cash-safety-note"><mat-icon>privacy_tip</mat-icon><span>La pantalla bloqueada mostrará mensajes genéricos, sin datos de clientas ni información financiera.</span></div>
+      }
+      @if (pushNotifications.message()) {
+        <p class="push-feedback" role="status">{{ pushNotifications.message() }}</p>
+      }
+    </div>
+    <div class="cash-settings-action">
+      <span class="mode-label" [class.on]="pushNotifications.state() === 'enabled'">{{ pushNotifications.state() === 'enabled' ? 'ACTIVADAS' : 'DESACTIVADAS' }}</span>
+      @if (pushNotifications.state() === 'enabled') {
+        <button mat-stroked-button type="button" [disabled]="pushNotifications.busy()" (click)="pushNotifications.disable()">Desactivar</button>
+      } @else if (pushNotifications.state() === 'prompt' || pushNotifications.state() === 'error') {
+        <button mat-flat-button color="primary" type="button" [disabled]="pushNotifications.busy() || (pushNotifications.isIos && !pushNotifications.isStandalone)" (click)="pushNotifications.enable()">Activar notificaciones</button>
+      }
+      <small>{{ pushNotifications.busy() ? 'Procesando...' : 'Configuración por dispositivo' }}</small>
+    </div>
+  </section>
+
+  <section
+    class="cash-settings-card whatsapp-settings-card"
+    [class.enabled]="whatsappContact?.active"
+    aria-labelledby="whatsapp-settings-title"
+  >
+    <div class="cash-settings-icon whatsapp-icon">
+      <mat-icon>{{ whatsappContact?.active ? 'chat' : 'sms_failed' }}</mat-icon>
+    </div>
+    <div class="cash-settings-copy">
+      <span class="panel-kicker">Canal de WhatsApp</span>
+      <h2 id="whatsapp-settings-title">WhatsApp del salón</h2>
+      @if (whatsappContactLoading) {
+        <p>Consultando la configuración de contacto...</p>
+      } @else if (whatsappContactError) {
+        <p class="cash-settings-error">{{ whatsappContactError }}</p>
+      } @else {
+        <p>
+          Número oficial que verán las clientas en SIDRO para escribir al salón. Solo abre la
+          conversación de WhatsApp; no envía mensajes automáticos.
+        </p>
+        <div class="whatsapp-form">
+          <label class="field">
+            <span>Número oficial <em>Ej. 0991234567</em></span>
+            <div class="input-shell">
+              <mat-icon>phone_iphone</mat-icon>
+              <input
+                type="tel"
+                name="whatsappNumber"
+                [(ngModel)]="whatsappNumberInput"
+                placeholder="+593 99 123 4567"
+                [disabled]="whatsappContactSaving"
+                maxlength="24"
+              />
+            </div>
+          </label>
+          <label class="field whatsapp-message-field">
+            <span>Mensaje inicial <em>Opcional</em></span>
+            <div class="input-shell">
+              <mat-icon>edit_note</mat-icon>
+              <input
+                type="text"
+                name="whatsappMessage"
+                [(ngModel)]="whatsappMessageInput"
+                placeholder="Hola, quiero consultar sobre una reserva..."
+                [disabled]="whatsappContactSaving"
+                maxlength="300"
+              />
+            </div>
+          </label>
+        </div>
+        <div class="cash-safety-note">
+          <mat-icon>shield</mat-icon>
+          <span>El número se normaliza a formato internacional; el botón solo se muestra si es válido.</span>
+        </div>
+      }
+    </div>
+    <div class="cash-settings-action">
+      <span class="mode-label" [class.on]="whatsappContact?.active">
+        {{ whatsappContact?.active ? 'VISIBLE EN SIDRO' : 'OCULTO' }}
+      </span>
+      <button
+        type="button"
+        class="cash-toggle"
+        role="switch"
+        [attr.aria-checked]="whatsappEnabled"
+        [attr.aria-label]="whatsappEnabled ? 'Ocultar WhatsApp en SIDRO' : 'Mostrar WhatsApp en SIDRO'"
+        [disabled]="whatsappContactLoading || whatsappContactSaving"
+        (click)="whatsappEnabled = !whatsappEnabled"
+      >
+        <span></span>
+      </button>
+      <small>{{ whatsappContactSaving ? 'Guardando...' : 'Mostrar en SIDRO' }}</small>
+      @if (!whatsappContactLoading) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="whatsapp-save"
+          [disabled]="whatsappContactSaving"
+          (click)="saveWhatsappContact()"
+        >
+          Guardar
+        </button>
+      }
+      @if (whatsappContactError) {
+        <button mat-button type="button" class="retry-setting" (click)="loadWhatsappContactSetting()">
+          Reintentar
+        </button>
+      }
+    </div>
+  </section>
+
   <section class="setup-grid">
     <aside class="guide-panel" aria-labelledby="guide-title">
       <header class="panel-heading">
