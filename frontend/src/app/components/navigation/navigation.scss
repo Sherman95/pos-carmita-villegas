@@ -25,6 +25,9 @@
     padding: 0;
     border-radius: 0;
     color: rgba(255, 255, 255, 0.6); // Color inactivo (transparente)
+    cursor: pointer;
+    font: inherit;
+    text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     
     // Contenedor interno para alinear icono y texto
@@ -130,4 +133,29 @@
 @keyframes popIn {
   0% { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* Navegación estable: compacta en móvil y contenida en escritorio. */
+.bottom-nav {
+  min-height: 64px;
+  padding: 4px 8px max(env(safe-area-inset-bottom), 8px);
+  background: rgba(54, 14, 36, .96);
+}
+.bottom-nav .nav-item { max-width: 104px; height: 54px; border-radius: 15px; gap: 2px; }
+.bottom-nav .nav-item .icon-container mat-icon { width: 22px; height: 22px; font-size: 22px; }
+.bottom-nav .nav-item .label { font-size: 9px; letter-spacing: .02em; }
+.bottom-nav .nav-item.active { background: rgba(255,255,255,.1); }
+
+@media (min-width: 800px) {
+  .bottom-nav {
+    right: auto;
+    bottom: 18px;
+    width: min(620px, calc(100vw - 48px));
+    min-width: 0;
+    height: 64px;
+    padding: 6px 12px;
+    gap: 4px;
+    border-radius: 22px;
+  }
+  .bottom-nav .nav-item { flex: 1 1 0; width: auto; max-width: none; height: 50px; }
 }

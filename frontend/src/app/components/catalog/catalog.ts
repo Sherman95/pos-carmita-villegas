@@ -52,6 +52,9 @@ export class CatalogComponent implements OnInit {
     return this.items().filter((i) => i.nombre.toLowerCase().includes(term));
   });
 
+  pricedItemsCount = computed(() => this.items().filter((item) => Number(item.precio) > 0).length);
+  reservableItemsCount = computed(() => this.items().filter((item) => item.is_reservable).length);
+
   presets: Array<{ nombre: string; precio: number }> = [
     { nombre: 'Manicure', precio: 0 },
     { nombre: 'Pedicure', precio: 0 },
@@ -193,5 +196,15 @@ export class CatalogComponent implements OnInit {
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
+  }
+
+  getServiceIcon(name: string): string {
+    const value = name.toLowerCase();
+    if (value.includes('uñ') || value.includes('manicure') || value.includes('pedicure')) return 'back_hand';
+    if (value.includes('color') || value.includes('tinte')) return 'palette';
+    if (value.includes('maquill')) return 'brush';
+    if (value.includes('depila')) return 'content_cut';
+    if (value.includes('cabello') || value.includes('peinado') || value.includes('keratina')) return 'face_3';
+    return 'spa';
   }
 }

@@ -557,3 +557,35 @@ $sombra-card: 0 6px 18px rgba(31,23,34,0.07);
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Ajustes finales de densidad y escala para escritorio y móvil. */
+.clients-page { padding-bottom: 120px; }
+.clients-hero,
+.clients-content { max-width: 1320px; }
+.clients-page .clients-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.clients-page .clients-grid .client-card { min-width: 0; }
+.client-main { min-height: 92px; }
+.client-details { min-height: 101px; }
+.card-footer { border-top: 1px solid rgba(238,229,233,.8); }
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .clients-page .clients-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .clients-page { padding: 10px 10px 92px; }
+  .clients-page .clients-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .clients-hero { min-height: 146px; padding: 22px 18px 34px; }
+  .hero-copy h1 { font-size: 2rem; }
+  .hero-copy p { max-width: 280px; margin-top: 9px; font-size: .78rem; }
+  .directory-toolbar { gap: 9px; border-radius: 16px; }
+  .search-control { height: 47px; }
+  .new-client-button { min-height: 47px; }
+  .results-heading { margin: 22px 2px 12px; }
+  .results-heading h2 { font-size: 1.35rem; }
+  .client-main { min-height: 82px; padding: 14px 14px 12px; }
+  .avatar { width: 46px; height: 46px; border-radius: 14px; }
+  .client-identity h3 { margin-bottom: 5px; }
+  .client-details { min-height: 0; padding: 12px 14px; }
+  .card-footer { min-height: 38px; padding: 0 14px; }
+}

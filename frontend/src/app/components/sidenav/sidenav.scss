@@ -208,3 +208,81 @@ $text-muted: #697386;
   background-color: #fbf8fa;
   border-top: 1px solid rgba(75, 30, 58, 0.08);
 }
+
+/* Refinamiento 2026: perfil compacto, navegación legible y mejor uso vertical. */
+.sidenav-header {
+  padding: 20px 18px 22px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.sidenav-header .header-content { position: relative; }
+
+.identity-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding-right: 36px;
+}
+
+.sidenav-header .avatar-circle {
+  width: 58px;
+  height: 58px;
+  margin: 0;
+  font-size: 1.35rem;
+  box-shadow: 0 8px 20px rgba(20, 5, 15, .18);
+}
+
+.sidenav-header .user-info { min-width: 0; }
+.sidenav-header .user-info h3 {
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidenav-header .user-info .role-badge { margin: 5px 0 3px; padding: 2px 8px; font-size: .58rem; }
+.sidenav-header .user-info .email { overflow: hidden; font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+
+.session-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  color: rgba(255,255,255,.7);
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.session-label i { width: 6px; height: 6px; border-radius: 50%; background: #8ee0ad; box-shadow: 0 0 0 3px rgba(142,224,173,.13); }
+.header-notifications { position: absolute; top: 4px; right: 0; }
+
+.nav-list {
+  padding: 6px 10px 12px !important;
+  scrollbar-color: rgba(96, 36, 66, .32) transparent;
+  scrollbar-width: thin;
+}
+.nav-list::-webkit-scrollbar { width: 5px; }
+.nav-list::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(96,36,66,.3); }
+.nav-list .section-title { padding: 16px 12px 7px; font-size: .61rem; letter-spacing: .14em; }
+.nav-list a[mat-list-item] { height: 44px; margin-bottom: 3px; border-radius: 11px; }
+.nav-list a[mat-list-item] mat-icon { margin-right: 9px; }
+.nav-list a[mat-list-item] ::ng-deep .mdc-list-item__content { min-width: 0; }
+.nav-list a[mat-list-item] ::ng-deep .mdc-list-item__primary-text {
+  display: block;
+  overflow: hidden;
+  font-size: .83rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-list a[mat-list-item] ::ng-deep .mdc-list-item__end { margin-left: 6px; }
+.custom-divider { margin: 10px 12px !important; }
+.logout-item { margin-top: 10px; }
+.sidenav-footer { padding: 10px 12px; background: #fff; }
+
+@media (min-height: 820px) {
+  .nav-list a[mat-list-item] { height: 46px; }
+}

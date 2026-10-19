@@ -283,21 +283,60 @@
 }
 
 .whatsapp-action {
-  color: #1f9d55;
+  width: 38px;
+  height: 38px;
+  color: #168a49;
+  border: 1px solid rgba(37, 211, 102, 0.25);
+  background: #eafaf0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 
   &:disabled {
-    color: rgba(31, 157, 85, 0.35);
+    color: rgba(90, 108, 98, 0.42);
+    border-color: var(--ui-border);
+    background: #f5f6f6;
   }
 }
 
 .whatsapp-button {
-  border-color: rgba(31, 157, 85, 0.45) !important;
-  color: #1f9d55 !important;
+  gap: 0.45rem;
+  border-color: rgba(37, 211, 102, 0.38) !important;
+  color: #127a40 !important;
+  background: linear-gradient(135deg, #effcf4, #e6f8ed) !important;
+  font-weight: 750;
 
   &:disabled {
     border-color: var(--ui-border) !important;
     color: var(--ui-text-muted) !important;
+    background: #f6f6f6 !important;
   }
+}
+
+.whatsapp-brand {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  color: #25d366;
+
+  svg { width: 100%; height: 100%; overflow: visible; }
+  .bubble { fill: currentColor; }
+  .phone { fill: #fff; }
+}
+
+.whatsapp-action .whatsapp-brand { width: 23px; height: 23px; }
+.whatsapp-action:disabled .whatsapp-brand,
+.whatsapp-button:disabled .whatsapp-brand { color: currentColor; }
+
+@media (hover: hover) and (pointer: fine) {
+  .whatsapp-action:not(:disabled):hover {
+    color: #fff;
+    border-color: #25d366;
+    background: #25d366;
+    box-shadow: 0 6px 14px rgba(37, 211, 102, 0.24);
+  }
+
+  .whatsapp-action:not(:disabled):hover .whatsapp-brand { color: #fff; }
 }
 
 .mobile-list {

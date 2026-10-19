@@ -6,7 +6,7 @@
 
 /* Configuración básica del panel lateral */
 .app-sidenav {
-  width: 280px;
+  width: min(88vw, 320px);
   border-right: none;
   background: #ffffff;
   overflow-x: hidden; /* Evita scrolls horizontales raros */

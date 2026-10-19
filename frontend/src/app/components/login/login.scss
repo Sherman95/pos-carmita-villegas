@@ -397,3 +397,149 @@
   .brand-message h1 { font-size: 3.1rem; }
   .access-panel { padding-top: 25px; padding-bottom: 25px; }
 }
+
+/* Transición posterior a la autenticación. */
+.login-transition {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(174, 86, 123, .34), transparent 31%),
+    linear-gradient(135deg, #260918 0%, #4a1230 48%, #6d2448 100%);
+  animation: transitionCurtainIn .42s cubic-bezier(.22,.8,.24,1) both;
+}
+
+.login-transition::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: .16;
+  background-image:
+    linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at center, #000, transparent 72%);
+  animation: transitionGrid 1.45s ease-out both;
+}
+
+.transition-aura {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.aura-one { width: min(70vw, 760px); aspect-ratio: 1; animation: auraOne 1.45s ease-out both; }
+.aura-two { width: min(48vw, 500px); aspect-ratio: 1; animation: auraTwo 1.45s ease-out both; }
+
+.transition-monogram {
+  position: absolute;
+  right: -3vw;
+  bottom: -12vh;
+  color: rgba(255,255,255,.035);
+  font: 500 clamp(13rem, 35vw, 34rem)/.8 Georgia, serif;
+  letter-spacing: -.14em;
+  user-select: none;
+  animation: monogramReveal 1.1s ease-out both;
+}
+
+.transition-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 580px);
+  text-align: center;
+  animation: transitionContentIn .7s .16s cubic-bezier(.22,.8,.24,1) both;
+}
+
+.transition-logo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 126px;
+  height: 126px;
+  margin-bottom: 28px;
+}
+.transition-ring { position: absolute; inset: 0; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; }
+.ring-one { animation: ringBloom 1.1s .18s ease-out both; }
+.ring-two { inset: 12px; border-color: rgba(238,178,202,.28); animation: ringBloom 1s .3s ease-out both reverse; }
+.transition-logo {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 24px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 22px 48px rgba(15,2,9,.28);
+  backdrop-filter: blur(12px);
+}
+.transition-logo img { width: 76px; height: 76px; object-fit: contain; }
+.transition-logo mat-icon { width: 34px; height: 34px; color: #641d40; font-size: 34px; }
+.success-mark {
+  position: absolute;
+  right: 11px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #50142f;
+  border-radius: 50%;
+  background: #f2c6d7;
+  color: #50142f;
+  box-shadow: 0 7px 16px rgba(19,3,11,.25);
+  animation: successPop .5s .62s cubic-bezier(.2,1.4,.3,1) both;
+}
+.success-mark mat-icon { width: 18px; height: 18px; font-size: 18px; font-weight: 800; }
+.transition-eyebrow { color: #efb9cf; font-size: .64rem; font-weight: 850; letter-spacing: .2em; text-transform: uppercase; }
+.transition-content h2 { margin: 10px 0 8px; font: 500 clamp(2.25rem, 5vw, 4.2rem)/1 Georgia, serif; letter-spacing: -.045em; }
+.transition-content p { margin: 0; color: rgba(255,255,255,.7); font-size: clamp(.8rem, 1.6vw, .95rem); }
+.transition-progress {
+  width: min(260px, 68vw);
+  height: 2px;
+  margin-top: 28px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.13);
+}
+.transition-progress span { display: block; width: 100%; height: 100%; transform-origin: left; background: linear-gradient(90deg, #d990ad, #fff1f6); animation: progressFill 1.15s .2s cubic-bezier(.2,.75,.3,1) both; }
+
+@keyframes transitionCurtainIn { from { opacity: 0; clip-path: inset(50% 0 50%); } to { opacity: 1; clip-path: inset(0); } }
+@keyframes transitionContentIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes transitionGrid { from { opacity: 0; transform: scale(1.08); } to { opacity: .16; transform: none; } }
+@keyframes auraOne { from { opacity: 0; transform: scale(.55) rotate(-12deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes auraTwo { from { opacity: 0; transform: scale(1.4) rotate(15deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes ringBloom { from { opacity: 0; transform: scale(.55) rotate(-25deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes successPop { from { opacity: 0; transform: scale(.35) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes monogramReveal { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes progressFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (max-width: 600px) {
+  .login-transition { padding: 20px; background: radial-gradient(circle at 50% 38%, rgba(176,88,126,.35), transparent 34%), linear-gradient(155deg, #260918, #5f1b3e 70%, #7a3154); }
+  .transition-logo-wrap { width: 108px; height: 108px; margin-bottom: 22px; }
+  .transition-logo { width: 72px; height: 72px; border-radius: 21px; }
+  .transition-logo img { width: 67px; height: 67px; }
+  .success-mark { right: 5px; bottom: 5px; width: 29px; height: 29px; }
+  .transition-content h2 { font-size: clamp(2rem, 10vw, 2.8rem); }
+  .aura-one { width: 118vw; }
+  .aura-two { width: 78vw; }
+  .transition-monogram { right: -14vw; bottom: -4vh; font-size: 15rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-transition,
+  .login-transition::before,
+  .transition-content,
+  .transition-ring,
+  .transition-aura,
+  .transition-monogram,
+  .success-mark,
+  .transition-progress span { animation-duration: .01ms !important; animation-delay: 0ms !important; }
+}

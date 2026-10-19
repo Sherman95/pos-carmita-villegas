@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef , ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectorRef, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,12 +23,15 @@ import { safeReturnUrl } from '../../utils/safe-return-url';
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   username = '';
   password = '';
   loading = false;
   error = '';
   hidePassword = true;
+  loginSuccess = false;
+  welcomeName = '';
+  private navigationTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Variable para controlar si la imagen del logo cargó bien
   logoLoaded = true;
@@ -55,9 +58,12 @@ export class LoginComponent {
     this.auth.login(username, password).subscribe({
       next: ({ user }) => {
         const returnUrl = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'), '/');
-        this.router.navigateByUrl(user.must_change_password ? '/profile' : returnUrl);
-        this.loading = false;
+        this.welcomeName = this.formatWelcomeName(user?.username || username);
+        this.loginSuccess = true;
         this.cdr.detectChanges();
+        this.navigationTimer = setTimeout(() => {
+          this.navigateAfterWelcome(user.must_change_password ? '/profile' : returnUrl);
+        }, 1450);
       },
       error: (err) => {
         this.loading = false;
@@ -66,5 +72,23 @@ export class LoginComponent {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.navigationTimer) clearTimeout(this.navigationTimer);
+  }
+
+  private formatWelcomeName(value: string): string {
+    const cleaned = String(value || '').trim().replace(/[._-]+/g, ' ');
+    if (!cleaned) return 'Carmita';
+    return cleaned
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  private navigateAfterWelcome(url: string): void {
+    void this.router.navigateByUrl(url);
   }
 }

@@ -1,106 +1,84 @@
-<div class="page-container fade-in">
-  
-  <header class="header-section">
-    <div class="header-content">
-      <h1>Servicios 💅</h1>
-      <p>Selecciona o crea servicios para tu negocio</p>
-      
-      <div class="search-wrapper">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input type="text" 
-               placeholder="Buscar servicio (ej. Manicura)..." 
-               [ngModel]="searchTerm()" 
-               (ngModelChange)="setSearch($event)">
-        @if (searchTerm()) {
-          <button mat-icon-button (click)="setSearch('')" class="clear-btn">
-            <mat-icon>close</mat-icon>
-          </button>
-        }
+<main class="catalog-page">
+  <section class="catalog-hero" aria-labelledby="catalog-title">
+    <div class="hero-copy">
+      <span class="eyebrow">Catálogo del salón</span>
+      <h1 id="catalog-title">Servicios</h1>
+      <p>Administra precios y agrega servicios a la venta desde un solo lugar.</p>
+    </div>
+    <div class="hero-summary" aria-label="Resumen del catálogo">
+      <div class="summary-metric"><mat-icon>spa</mat-icon><span><strong>{{ items().length }}</strong><small>Servicios</small></span></div>
+      <div class="summary-divider"></div>
+      <div class="summary-metric"><mat-icon>sell</mat-icon><span><strong>{{ pricedItemsCount() }}</strong><small>Con precio</small></span></div>
+      <div class="summary-divider"></div>
+      <div class="summary-metric"><mat-icon>event_available</mat-icon><span><strong>{{ reservableItemsCount() }}</strong><small>Reservables</small></span></div>
+    </div>
+  </section>
+  <section class="catalog-content">
+    <div class="catalog-toolbar">
+      <label class="search-control">
+        <span class="sr-only">Buscar servicio</span><mat-icon>search</mat-icon>
+        <input type="search" placeholder="Buscar por nombre del servicio" autocomplete="off" [ngModel]="searchTerm()" (ngModelChange)="setSearch($event)" />
+        @if (searchTerm()) { <button type="button" mat-icon-button (click)="setSearch('')" aria-label="Limpiar búsqueda"><mat-icon>close</mat-icon></button> }
+      </label>
+      <div class="toolbar-actions">
+        <button type="button" mat-stroked-button class="btn-secondary" (click)="seedServicios()" matTooltip="Cargar servicios sugeridos"><mat-icon>auto_awesome</mat-icon><span>Sugeridos</span></button>
+        <button type="button" mat-flat-button class="btn-primary" (click)="nuevoServicio()"><mat-icon>add</mat-icon><span>Nuevo servicio</span></button>
       </div>
     </div>
-  </header>
-
-  <div class="catalog-wrapper">
-    
-    <div class="actions-bar">
-      <button mat-flat-button class="btn-new" (click)="nuevoServicio()">
-        <mat-icon>add_circle</mat-icon> NUEVO SERVICIO
-      </button>
-      
-      <button mat-stroked-button class="btn-seed" (click)="seedServicios()" matTooltip="Cargar servicios de ejemplo">
-        <mat-icon>cloud_download</mat-icon> SUGERIDOS
-      </button>
+    <div class="results-heading">
+      <div><span class="section-kicker">Servicios disponibles</span><h2>Selecciona para agregar a la venta</h2></div>
+      <span class="result-count">{{ filteredItems().length }} resultados</span>
     </div>
-
     @if (filteredItems().length === 0) {
       <div class="empty-state">
-        <div class="icon-circle"><mat-icon>spa</mat-icon></div>
-        <h3>No se encontraron servicios</h3>
-        <p>Intenta con otro nombre o crea uno nuevo.</p>
-        <button mat-stroked-button color="primary" (click)="setSearch('')">Limpiar búsqueda</button>
+        <div class="empty-icon"><mat-icon>search_off</mat-icon></div>
+        <h3>No encontramos servicios</h3><p>Prueba con otro nombre o registra un servicio nuevo.</p>
+        @if (searchTerm()) { <button type="button" mat-stroked-button (click)="setSearch('')">Limpiar búsqueda</button> }
       </div>
     } @else {
-      <div class="services-grid"> 
+      <div class="services-grid">
         @for (item of filteredItems(); track item.id) {
-          <div class="service-card elevation-z2" (click)="abrirDialogoPrecio(item)">
-            
-            <div class="card-header">
-              <div class="icon-box" [style.background-color]="getColor(item.nombre)">
-                {{ item.nombre.charAt(0).toUpperCase() }}
+          <article class="service-card" [style.--service-accent]="getColor(item.nombre)" (click)="abrirDialogoPrecio(item)" tabindex="0" (keydown.enter)="abrirDialogoPrecio(item)">
+            <div class="service-visual">
+              <div class="visual-fallback"><mat-icon>{{ getServiceIcon(item.nombre) }}</mat-icon><span>{{ item.nombre.charAt(0).toUpperCase() }}</span></div>
+              @if (item.sidro_image_url) {
+                <img [src]="item.sidro_image_url" [alt]="item.nombre" loading="lazy" (error)="$any($event.target).style.display = 'none'" />
+              }
+              <div class="visual-shade"></div>
+              <div class="visual-toolbar">
+                <span class="service-type"><mat-icon>spa</mat-icon> Servicio</span>
+                <button type="button" mat-icon-button class="edit-btn" (click)="seleccionar(item.id); $event.stopPropagation()" [attr.aria-label]="'Editar ' + item.nombre"><mat-icon>edit</mat-icon></button>
               </div>
-              
-              <button mat-icon-button class="edit-btn" (click)="seleccionar(item.id); $event.stopPropagation()">
-                <mat-icon>edit</mat-icon>
-              </button>
             </div>
-
-            <div class="card-body">
-              <h3 class="name">{{ item.nombre }}</h3>
-              <span class="price-tag">${{ item.precio | number:'1.2-2' }}</span>
+            <div class="service-main">
+              <h3>{{ item.nombre }}</h3>
+              <div class="service-meta">
+                @if (item.duration_minutes) { <span><mat-icon>schedule</mat-icon>{{ item.duration_minutes }} min</span> }
+                @if (item.is_reservable) { <span class="reservable"><mat-icon>event_available</mat-icon>SIDRO</span> }
+              </div>
+              <div class="price-block"><span>Precio base</span><strong>${{ item.precio | number:'1.2-2' }}</strong></div>
             </div>
-
-            <div class="card-footer">
-              <button mat-flat-button class="btn-add">
-                AGREGAR A VENTA <mat-icon>add_shopping_cart</mat-icon>
-              </button>
-            </div>
-
-          </div>
+            <button type="button" mat-flat-button class="btn-add"><span>Agregar a venta</span><mat-icon>arrow_forward</mat-icon></button>
+          </article>
         }
-      </div> 
+      </div>
     }
-  </div>
-
+  </section>
   <ng-template #serviceFormDialog>
     <div class="modern-dialog">
       <div class="dialog-header">
-        <h2>{{ selectedId() ? 'Editar Servicio' : 'Nuevo Servicio' }}</h2>
-        <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
+        <div class="dialog-title"><span class="dialog-icon"><mat-icon>{{ selectedId() ? 'edit' : 'add' }}</mat-icon></span><span><small>Catálogo de servicios</small><h2>{{ selectedId() ? 'Editar servicio' : 'Nuevo servicio' }}</h2></span></div>
+        <button type="button" mat-icon-button mat-dialog-close class="close-btn" aria-label="Cerrar"><mat-icon>close</mat-icon></button>
       </div>
-
       <div class="dialog-body">
-        <p class="dialog-subtitle">Ingresa los datos del servicio para el catálogo.</p>
-        
-        <mat-form-field appearance="outline" class="full-width custom-field">
-          <mat-label>Nombre del servicio</mat-label>
-          <mat-icon matPrefix class="prefix-icon">spa</mat-icon>
-          <input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" placeholder="Ej. Manicura Gel" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width custom-field">
-          <mat-label>Precio Base</mat-label>
-          <mat-icon matPrefix class="prefix-icon">attach_money</mat-icon>
-          <input matInput type="number" [ngModel]="form().precio" (ngModelChange)="updateField('precio', +$event)" placeholder="0.00" />
-        </mat-form-field>
+        <p>Completa la información que verá el equipo al registrar una venta.</p>
+        <mat-form-field appearance="outline" class="full-width"><mat-label>Nombre del servicio</mat-label><mat-icon matPrefix>spa</mat-icon><input matInput [ngModel]="form().nombre" (ngModelChange)="updateField('nombre', $event)" placeholder="Ej. Manicura gel" /></mat-form-field>
+        <mat-form-field appearance="outline" class="full-width"><mat-label>Precio base</mat-label><mat-icon matPrefix>attach_money</mat-icon><input matInput type="number" min="0" step="0.01" [ngModel]="form().precio" (ngModelChange)="updateField('precio', +$event)" placeholder="0.00" /></mat-form-field>
       </div>
-
       <div class="dialog-actions">
-        <button mat-stroked-button mat-dialog-close (click)="cancelar()">Cancelar</button>
-        <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!form().nombre" class="save-btn">
-          {{ selectedId() ? 'ACTUALIZAR' : 'GUARDAR' }}
-        </button>
+        <button type="button" mat-stroked-button mat-dialog-close (click)="cancelar()">Cancelar</button>
+        <button type="button" mat-flat-button class="save-btn" (click)="guardar()" [disabled]="!form().nombre">{{ selectedId() ? 'Actualizar servicio' : 'Guardar servicio' }}</button>
       </div>
     </div>
   </ng-template>
-
-</div>
+</main>

@@ -2,15 +2,18 @@
 
   <div class="sidenav-header">
     <div class="header-content">
-      <div class="avatar-circle elevation-z8">
-        {{ user.initial }}
+      <div class="identity-row">
+        <div class="avatar-circle elevation-z8">
+          {{ user.initial }}
+        </div>
+        <div class="user-info">
+          <span class="session-label"><i></i> Sesión activa</span>
+          <h3>{{ user.name }}</h3>
+          <span class="role-badge">{{ user.role }}</span>
+          <p class="email">{{ user.email }}</p>
+        </div>
       </div>
-      <div class="user-info">
-        <h3>{{ user.name }}</h3>
-        <span class="role-badge">{{ user.role }}</span>
-        <p class="email">{{ user.email }}</p>
-      </div>
-      <app-notifications-bell></app-notifications-bell>
+      <div class="header-notifications" aria-label="Notificaciones"><app-notifications-bell></app-notifications-bell></div>
     </div>
     <div class="header-wave"></div>
   </div>

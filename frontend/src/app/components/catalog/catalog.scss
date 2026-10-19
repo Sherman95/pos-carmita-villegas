@@ -1,216 +1,174 @@
-// VARIABLES DE DISEÑO
-$vino-main: #4b1e3a;
-$vino-dark: #2e0e22;
-$gris-fondo: #f5f6f8;
-$blanco: #ffffff;
-$verde-add: #7a294f;
-$borde-tarjeta: 1px solid #e2e6eb;
-$sombra-card: 0 6px 18px rgba(31,23,34,0.07);
+$wine: #571638;
+$wine-deep: #351027;
+$rose: #a94772;
+$blush: #f7e9ef;
+$ink: #281d25;
+$muted: #746776;
+$line: #eadfe5;
+$surface: #fff;
+$canvas: #f7f5f7;
 
-.page-container {
-    min-height: 100vh;
-    background-color: $gris-fondo;
-    display: flex; flex-direction: column;
+:host { display: block; }
+
+.catalog-page {
+  min-height: 100vh;
+  padding-bottom: 112px;
+  color: $ink;
+  background: radial-gradient(circle at 88% 4%, rgba(210, 155, 179, .18), transparent 24rem), $canvas;
 }
 
-// 1. CABECERA
-.header-section {
-    height: 260px; 
-    background: linear-gradient(135deg, $vino-main 0%, $vino-dark 100%);
-    padding: 30px 20px 0;
-    border-bottom-left-radius: 40px;
-    border-bottom-right-radius: 40px;
-    text-align: center;
-    position: relative; z-index: 1;
-    color: white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-
-    h1 { font-size: 2rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    p { opacity: 0.95; margin-top: 5px; font-size: 1rem; font-weight: 500; }
-    
-    .search-wrapper {
-        margin: 25px auto 0;
-        max-width: 600px;
-        background: white; border-radius: 50px; padding: 5px 20px;
-        display: flex; align-items: center; gap: 10px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25); 
-
-        .search-icon { color: #64748b; }
-        input { flex: 1; border: none; outline: none; height: 45px; font-size: 1rem; color: #333; font-weight: 600; background: transparent; }
-        .clear-btn { color: #94a3b8; }
-    }
+.catalog-hero {
+  min-height: 230px;
+  padding: 44px clamp(22px, 5vw, 76px) 82px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  color: #fff;
+  background: radial-gradient(circle at 88% 20%, rgba(255,255,255,.12), transparent 18rem), linear-gradient(125deg, $wine-deep, $wine 60%, #843158);
+  overflow: hidden;
 }
 
-// 2. CONTENEDOR FULL WIDTH
-.catalog-wrapper {
-    margin-top: -60px;
-    padding: 0 20px 40px;
-    
-    // 🟢 CAMBIO: Permitir que se expanda a todo el ancho disponible
-    max-width: 100%;  
-    width: 96%;       // Dejamos un pequeño margen a los lados (2% cada lado)
-    
-    margin-left: auto; margin-right: auto;
-    position: relative; z-index: 2;
+.hero-copy { max-width: 680px; }
+.eyebrow, .section-kicker { display: block; margin-bottom: 8px; font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.eyebrow { color: #e9bdcf; }
+.hero-copy h1 { margin: 0; font: 800 clamp(2.15rem, 5vw, 3.6rem)/1.02 Georgia, 'Times New Roman', serif; letter-spacing: -.035em; }
+.hero-copy p { max-width: 560px; margin: 14px 0 0; color: rgba(255,255,255,.78); font-size: clamp(.96rem, 1.5vw, 1.08rem); line-height: 1.6; }
+
+.hero-summary {
+  min-width: 390px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 18px;
+  background: rgba(255,255,255,.1);
+}
+.summary-metric { min-width: 92px; display: flex; align-items: center; gap: 9px; }
+.summary-metric > mat-icon { color: #f2bed3; font-size: 21px; }
+.summary-metric strong, .summary-metric small { display: block; }
+.summary-metric strong { font-size: 1.22rem; line-height: 1; }
+.summary-metric small { margin-top: 5px; color: rgba(255,255,255,.68); font-size: .7rem; }
+.summary-divider { width: 1px; height: 35px; background: rgba(255,255,255,.16); }
+
+.catalog-content { width: min(1320px, calc(100% - 40px)); margin: -46px auto 0; position: relative; }
+.catalog-toolbar {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(87,22,56,.08);
+  border-radius: 22px;
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 18px 45px rgba(57,27,44,.12);
 }
 
-.actions-bar {
-    display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;
-    flex-wrap: wrap;
+.search-control { height: 52px; padding: 0 8px 0 16px; display: flex; align-items: center; gap: 10px; border: 1px solid $line; border-radius: 15px; background: #fbf9fa; }
+.search-control:focus-within { border-color: rgba(87,22,56,.55); box-shadow: 0 0 0 3px rgba(87,22,56,.08); background: #fff; }
+.search-control > mat-icon { color: #97617c; }
+.search-control input { min-width: 0; flex: 1; border: 0; outline: 0; color: $ink; background: transparent; font: inherit; }
+.search-control input::placeholder { color: #a4959d; }
+.toolbar-actions { display: flex; gap: 10px; }
+.toolbar-actions button { height: 52px; padding-inline: 20px; border-radius: 14px; font-weight: 750; }
+.btn-primary, .save-btn { color: #fff !important; background: linear-gradient(135deg, $wine, #7d2853) !important; }
+.btn-secondary { color: $wine !important; border-color: #dcc8d2 !important; }
 
-    .btn-new {
-        background: $verde-add; color: white; 
-        height: 50px; border-radius: 25px; 
-        font-weight: 700; padding: 0 30px;
-        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        border: 2px solid white;
-    }
-    
-    .btn-seed {
-        background: rgba(255,255,255,0.15); color: white; 
-        height: 50px; border-radius: 25px;
-        border: 1px solid rgba(255,255,255,0.4);
-        font-weight: 600; backdrop-filter: blur(5px);
-    }
+.results-heading { margin: 34px 2px 18px; display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.section-kicker { margin-bottom: 5px; color: $rose; }
+.results-heading h2 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.2; }
+.result-count { padding: 7px 11px; flex: none; border-radius: 999px; color: $wine; background: $blush; font-size: .78rem; font-weight: 750; }
+
+.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+.service-card {
+  min-height: 360px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $line;
+  border-radius: 20px;
+  outline: none;
+  background: $surface;
+  box-shadow: 0 7px 22px rgba(56,33,47,.055);
+  cursor: pointer;
+  overflow: hidden;
+}
+.service-card:focus-visible { border-color: $wine; box-shadow: 0 0 0 3px rgba(87,22,56,.12), 0 8px 24px rgba(56,33,47,.08); }
+.price-block { display: flex; align-items: center; }
+.service-visual { height: 142px; position: relative; overflow: hidden; background: linear-gradient(135deg, color-mix(in srgb, var(--service-accent) 82%, #2c1021), color-mix(in srgb, var(--service-accent) 48%, #f6dce7)); }
+.service-visual img { width: 100%; height: 100%; position: relative; z-index: 1; display: block; object-fit: cover; }
+.visual-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,.95); }
+.visual-fallback mat-icon { width: 60px; height: 60px; font-size: 60px; opacity: .28; transform: translateX(-28px) rotate(-8deg); }
+.visual-fallback span { position: absolute; right: 24px; bottom: -23px; font: 800 8rem/1 Georgia, serif; color: rgba(255,255,255,.12); }
+.visual-shade { position: absolute; inset: 0; z-index: 2; background: linear-gradient(180deg, rgba(33,9,22,.05), rgba(33,9,22,.45)); pointer-events: none; }
+.visual-toolbar { position: absolute; inset: 12px 12px auto; z-index: 3; display: flex; justify-content: space-between; align-items: center; }
+.service-type { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; color: #fff; background: rgba(46,14,34,.48); backdrop-filter: blur(8px); font-size: .65rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.service-type mat-icon { width: 14px; height: 14px; font-size: 14px; }
+.edit-btn { width: 38px; height: 38px; color: #fff; background: rgba(46,14,34,.62); backdrop-filter: blur(8px); }
+.service-main { margin: 0; padding: 19px 19px 15px; }
+.service-main h3 { min-height: 2.7em; margin: 0 0 10px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; color: #2c2028; font-size: 1.12rem; font-weight: 750; line-height: 1.35; }
+.service-meta { min-height: 26px; margin-bottom: 13px; display: flex; flex-wrap: wrap; gap: 7px; }
+.service-meta span { height: 25px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; color: #786571; background: #f6f1f3; font-size: .69rem; font-weight: 700; }
+.service-meta span.reservable { color: #256044; background: #edf8f1; }
+.service-meta mat-icon { width: 14px; height: 14px; font-size: 14px; }
+.price-block { justify-content: space-between; gap: 12px; }
+.price-block span { color: $muted; font-size: .8rem; }
+.price-block strong { color: $wine; font-size: 1.35rem; }
+.btn-add { width: calc(100% - 38px); height: 44px; margin: auto 19px 19px; justify-content: space-between; border-radius: 13px; color: $wine !important; background: $blush !important; box-shadow: none !important; font-weight: 750; }
+.btn-add mat-icon { margin-left: auto; font-size: 19px; }
+
+.empty-state { min-height: 330px; padding: 48px 24px; display: grid; place-items: center; align-content: center; text-align: center; border: 1px dashed #dac8d1; border-radius: 22px; background: $surface; }
+.empty-icon { width: 68px; height: 68px; display: grid; place-items: center; margin-bottom: 16px; border-radius: 22px; color: $wine; background: $blush; }
+.empty-icon mat-icon { width: 32px; height: 32px; font-size: 32px; }
+.empty-state h3 { margin: 0; font-size: 1.25rem; }
+.empty-state p { margin: 8px 0 20px; color: $muted; }
+
+.modern-dialog { overflow: hidden; background: #fff; }
+.dialog-header { padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid $line; background: linear-gradient(135deg, #fff, #fbf3f6); }
+.dialog-title { display: flex; align-items: center; gap: 12px; }
+.dialog-title > span:last-child { min-width: 0; }
+.dialog-icon { width: 43px; height: 43px; display: grid; place-items: center; flex: none; border-radius: 14px; color: #fff; background: $wine; }
+.dialog-title small { display: block; margin-bottom: 2px; color: $rose; font-size: .67rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dialog-title h2 { margin: 0; color: $ink; font-size: 1.18rem; }
+.close-btn { flex: none; color: #88737e; background: #fff; }
+.dialog-body { padding: 24px 22px 10px; }
+.dialog-body > p { margin: 0 0 20px; color: $muted; line-height: 1.5; }
+.full-width { width: 100%; }
+.dialog-body mat-icon[matPrefix] { margin-right: 10px; color: #956078; }
+.dialog-actions { padding: 12px 22px 22px; display: grid; grid-template-columns: 1fr 1.45fr; gap: 10px; }
+.dialog-actions button { min-height: 48px; border-radius: 13px; font-weight: 750; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover { transform: translateY(-2px); border-color: rgba(87,22,56,.35); box-shadow: 0 12px 28px rgba(56,33,47,.09); }
+  .service-card:hover .btn-add { color: #fff !important; background: $wine !important; }
 }
 
-// 3. GRID MULTI-COLUMNA (x4, x5, x6)
-.services-grid {
-    display: grid; 
-    gap: 15px; // Espacio entre tarjetas un poco más ajustado
-    
-    // 🟢 CAMBIO CLAVE: Bajamos el mínimo a 240px.
-    // Esto fuerza al navegador a meter MÁS COLUMNAS en vez de estirar las tarjetas.
-    // - Laptop pequeña: ~4 columnas
-    // - Monitor normal: ~5 columnas
-    // - Monitor grande: ~6 o 7 columnas
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-
-    .service-card {
-        background: white; border-radius: 20px; padding: 15px;
-        border: $borde-tarjeta; box-shadow: $sombra-card;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-        display: flex; flex-direction: column; gap: 10px;
-        position: relative; overflow: hidden;
-
-        &:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-            border-color: $vino-main;
-        }
-        &:active { transform: scale(0.98); }
-
-        .card-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            
-            .icon-box {
-                width: 48px; height: 48px; border-radius: 14px; // Icono un pelín más pequeño
-                color: white; font-weight: 800; font-size: 1.4rem;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-                text-shadow: 0 2px 2px rgba(0,0,0,0.1);
-            }
-
-            .edit-btn {
-                width: 35px; height: 35px; // Botón editar compacto
-                color: #94a3b8; background: #f8fafc;
-                display: flex; align-items: center; justify-content: center;
-                border-radius: 10px;
-                &:hover { color: $vino-main; background: #fdf2f8; }
-            }
-        }
-
-        .card-body {
-            .name { 
-                margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 800; 
-                line-height: 1.2; margin-bottom: 5px;
-                
-                // TRUNCADO DE TEXTO (MULTILINEA)
-                display: -webkit-box;
-                -webkit-line-clamp: 2; 
-                line-clamp: 2; // 🟢 AGREGAMOS ESTA LÍNEA (Estándar)
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-            .price-tag {
-                display: inline-block;
-                font-size: 1.3rem; font-weight: 800; color: $vino-main;
-                background: #fdf2f8; padding: 2px 8px; border-radius: 8px;
-            }
-        }
-
-        .card-footer {
-            margin-top: auto; 
-            .btn-add {
-                width: 100%; height: 42px; border-radius: 12px; // Botón un poco más compacto
-                background: #f1f5f9; color: #334155; font-weight: 700;
-                box-shadow: none; border: 1px solid #e2e8f0;
-                transition: all 0.2s;
-                font-size: 0.9rem;
-                
-                mat-icon { font-size: 18px; margin-left: 6px; margin-bottom: 2px; }
-
-                &:hover { 
-                    background: $vino-main; color: white; border-color: $vino-main;
-                    box-shadow: 0 4px 12px rgba(75, 30, 58, 0.3);
-                }
-            }
-        }
-    }
+@media (max-width: 720px) {
+  .catalog-page { padding-bottom: 100px; }
+  .catalog-hero { min-height: 216px; padding: 28px 18px 74px; }
+  .hero-copy h1 { font-size: 2.35rem; }
+  .hero-summary { display: none; }
+  .catalog-content { width: calc(100% - 24px); margin-top: -48px; }
+  .catalog-toolbar { padding: 12px; grid-template-columns: 1fr; border-radius: 18px; }
+  .toolbar-actions { display: grid; grid-template-columns: .9fr 1.1fr; }
+  .toolbar-actions button { min-width: 0; padding-inline: 10px; }
+  .results-heading { margin: 27px 2px 15px; align-items: start; }
+  .results-heading h2 { max-width: 230px; font-size: 1.15rem; }
+  .result-count { margin-top: 2px; }
+  .services-grid { grid-template-columns: 1fr; gap: 12px; }
+  .service-card { min-height: 340px; padding: 0; border-radius: 18px; }
+  .service-visual { height: 132px; }
+  .service-main { margin: 0; padding: 17px 17px 13px; }
+  .service-main h3 { min-height: 0; margin-bottom: 15px; }
+  .btn-add { width: calc(100% - 34px); margin: auto 17px 17px; }
+  .dialog-actions { padding-inline: 16px; }
 }
 
-// EMPTY STATE
-.empty-state {
-    text-align: center; padding: 60px 20px;
-    background: white; border-radius: 24px;
-    border: $borde-tarjeta; box-shadow: $sombra-card;
-    grid-column: 1 / -1;
-
-    .icon-circle {
-        width: 80px; height: 80px; background: #f1f5f9;
-        border-radius: 50%; margin: 0 auto 20px;
-        display: flex; align-items: center; justify-content: center;
-        mat-icon { font-size: 40px; width: 40px; height: 40px; color: #cbd5e1; }
-    }
-    h3 { margin: 0; font-size: 1.3rem; color: #333; font-weight: 700; }
-    p { color: #64748b; margin-bottom: 25px; }
+@media (max-width: 390px) {
+  .toolbar-actions button span { font-size: .78rem; }
+  .results-heading { display: block; }
+  .result-count { display: inline-block; margin-top: 10px; }
 }
-
-// DIÁLOGO MODERNO
-.modern-dialog {
-    padding: 0;
-    
-    .dialog-header {
-        padding: 20px 25px; border-bottom: 1px solid #f1f5f9;
-        display: flex; justify-content: space-between; align-items: center;
-        background: #fafafa;
-        h2 { margin: 0; color: #333; font-weight: 800; font-size: 1.2rem; }
-        .close-btn { color: #94a3b8; }
-    }
-
-    .dialog-body {
-        padding: 30px 25px;
-        .dialog-subtitle { margin: 0 0 25px; color: #64748b; font-size: 0.95rem; }
-        
-        .custom-field {
-            width: 100%; margin-bottom: 10px;
-            ::ng-deep .mdc-text-field--filled {
-                background: #f8fafc; border-radius: 12px;
-                border: 1px solid #cbd5e1;
-                &:hover { background: #f1f5f9; border-color: #94a3b8; }
-            }
-            .prefix-icon { color: #64748b; margin-right: 12px; }
-        }
-    }
-
-    .dialog-actions {
-        padding: 15px 25px 25px;
-        display: flex; justify-content: flex-end; gap: 12px;
-        background: white;
-        .save-btn { height: 50px; padding: 0 35px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 15px rgba(75, 30, 58, 0.2); }
-    }
-}
-
-.fade-in { animation: fadeIn 0.4s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }

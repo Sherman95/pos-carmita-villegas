@@ -68,4 +68,27 @@
       <footer>© 2026 Carmita Villegas Estilistas · Piñas, El Oro</footer>
     </div>
   </section>
+
+  @if (loginSuccess) {
+    <section class="login-transition" role="status" aria-live="assertive" aria-label="Acceso correcto">
+      <div class="transition-aura aura-one"></div>
+      <div class="transition-aura aura-two"></div>
+      <div class="transition-monogram" aria-hidden="true">CV</div>
+      <div class="transition-content">
+        <div class="transition-logo-wrap">
+          <span class="transition-ring ring-one"></span>
+          <span class="transition-ring ring-two"></span>
+          <div class="transition-logo">
+            <img src="/assets/imghome.png" alt="" [hidden]="!logoLoaded">
+            @if (!logoLoaded) { <mat-icon>spa</mat-icon> }
+          </div>
+          <span class="success-mark"><mat-icon>check</mat-icon></span>
+        </div>
+        <span class="transition-eyebrow">Acceso concedido</span>
+        <h2>Bienvenida, {{ welcomeName }}</h2>
+        <p>Estamos preparando tu espacio de trabajo.</p>
+        <div class="transition-progress" aria-hidden="true"><span></span></div>
+      </div>
+    </section>
+  }
 </main>
